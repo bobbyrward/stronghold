@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stronghold-config
+  labels:
+    {{- include "stronghold.labels" . | nindent 4 }}
+    app.kubernetes.io/component: book-importer
+data:
+  config.yaml: |
+{{ toYaml .Values.bookImporter.config | indent 4 }}

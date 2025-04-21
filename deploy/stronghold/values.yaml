@@ -1,0 +1,37 @@
+images:
+  stronghold:
+    repository: does-not-exist/stronghold
+    pullPolicy: IfNotPresent
+    tag: ""
+
+persistentVolumes: []
+persistentVolumeClaims: []
+volumes: []
+volumeMounts: []
+
+bookImporter:
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Automatically mount a ServiceAccount's API credentials?
+    automount: false
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  config:
+    bookImporter:
+      qbitURL: ""
+      qbitUsername: ""
+      qbitPassword: ""
+      importTypes:
+        - category: books
+          sourcePath: ""
+          destinationPath: ""
+          importedTag: imported
+          sourcePrefixPath: ""
+          calibreDesktopURL: ""
+          calibreWebURL: ""
+          manualInterventionTag: needs-manual
