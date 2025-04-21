@@ -32,4 +32,4 @@ jobs:
         id: release-version
         run: npx semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.githubToken }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
