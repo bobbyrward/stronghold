@@ -12,13 +12,25 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v4
-      - name: Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:github-actions
-          version: 1.52.0
-      - name: Test tailscale
-        run: |
-          docker pull ${{ secrets.DOCKER_REPO_PREFIX }}/stronghold:latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+
+      # - name: Tailscale
+      #   uses: tailscale/github-action@v3
+      #   with:
+      #     oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      #     oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+      #     tags: tag:github-actions
+      #     version: 1.52.0
+      # - name: Test tailscale
+      #   run: |
+      #     docker pull ${{ secrets.DOCKER_REPO_PREFIX }}/stronghold:latest
+
+  golangci-lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+      - uses: golangci/golangci-lint-action@v4
