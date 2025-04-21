@@ -1,0 +1,87 @@
+name: Release
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+on:
+  release:
+    types:
+      - published
+
+# Cancel in-progress jobs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      releaseVersion: ${{ github.event.release.name }}
+      chartVersion: ${{ steps.generate-version.outputs.version }}
+    steps:
+      - name: generate chart version
+        id: generate-version
+        run: |-
+          echo ${{ github.event.release.name }} | sed 's/^v//' | awk '{print "version="$1}' >> "$GITHUB_OUTPUT"
+
+  deliver-image:
+    runs-on: ubuntu-latest
+    needs:
+      - generate-version
+    env:
+      version: ${{ needs.generate-version.outputs.releaseVersion }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:github-actions
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REPO }}
+          username: ${{ secrets.DOCKER_REPO_USERNAME }}
+          password: ${{ secrets.DOCKER_REPO_PASSWORD }}
+      - uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_REPO_PREFIX }}/stronghold:${{ env.version }}
+            ${{ secrets.DOCKER_REPO_PREFIX }}/stronghold:latest
+
+  deliver-chart:
+    runs-on: ubuntu-latest
+    needs:
+      - generate-version
+      - deliver-image
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+      - name: Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:github-actions
+      - run: |
+          helm repo add ${{ secrets.DOCKER_REPO }} \
+            --username ${{ secrets.DOCKER_REPO_USERNAME }} \
+            --password ${{ secrets.DOCKER_REPO_PASSWORD }}
+
+          helm package \
+            --destination . \
+            --app-version ${{ needs.generate-version.outputs.releaseVersion }} \
+            --version ${{ needs.generate-version.outputs.chartVersion }} \
+            deploy/stronghold
+
+          helm lint stronghold-*.tgz
+
+          helm push \
+            --version XXX \
+            --app-version XXX \
+            stronghold-*.tgz \
+            oci://${{ secrets.DOCKER_REPO_PREFIX }}/charts
