@@ -82,7 +82,5 @@ jobs:
           helm lint stronghold-*.tgz
 
           helm push \
-            --version XXX \
-            --app-version XXX \
             stronghold-*.tgz \
             oci://${{ secrets.DOCKER_REPO_PREFIX }}/charts
