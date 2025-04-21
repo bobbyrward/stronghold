@@ -6,13 +6,12 @@ on:
       - reopened
       - synchronize
 
-# Cancel in-progress jobs when new commits are pushed
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  run-tests:
+  test-image:
     runs-on: ubuntu-latest
     steps:
       - name: checkout repo
