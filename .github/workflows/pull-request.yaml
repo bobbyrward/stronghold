@@ -5,6 +5,9 @@ on:
       - opened
       - reopened
       - synchronize
+    paths-ignore:
+      - deploy/**
+      - .github/workflows/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
