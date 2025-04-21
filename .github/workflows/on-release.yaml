@@ -68,7 +68,8 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:github-actions
       - run: |
-          helm repo add ${{ secrets.DOCKER_REPO }} \
+          helm registry login \
+            ${{ secrets.DOCKER_REPO }} \
             --username ${{ secrets.DOCKER_REPO_USERNAME }} \
             --password ${{ secrets.DOCKER_REPO_PASSWORD }}
 
