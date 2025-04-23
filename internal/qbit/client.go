@@ -10,9 +10,9 @@ import (
 
 func CreateClient() (*qbittorrent.Client, error) {
 	client := qbittorrent.NewClient(qbittorrent.Config{
-		Host:     config.Config.BookImporter.QbitURL,
-		Username: config.Config.BookImporter.QbitUsername,
-		Password: config.Config.BookImporter.QbitPassword,
+		Host:     config.Config.Qbit.URL,
+		Username: config.Config.Qbit.Username,
+		Password: config.Config.Qbit.Password,
 	})
 
 	return client, nil

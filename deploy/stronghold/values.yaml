@@ -22,10 +22,11 @@ bookImporter:
     name: ""
 
   config:
+    qbit:
+      url: ""
+      username: ""
+      password: ""
     bookImporter:
-      qbitURL: ""
-      qbitUsername: ""
-      qbitPassword: ""
       importTypes:
         - category: books
           sourcePath: ""
