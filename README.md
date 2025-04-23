@@ -4,10 +4,10 @@ automation of all the things
 
 ## sub systems
 
-* manga downloader
+* ~book importer~
 * book feed watcher
-* book importer
 * audiobook import
+* manga downloader
 * book requests
 
 ### Book Importer
