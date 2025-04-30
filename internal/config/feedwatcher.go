@@ -75,9 +75,12 @@ var stringToMatchKey = map[string]FilterKey{
 	"summary":  FilterKey_Summary,
 }
 
-type FeedWatcherConfig struct{}
+type FeedWatcherConfig struct {
+	Feeds []FeedWatcherConfigFeed `yaml:"feeds"`
+}
 
 type FeedWatcherConfigFeed struct {
+	Name    string                  `yaml:"name"`
 	URL     string                  `yaml:"url"`
 	Filters []FeedWatcherConfigFeed `yaml:"filters"`
 }

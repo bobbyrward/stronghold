@@ -32,6 +32,8 @@ spec:
                 - "book-import"
               imagePullPolicy: IfNotPresent
               resources: {}
+              envFrom:
+                {{- include "stronghold.envFrom" . | nindent 16 }}
               volumeMounts:
                 {{- if .Values.volumeMounts }}
                   {{- toYaml .Values.volumeMounts | nindent 16 }}
