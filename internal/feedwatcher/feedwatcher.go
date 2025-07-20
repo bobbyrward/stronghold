@@ -17,7 +17,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/models"
-	notifications "github.com/bobbyrward/stronghold/internal/noticications"
+	"github.com/bobbyrward/stronghold/internal/notifications"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 )
 
@@ -201,10 +201,6 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 	}
 
 	for _, item := range feed.Items {
-		for key, value := range item.Custom {
-			fmt.Printf("Key=%s Value=%s\n", key, value)
-		}
-
 		entry, err := parseDescription(ctx, item.Description)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to parse feed item", slog.String("feedName", feedConfig.Name), slog.Any("err", err))
@@ -313,7 +309,7 @@ func parseDescription(ctx context.Context, description string) (parsedEntry, err
 		label, value, ok := strings.Cut(part, ":")
 
 		if !ok {
-			fmt.Printf("!ok: %s\n", part)
+			slog.WarnContext(ctx, "Unable to parse label and value from part", slog.String("part", part))
 			continue
 		}
 
@@ -327,7 +323,7 @@ func parseDescription(ctx context.Context, description string) (parsedEntry, err
 			parsed.Narrators = strings.Split(value, ",")
 		case "Series":
 			parsed.Series = strings.Split(value, ",")
-		case "Sumnmary":
+		case "Summary":
 			parsed.Summary = value
 		case "Category":
 			parsed.Category = value
@@ -340,7 +336,7 @@ func parseDescription(ctx context.Context, description string) (parsedEntry, err
 		case "Seeders":
 			intValue, err := strconv.Atoi(value)
 			if err != nil {
-				slog.WarnContext(ctx, "Unable to parse seeeders", slog.String("seeders", value))
+				slog.WarnContext(ctx, "Unable to parse seeders", slog.String("seeders", value))
 			}
 			parsed.Seeders = intValue
 		case "Added":
