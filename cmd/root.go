@@ -31,6 +31,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Path to the config file")
 	rootCmd.AddCommand(createBookImportCmd())
+	rootCmd.AddCommand(createFeedWatcherCmd())
 	rootCmd.AddCommand(createApiCmd())
 }
 
