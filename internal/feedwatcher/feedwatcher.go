@@ -24,18 +24,31 @@ import (
 type FeedWatcher struct{}
 
 type parsedEntry struct {
-	Guid        string
-	Link        string
-	Title       string
-	Category    string
-	Series      []string
-	Authors     []string
-	Narrators   []string
-	Summary     string
-	Leechers    int
-	Seeders     int
-	Added       string
-	Tags        string
+	// Guid is the unique identifier for the entry.
+	Guid string
+	// Link is the URL associated with the entry.
+	Link string
+	// Title is the name or title of the entry.
+	Title string
+	// Category represents the category or genre of the entry.
+	Category string
+	// Series contains a list of series names associated with the entry.
+	Series []string
+	// Authors contains a list of authors associated with the entry.
+	Authors []string
+	// Narrators contains a list of narrators associated with the entry.
+	Narrators []string
+	// Summary provides a brief summary or description of the entry.
+	Summary string
+	// Leechers is the number of leechers for the entry.
+	Leechers int
+	// Seeders is the number of seeders for the entry.
+	Seeders int
+	// Added is the date and time when the entry was added.
+	Added string
+	// Tags contains a comma-separated list of tags associated with the entry.
+	Tags string
+	// Description provides a detailed description of the entry.
 	Description string
 }
 
