@@ -271,7 +271,15 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 				},
 			)
 			if err != nil {
-				slog.ErrorContext(ctx, "Failed to add torrent to qBittorrent", slog.String("link", entry.Link), slog.Any("err", err), slog.String("guid", entry.Guid), slog.String("feedName", feedConfig.Name), slog.String("filterName", filter.Name))
+				slog.ErrorContext(ctx, "Failed to add torrent to qBittorrent",
+					slog.String("link", entry.Link),
+					slog.Any("err", err),
+					slog.String("guid", entry.Guid),
+					slog.Group("feedFilter",
+						slog.String("feedName", feedConfig.Name),
+						slog.String("filterName", filter.Name),
+					),
+				)
 			}
 
 			newFeedItem := models.FeedItem{
