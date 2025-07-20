@@ -30,3 +30,10 @@ Create the name of the service account to use
 {{- define "stronghold.image" -}}
 {{ .Values.images.stronghold.repository }}:{{ .Values.images.stronghold.tag | default .Chart.AppVersion }}
 {{- end }}
+
+{{- define "stronghold.envFrom" -}}
+- secretRef:
+    name: cluster-stronghold-app
+    optional: false
+  prefix: POSTGRES_
+{{- end }}

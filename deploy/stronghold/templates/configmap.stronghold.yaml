@@ -7,4 +7,4 @@ metadata:
     app.kubernetes.io/component: book-importer
 data:
   config.yaml: |
-{{ toYaml .Values.bookImporter.config | indent 4 }}
+{{ toYaml .Values.config | indent 4 }}
