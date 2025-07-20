@@ -282,13 +282,18 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 				)
 			}
 
+			pubDate := time.Now()
+			if item.PublishedParsed != nil {
+				pubDate = *item.PublishedParsed
+			}
+
 			newFeedItem := models.FeedItem{
 				Guid:        entry.Guid,
 				Title:       entry.Title,
 				Link:        entry.Link,
 				Category:    entry.Category,
 				Description: item.Description,
-				PubDate:     *item.PublishedParsed,
+				PubDate:     pubDate,
 			}
 
 			result = db.Create(&newFeedItem)
