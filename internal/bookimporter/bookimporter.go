@@ -13,7 +13,6 @@ import (
 	"github.com/autobrr/go-qbittorrent"
 
 	"github.com/bobbyrward/stronghold/internal/config"
-	"github.com/bobbyrward/stronghold/internal/notifications"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 )
 
@@ -135,55 +134,6 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, client *qbitto
 	err = client.AddTagsCtx(ctx, []string{torrent.Hash}, importType.ImportedTag)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to add imported tag", slog.String("name", torrent.Name), slog.Any("err", err))
-	}
-
-	bis.sendDiscordNotification(ctx, torrent, books, importType)
-}
-
-func (bis *BookImporterSystem) sendDiscordNotification(ctx context.Context, torrent qbittorrent.Torrent, books []string, importType config.BookImportTypeConfig) {
-	if importType.DiscordNotifier == "" {
-		return
-	}
-
-	bookList := ""
-	for i, book := range books {
-		if i > 0 {
-			bookList += "\n"
-		}
-		bookList += "• " + filepath.Base(book)
-	}
-
-	message := notifications.DiscordWebhookMessage{
-		Username: "Stronghold Book Importer",
-		Embeds: []notifications.DiscordEmbed{
-			{
-				Title:       "📚 New Book(s) Imported",
-				Description: fmt.Sprintf("Successfully imported %d book(s) from torrent **%s**", len(books), torrent.Name),
-				Color:       0x00ff00,
-				Fields: []notifications.DiscordEmbedField{
-					{
-						Name:   "Books",
-						Value:  bookList,
-						Inline: false,
-					},
-					{
-						Name:   "Category",
-						Value:  importType.Category,
-						Inline: true,
-					},
-					{
-						Name:   "Destination",
-						Value:  importType.DestinationPath,
-						Inline: true,
-					},
-				},
-			},
-		},
-	}
-
-	err := notifications.SendNotification(ctx, importType.DiscordNotifier, message)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to send Discord notification", slog.String("torrent", torrent.Name), slog.Any("err", err))
 	}
 }
 
