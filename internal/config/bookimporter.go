@@ -13,4 +13,5 @@ type BookImportTypeConfig struct {
 	CalibreDesktopURL     string `yaml:"calibreDesktopURL"`
 	CalibreWebURL         string `yaml:"calibreWebURL"`
 	ManualInterventionTag string `yaml:"manualInterventionTag"`
+	DiscordNotifier       string `yaml:"notification"`
 }
