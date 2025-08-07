@@ -1,13 +1,7 @@
-images:
-  stronghold:
-    repository: does-not-exist/stronghold
-    pullPolicy: IfNotPresent
-    tag: ""
-
-persistentVolumes: []
-persistentVolumeClaims: []
-volumes: []
-volumeMounts: []
+image:
+  repository: does-not-exist/stronghold
+  pullPolicy: IfNotPresent
+  tag: ""
 
 bookImporter:
   serviceAccount:
@@ -20,6 +14,27 @@ bookImporter:
     # The name of the service account to use.
     # If not set and create is true, a name is generated using the fullname template
     name: ""
+
+discordBot:
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Automatically mount a ServiceAccount's API credentials?
+    automount: false
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  resources: {}
+  #  limits:
+  #    cpu: 100m
+  #    memory: 128Mi
+  #  requests:
+  #    cpu: 100m
+  #    memory: 128Mi
+
 
 feedWatcher:
   serviceAccount:
@@ -52,3 +67,16 @@ config:
         manualInterventionTag: needs-manual
   feedWatcher:
     feeds: []
+  discordBot:
+    token: ""
+    guildId: ""
+    bookSearchApi:
+      baseUrl: ""
+      apiKey: ""
+
+postgres:
+  uri: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
