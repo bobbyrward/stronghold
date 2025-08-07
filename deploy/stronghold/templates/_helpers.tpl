@@ -28,7 +28,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "stronghold.image" -}}
-{{ .Values.images.repository }}:{{ .Values.images.tag | default .Chart.AppVersion }}
+{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
 {{- end }}
 
 {{- define "stronghold.envFrom" -}}
