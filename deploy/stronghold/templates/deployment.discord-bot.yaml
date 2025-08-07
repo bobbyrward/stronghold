@@ -23,7 +23,7 @@ spec:
           image: "{{- include "stronghold.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - /stronghold
+            - ./stronghold
           args:
             - discord-bot
             - --config=/etc/stronghold/config.yaml
