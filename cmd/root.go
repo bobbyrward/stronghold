@@ -33,6 +33,8 @@ func init() {
 	rootCmd.AddCommand(createBookImportCmd())
 	rootCmd.AddCommand(createFeedWatcherCmd())
 	rootCmd.AddCommand(createApiCmd())
+	rootCmd.AddCommand(createDiscordBotCmd())
+	rootCmd.AddCommand(createBookSearchCmd())
 }
 
 func internalCobraInit() error {
@@ -52,6 +54,7 @@ func internalCobraInit() error {
 func onCobraInit() {
 	err := internalCobraInit()
 	if err != nil {
+		// Use fmt.Println here since slog may not be initialized yet
 		fmt.Println("Error initializing Cobra:", err)
 		os.Exit(1)
 	}

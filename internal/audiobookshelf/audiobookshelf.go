@@ -1,9 +1,11 @@
 package audiobookshelf
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -99,7 +101,11 @@ type LibraryDetails struct {
 }
 
 func NewClient(baseUrl string, token string) *Client {
+	ctx := context.Background()
 	baseUrl = strings.TrimSuffix(baseUrl, "/")
+
+	slog.InfoContext(ctx, "Creating Audiobookshelf client", 
+		slog.String("baseUrl", baseUrl))
 
 	aac := &Client{
 		httpClient: &http.Client{},
@@ -111,8 +117,14 @@ func NewClient(baseUrl string, token string) *Client {
 }
 
 func (aac *Client) ListLibraries() ([]Library, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/api/libraries", aac.baseUrl), nil)
+	ctx := context.Background()
+	url := fmt.Sprintf("%s/api/libraries", aac.baseUrl)
+	
+	slog.InfoContext(ctx, "Listing Audiobookshelf libraries", slog.String("url", url))
+	
+	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create request", slog.String("url", url), slog.Any("err", err))
 		return nil, err
 	}
 
@@ -120,17 +132,22 @@ func (aac *Client) ListLibraries() ([]Library, error) {
 
 	response, err := aac.httpClient.Do(request)
 	if err != nil {
+		slog.ErrorContext(ctx, "HTTP request failed", slog.String("url", url), slog.Any("err", err))
 		return nil, err
 	}
 
 	defer func() { _ = response.Body.Close() }()
 
 	if response.StatusCode != http.StatusOK {
+		slog.ErrorContext(ctx, "Unexpected HTTP status", 
+			slog.String("url", url),
+			slog.Int("statusCode", response.StatusCode))
 		return nil, fmt.Errorf("unexpected response: status=%d", response.StatusCode)
 	}
 
 	responseBytes, err := io.ReadAll(response.Body)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to read response body", slog.String("url", url), slog.Any("err", err))
 		return nil, err
 	}
 
@@ -140,15 +157,29 @@ func (aac *Client) ListLibraries() ([]Library, error) {
 
 	err = json.Unmarshal(responseBytes, &parsedResponse)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to unmarshal response", slog.String("url", url), slog.Any("err", err))
 		return nil, err
 	}
+
+	slog.InfoContext(ctx, "Successfully listed libraries", 
+		slog.String("url", url),
+		slog.Int("libraryCount", len(parsedResponse.Libraries)))
 
 	return parsedResponse.Libraries, nil
 }
 
 func (aac *Client) ScanLibrary(libraryId string, force bool) error {
-	request, err := http.NewRequest("POST", fmt.Sprintf("%s/api/libraries/%s/scan", aac.baseUrl, libraryId), nil)
+	ctx := context.Background()
+	url := fmt.Sprintf("%s/api/libraries/%s/scan", aac.baseUrl, libraryId)
+	
+	slog.InfoContext(ctx, "Scanning Audiobookshelf library", 
+		slog.String("url", url),
+		slog.String("libraryId", libraryId),
+		slog.Bool("force", force))
+	
+	request, err := http.NewRequest("POST", url, nil)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create scan request", slog.String("url", url), slog.Any("err", err))
 		return err
 	}
 
@@ -156,25 +187,38 @@ func (aac *Client) ScanLibrary(libraryId string, force bool) error {
 
 	response, err := aac.httpClient.Do(request)
 	if err != nil {
+		slog.ErrorContext(ctx, "HTTP scan request failed", slog.String("url", url), slog.Any("err", err))
 		return err
 	}
 
 	defer func() { _ = response.Body.Close() }()
 
 	if response.StatusCode != http.StatusOK {
+		slog.ErrorContext(ctx, "Scan request failed", 
+			slog.String("url", url),
+			slog.Int("statusCode", response.StatusCode))
 		return fmt.Errorf("unexpected response: status=%d", response.StatusCode)
 	}
 
+	slog.InfoContext(ctx, "Successfully triggered library scan", 
+		slog.String("libraryId", libraryId))
 	return nil
 }
 
 func (aac *Client) GetLibrary(libraryId string, includeFilterData bool) (Library, error) {
 	var library Library
+	ctx := context.Background()
 
 	url := fmt.Sprintf("%s/api/libraries/%s", aac.baseUrl, libraryId)
+	
+	slog.InfoContext(ctx, "Getting Audiobookshelf library details", 
+		slog.String("url", url),
+		slog.String("libraryId", libraryId),
+		slog.Bool("includeFilterData", includeFilterData))
 
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create get library request", slog.String("url", url), slog.Any("err", err))
 		return library, err
 	}
 
@@ -182,24 +226,33 @@ func (aac *Client) GetLibrary(libraryId string, includeFilterData bool) (Library
 
 	response, err := aac.httpClient.Do(request)
 	if err != nil {
+		slog.ErrorContext(ctx, "HTTP get library request failed", slog.String("url", url), slog.Any("err", err))
 		return library, err
 	}
 
 	defer func() { _ = response.Body.Close() }()
 
 	if response.StatusCode != http.StatusOK {
+		slog.ErrorContext(ctx, "Get library request failed", 
+			slog.String("url", url),
+			slog.Int("statusCode", response.StatusCode))
 		return library, fmt.Errorf("unexpected response: status=%d", response.StatusCode)
 	}
 
 	responseBytes, err := io.ReadAll(response.Body)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to read get library response", slog.String("url", url), slog.Any("err", err))
 		return library, err
 	}
 
 	err = json.Unmarshal(responseBytes, &library)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to unmarshal library response", slog.String("url", url), slog.Any("err", err))
 		return library, err
 	}
 
+	slog.InfoContext(ctx, "Successfully retrieved library details", 
+		slog.String("libraryId", libraryId),
+		slog.String("libraryName", library.Name))
 	return library, nil
 }

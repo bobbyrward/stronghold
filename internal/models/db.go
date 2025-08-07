@@ -1,30 +1,122 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/bobbyrward/stronghold/internal/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
+// SlogGormLogger integrates slog with GORM
+type SlogGormLogger struct {
+	SlowThreshold         time.Duration
+	LogLevel              logger.LogLevel
+	IgnoreRecordNotFoundError bool
+}
+
+// NewSlogGormLogger creates a new GORM logger that uses slog
+func NewSlogGormLogger() *SlogGormLogger {
+	return &SlogGormLogger{
+		SlowThreshold:         200 * time.Millisecond,
+		LogLevel:              logger.Info,
+		IgnoreRecordNotFoundError: true,
+	}
+}
+
+func (l *SlogGormLogger) LogMode(level logger.LogLevel) logger.Interface {
+	newlogger := *l
+	newlogger.LogLevel = level
+	return &newlogger
+}
+
+func (l *SlogGormLogger) Info(ctx context.Context, msg string, data ...interface{}) {
+	if l.LogLevel >= logger.Info {
+		slog.InfoContext(ctx, fmt.Sprintf(msg, data...))
+	}
+}
+
+func (l *SlogGormLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
+	if l.LogLevel >= logger.Warn {
+		slog.WarnContext(ctx, fmt.Sprintf(msg, data...))
+	}
+}
+
+func (l *SlogGormLogger) Error(ctx context.Context, msg string, data ...interface{}) {
+	if l.LogLevel >= logger.Error {
+		slog.ErrorContext(ctx, fmt.Sprintf(msg, data...))
+	}
+}
+
+func (l *SlogGormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+	if l.LogLevel <= logger.Silent {
+		return
+	}
+
+	elapsed := time.Since(begin)
+	sql, rows := fc()
+
+	if err != nil && (!errors.Is(err, logger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError) {
+		slog.ErrorContext(ctx, "Database query failed",
+			slog.String("sql", sql),
+			slog.Duration("elapsed", elapsed),
+			slog.Int64("rows", rows),
+			slog.Any("error", err))
+	} else if elapsed > l.SlowThreshold && l.SlowThreshold != 0 {
+		slog.WarnContext(ctx, "Slow database query",
+			slog.String("sql", sql),
+			slog.Duration("elapsed", elapsed),
+			slog.Duration("threshold", l.SlowThreshold),
+			slog.Int64("rows", rows))
+	} else if l.LogLevel == logger.Info {
+		slog.InfoContext(ctx, "Database query",
+			slog.String("sql", sql),
+			slog.Duration("elapsed", elapsed),
+			slog.Int64("rows", rows))
+	}
+}
+
 func ConnectDB() (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(config.Config.Postgres.URL), &gorm.Config{})
+	ctx := context.Background()
+	
+	slog.InfoContext(ctx, "Connecting to database", 
+		slog.String("url", config.Config.Postgres.URL))
+	
+	gormConfig := &gorm.Config{
+		Logger: NewSlogGormLogger(),
+	}
+	
+	db, err := gorm.Open(postgres.Open(config.Config.Postgres.URL), gormConfig)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to connect to database", 
+			slog.String("url", config.Config.Postgres.URL),
+			slog.Any("err", err))
 		return nil, errors.Join(err, fmt.Errorf("failed to connect to db"))
 	}
 
+	slog.InfoContext(ctx, "Successfully connected to database")
 	return db, nil
 }
 
 func AutoMigrate(db *gorm.DB) error {
+	ctx := context.Background()
+	
+	slog.InfoContext(ctx, "Starting database auto-migration")
+	
 	err := db.AutoMigrate(
 		&FeedItem{},
+		&SearchResponseItem{},
 	)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
 		return errors.Join(err, fmt.Errorf("failed to auto migrate db"))
 	}
 
+	slog.InfoContext(ctx, "Successfully completed database auto-migration")
 	return nil
 }

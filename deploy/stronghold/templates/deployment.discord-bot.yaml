@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discord-bot
+  labels:
+    {{- include "stronghold.labels" . | nindent 4 }}
+    app.kubernetes.io/component: discord-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "stronghold.labels" . | nindent 6 }}
+      app.kubernetes.io/component: discord-bot
+  template:
+    metadata:
+      labels:
+        {{- include "stronghold.labels" . | nindent 8 }}
+        app.kubernetes.io/component: discord-bot
+    spec:
+      serviceAccountName: discord-bot
+      containers:
+        - name: discord-bot
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /stronghold
+          args:
+            - discord-bot
+            - --config=/etc/stronghold/config.yaml
+          envFrom:
+            {{- include "stronghold.envFrom" . | nindent 16 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/stronghold
+              readOnly: true
+          resources:
+            {{- toYaml .Values.discordBot.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: "stronghold-config"
