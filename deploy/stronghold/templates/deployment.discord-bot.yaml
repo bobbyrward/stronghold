@@ -20,7 +20,7 @@ spec:
       serviceAccountName: discord-bot
       containers:
         - name: discord-bot
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{- include "stronghold.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - /stronghold
