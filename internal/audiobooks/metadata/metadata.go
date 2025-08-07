@@ -2,6 +2,8 @@ package metadata
 
 import (
 	"bytes"
+	"context"
+	"log/slog"
 	"text/template"
 	"time"
 )
@@ -51,8 +53,16 @@ type BookMetadata struct {
 const dirNameTemplate = `{{.Title}}{{if .PrimarySeries}} - {{.PrimarySeries.Name}}{{if .PrimarySeries.Position}} - Book {{.PrimarySeries.Position}}{{end}}{{end}}`
 
 func (md *BookMetadata) GenerateDirectoryName() (string, error) {
+	ctx := context.Background()
+	
+	slog.InfoContext(ctx, "Generating directory name from metadata", 
+		slog.String("title", md.Title),
+		slog.String("asin", md.Asin))
+	
 	tmpl, err := template.New("opf").Parse(dirNameTemplate)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to parse directory name template", 
+			slog.String("title", md.Title), slog.Any("err", err))
 		return "", err
 	}
 
@@ -60,8 +70,15 @@ func (md *BookMetadata) GenerateDirectoryName() (string, error) {
 
 	err = tmpl.Execute(&buf, &md)
 	if err != nil {
+		slog.ErrorContext(ctx, "Failed to execute directory name template", 
+			slog.String("title", md.Title), slog.Any("err", err))
 		return "", err
 	}
 
-	return buf.String(), nil
+	dirName := buf.String()
+	slog.InfoContext(ctx, "Successfully generated directory name", 
+		slog.String("title", md.Title),
+		slog.String("directoryName", dirName))
+
+	return dirName, nil
 }

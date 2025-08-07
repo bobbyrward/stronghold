@@ -6,4 +6,6 @@ type ClusterConfig struct {
 	Notifications NotificationsConfig `yaml:"notifications"`
 	BookImporter  BookImportConfig    `yaml:"bookImporter"`
 	FeedWatcher   FeedWatcherConfig   `yaml:"feedWatcher"`
+	DiscordBot    DiscordBotConfig    `yaml:"discordBot"`
+	BookSearch    BookSearchConfig    `yaml:"bookSearch"`
 }
