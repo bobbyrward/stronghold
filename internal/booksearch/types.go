@@ -33,6 +33,7 @@ type SearchRequestTor struct {
 	SortType       string              `json:"sortType,omitempty"`
 	SearchIn       SearchRequestSrchIn `json:"srchIn,omitempty"`
 	Query          string              `json:"text,omitempty"`
+	Hash           string              `json:"hash,omitempty"`
 }
 
 type SearchRequestSrchIn struct {
@@ -43,6 +44,7 @@ type SearchRequestSrchIn struct {
 
 type SearchParameters struct {
 	Query      string
+	Hash       string
 	MaxResults int
 
 	// Offset             int
@@ -76,6 +78,7 @@ type SearchResponseItem struct {
 	DlHash          string `json:"dl"`
 	FileTypes       string `json:"filetype"`
 	ID              int    `json:"id"`
+	ISBN            string `json:"isbn"`
 	LanguageCode    string `json:"lang_code"`
 	Language        int    `json:"language"`
 	Title           string `json:"title"`
