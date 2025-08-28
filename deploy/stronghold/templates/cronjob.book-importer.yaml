@@ -11,13 +11,13 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        {{- include "stronghold.labels" . | nindent 8 }}
+        {{- include "stronghold.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: book-importer
     spec:
       template:
         metadata:
           labels:
-            {{- include "stronghold.labels" . | nindent 12 }}
+            {{- include "stronghold.selectorLabels" . | nindent 12 }}
             app.kubernetes.io/component: book-importer
         spec:
           serviceAccountName: book-importer
