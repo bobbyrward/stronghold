@@ -26,6 +26,14 @@ func NewBookSearchService() *BookSearchService {
 	return &BookSearchService{}
 }
 
+func (params *SearchParameters) Validate() error {
+	if (params.Hash != "") == (params.Query != "") {
+		return fmt.Errorf("one of Query or Hash is required")
+	}
+
+	return nil
+}
+
 /*
 func logRequest(req *http.Request, res *http.Response, err error, d time.Duration) {
 	slog.Info(
@@ -69,6 +77,11 @@ func (s *BookSearchService) Search(ctx context.Context, params *SearchParameters
 		return nil, fmt.Errorf("params is required")
 	}
 
+	err := params.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	searchConfig := &config.Config.BookSearch
 	baseUrl := searchConfig.BaseURL
 	searchEndpoint := searchConfig.SearchEndpoint
@@ -92,6 +105,7 @@ func (s *BookSearchService) Search(ctx context.Context, params *SearchParameters
 				Title:  true,
 			},
 			Query: params.Query,
+			Hash:  params.Hash,
 		},
 	}
 
@@ -148,7 +162,11 @@ func (s *BookSearchService) displayTable(searchParams *SearchParameters, result 
 		return nil
 	}
 
-	fmt.Printf("Found %d books for query: %s\n\n", result.TotalFound, searchParams.Query)
+	if searchParams.Query != "" {
+		fmt.Printf("Found %d books for query: %s\n\n", result.TotalFound, searchParams.Query)
+	} else {
+		fmt.Printf("Found %d books for hash: %s\n\n", result.TotalFound, searchParams.Hash)
+	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	_, _ = fmt.Fprintln(w, "TITLE\tCATEGORY\tAUTHOR(S)\tSERIES(S)\tNARRATOR(S)\tFILETYPE(S)")
