@@ -78,7 +78,7 @@ type SearchResponseItem struct {
 	DlHash          string `json:"dl"`
 	FileTypes       string `json:"filetype"`
 	ID              int    `json:"id"`
-	ISBN            string `json:"isbn"`
+	ISBN            string
 	LanguageCode    string `json:"lang_code"`
 	Language        int    `json:"language"`
 	Title           string `json:"title"`
@@ -102,15 +102,28 @@ func (sri *SearchResponseItem) UnmarshalJSON(data []byte) error {
 	aux := &struct {
 		*Alias
 
-		AuthorInfo   string `json:"author_info"`
-		NarratorInfo string `json:"narrator_info"`
-		SeriesInfo   string `json:"series_info"`
+		AuthorInfo   string      `json:"author_info"`
+		NarratorInfo string      `json:"narrator_info"`
+		SeriesInfo   string      `json:"series_info"`
+		ISBN_inner   interface{} `json:"isbn"`
 	}{
 		Alias: (*Alias)(sri),
 	}
 
 	if err := json.Unmarshal(data, aux); err != nil {
 		return err
+	}
+
+	if aux.ISBN_inner != nil {
+		switch aux.ISBN_inner.(type) {
+		case string:
+			sri.ISBN, _ = aux.ISBN_inner.(string)
+		case float64:
+			v, _ := aux.ISBN_inner.(float64)
+			sri.ISBN = fmt.Sprintf("%v", int(v))
+		default:
+			panic(fmt.Sprintf("Unable to parse isbn: %v", aux.ISBN_inner))
+		}
 	}
 
 	if aux.AuthorInfo != "" {
