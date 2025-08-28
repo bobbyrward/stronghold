@@ -9,12 +9,12 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "stronghold.labels" . | nindent 6 }}
+      {{- include "stronghold.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: discord-bot
   template:
     metadata:
       labels:
-        {{- include "stronghold.labels" . | nindent 8 }}
+        {{- include "stronghold.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: discord-bot
     spec:
       serviceAccountName: discord-bot

@@ -9,11 +9,15 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "stronghold.labels" -}}
-app.kubernetes.io/name: "stronghold"
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "stronghold.selectorLabels" . }}
 helm.sh/chart: {{ include "stronghold.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{- define "stronghold.selectorLabels" -}}
+app.kubernetes.io/name: "stronghold"
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
