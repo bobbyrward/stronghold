@@ -94,9 +94,16 @@ type FeedWatcherConfig struct {
 }
 
 type FeedWatcherConfigFeed struct {
-	Name    string                        `yaml:"name"`
-	URL     string                        `yaml:"url"`
-	Filters []FeedWatcherConfigFeedFilter `yaml:"filters"`
+	Name          string                            `yaml:"name"`
+	URL           string                            `yaml:"url"`
+	Filters       []FeedWatcherConfigFeedFilter     `yaml:"filters"`
+	AuthorFilters []FeedWatcherConfigFilterByAuthor `yaml:"authorFilters,omitempty"`
+}
+
+type FeedWatcherConfigFilterByAuthor struct {
+	Category     string `yaml:"category"`
+	Notification string `yaml:"notification,omitempty"`
+	Author       string `yaml:"author"`
 }
 
 type FeedWatcherConfigFeedFilter struct {
@@ -110,6 +117,47 @@ type FeedWatcherConfigFeedFilterMatch struct {
 	Key      FilterKey      `yaml:"key"`
 	Value    string         `yaml:"value"`
 	Operator FilterOperator `yaml:"operator"`
+}
+
+func (fwc *FeedWatcherConfig) Preprocess() {
+	for _, feed := range fwc.Feeds {
+		for _, authorFilter := range feed.AuthorFilters {
+			feed.Filters = append(feed.Filters, FeedWatcherConfigFeedFilter{
+				Name:         fmt.Sprintf("%s Books", authorFilter.Author),
+				Category:     "personal-books",
+				Notification: "discord-personal-books",
+				Matches: []FeedWatcherConfigFeedFilterMatch{
+					{
+						Key:      FilterKey_Author,
+						Operator: FilterOperator_Contains,
+						Value:    authorFilter.Author,
+					},
+					{
+						Key:      FilterKey_Category,
+						Operator: FilterOperator_Fnmatch,
+						Value:    "Ebooks - *",
+					},
+				},
+			})
+			feed.Filters = append(feed.Filters, FeedWatcherConfigFeedFilter{
+				Name:         fmt.Sprintf("%s Audiobooks", authorFilter.Author),
+				Category:     "audiobooks",
+				Notification: "discord-personal-books",
+				Matches: []FeedWatcherConfigFeedFilterMatch{
+					{
+						Key:      FilterKey_Author,
+						Operator: FilterOperator_Contains,
+						Value:    authorFilter.Author,
+					},
+					{
+						Key:      FilterKey_Category,
+						Operator: FilterOperator_Fnmatch,
+						Value:    "Audiobooks - *",
+					},
+				},
+			})
+		}
+	}
 }
 
 func (fwcffm FeedWatcherConfigFeedFilterMatch) String() string {
