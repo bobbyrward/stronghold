@@ -182,6 +182,8 @@ func (fw *FeedWatcher) Run(ctx context.Context, db *gorm.DB) error {
 		return errors.Join(err, fmt.Errorf("failed to create qBittorrent client"))
 	}
 
+	config.Config.FeedWatcher.Preprocess()
+
 	for _, feed := range config.Config.FeedWatcher.Feeds {
 		err := fw.watchFeed(ctx, &feed, client, db)
 		if err != nil {
