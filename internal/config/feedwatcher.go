@@ -124,7 +124,7 @@ func (fwc *FeedWatcherConfig) Preprocess() {
 		for _, authorFilter := range feed.AuthorFilters {
 			feed.Filters = append(feed.Filters, FeedWatcherConfigFeedFilter{
 				Name:         fmt.Sprintf("%s Books", authorFilter.Author),
-				Category:     authorFilter.Category,
+				Category:     "personal-books",
 				Notification: authorFilter.Notification,
 				Matches: []FeedWatcherConfigFeedFilterMatch{
 					{
@@ -141,7 +141,7 @@ func (fwc *FeedWatcherConfig) Preprocess() {
 			})
 			feed.Filters = append(feed.Filters, FeedWatcherConfigFeedFilter{
 				Name:         fmt.Sprintf("%s Audiobooks", authorFilter.Author),
-				Category:     authorFilter.Category,
+				Category:     "personal-audiobooks",
 				Notification: authorFilter.Notification,
 				Matches: []FeedWatcherConfigFeedFilterMatch{
 					{
