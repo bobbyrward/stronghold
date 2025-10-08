@@ -120,9 +120,9 @@ type FeedWatcherConfigFeedFilterMatch struct {
 }
 
 func (fwc *FeedWatcherConfig) Preprocess() {
-	for _, feed := range fwc.Feeds {
-		for _, authorFilter := range feed.AuthorFilters {
-			feed.Filters = append(feed.Filters, FeedWatcherConfigFeedFilter{
+	for i := range fwc.Feeds {
+		for _, authorFilter := range fwc.Feeds[i].AuthorFilters {
+			fwc.Feeds[i].Filters = append(fwc.Feeds[i].Filters, FeedWatcherConfigFeedFilter{
 				Name:         fmt.Sprintf("%s Books", authorFilter.Author),
 				Category:     "personal-books",
 				Notification: authorFilter.Notification,
@@ -139,7 +139,7 @@ func (fwc *FeedWatcherConfig) Preprocess() {
 					},
 				},
 			})
-			feed.Filters = append(feed.Filters, FeedWatcherConfigFeedFilter{
+			fwc.Feeds[i].Filters = append(fwc.Feeds[i].Filters, FeedWatcherConfigFeedFilter{
 				Name:         fmt.Sprintf("%s Audiobooks", authorFilter.Author),
 				Category:     "personal-audiobooks",
 				Notification: authorFilter.Notification,
