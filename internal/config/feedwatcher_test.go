@@ -513,3 +513,442 @@ feeds:
 		_ = yaml.Unmarshal(yamlData, &config)
 	}
 }
+
+func TestFeedWatcherConfig_Preprocess(t *testing.T) {
+	tests := []struct {
+		name           string
+		config         FeedWatcherConfig
+		expectedResult FeedWatcherConfig
+	}{
+		{
+			name: "single author filter gets converted to ebook and audiobook filters",
+			config: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Category:     "test-category",
+								Notification: "https://webhook.site/test",
+								Author:       "John Smith",
+							},
+						},
+					},
+				},
+			},
+			expectedResult: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Category:     "test-category",
+								Notification: "https://webhook.site/test",
+								Author:       "John Smith",
+							},
+						},
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:         "John Smith Books",
+								Category:     "personal-books",
+								Notification: "https://webhook.site/test",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "John Smith",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Ebooks - *",
+									},
+								},
+							},
+							{
+								Name:         "John Smith Audiobooks",
+								Category:     "personal-audiobooks",
+								Notification: "https://webhook.site/test",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "John Smith",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Audiobooks - *",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple author filters create multiple filter pairs",
+			config: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Brandon Sanderson",
+							},
+							{
+								Author:       "Patrick Rothfuss",
+								Notification: "https://webhook.site/rothfuss",
+							},
+						},
+					},
+				},
+			},
+			expectedResult: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Brandon Sanderson",
+							},
+							{
+								Author:       "Patrick Rothfuss",
+								Notification: "https://webhook.site/rothfuss",
+							},
+						},
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:     "Brandon Sanderson Books",
+								Category: "personal-books",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Brandon Sanderson",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Ebooks - *",
+									},
+								},
+							},
+							{
+								Name:     "Brandon Sanderson Audiobooks",
+								Category: "personal-audiobooks",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Brandon Sanderson",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Audiobooks - *",
+									},
+								},
+							},
+							{
+								Name:         "Patrick Rothfuss Books",
+								Category:     "personal-books",
+								Notification: "https://webhook.site/rothfuss",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Patrick Rothfuss",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Ebooks - *",
+									},
+								},
+							},
+							{
+								Name:         "Patrick Rothfuss Audiobooks",
+								Category:     "personal-audiobooks",
+								Notification: "https://webhook.site/rothfuss",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Patrick Rothfuss",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Audiobooks - *",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "existing filters are preserved when author filters are processed",
+			config: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:     "Existing Filter",
+								Category: "existing-category",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Title,
+										Operator: FilterOperator_Contains,
+										Value:    "Test",
+									},
+								},
+							},
+						},
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Test Author",
+							},
+						},
+					},
+				},
+			},
+			expectedResult: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:     "Existing Filter",
+								Category: "existing-category",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Title,
+										Operator: FilterOperator_Contains,
+										Value:    "Test",
+									},
+								},
+							},
+							{
+								Name:     "Test Author Books",
+								Category: "personal-books",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Test Author",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Ebooks - *",
+									},
+								},
+							},
+							{
+								Name:     "Test Author Audiobooks",
+								Category: "personal-audiobooks",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Test Author",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Audiobooks - *",
+									},
+								},
+							},
+						},
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Test Author",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "no author filters means no changes",
+			config: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:     "Existing Filter",
+								Category: "existing-category",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Title,
+										Operator: FilterOperator_Contains,
+										Value:    "Test",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedResult: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "TestFeed",
+						URL:  "https://example.com/feed",
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:     "Existing Filter",
+								Category: "existing-category",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Title,
+										Operator: FilterOperator_Contains,
+										Value:    "Test",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple feeds with author filters",
+			config: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "Feed1",
+						URL:  "https://feed1.com",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Author 1",
+							},
+						},
+					},
+					{
+						Name: "Feed2",
+						URL:  "https://feed2.com",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Author 2",
+							},
+						},
+					},
+				},
+			},
+			expectedResult: FeedWatcherConfig{
+				Feeds: []FeedWatcherConfigFeed{
+					{
+						Name: "Feed1",
+						URL:  "https://feed1.com",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Author 1",
+							},
+						},
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:     "Author 1 Books",
+								Category: "personal-books",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Author 1",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Ebooks - *",
+									},
+								},
+							},
+							{
+								Name:     "Author 1 Audiobooks",
+								Category: "personal-audiobooks",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Author 1",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Audiobooks - *",
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "Feed2",
+						URL:  "https://feed2.com",
+						AuthorFilters: []FeedWatcherConfigFilterByAuthor{
+							{
+								Author: "Author 2",
+							},
+						},
+						Filters: []FeedWatcherConfigFeedFilter{
+							{
+								Name:     "Author 2 Books",
+								Category: "personal-books",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Author 2",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Ebooks - *",
+									},
+								},
+							},
+							{
+								Name:     "Author 2 Audiobooks",
+								Category: "personal-audiobooks",
+								Matches: []FeedWatcherConfigFeedFilterMatch{
+									{
+										Key:      FilterKey_Author,
+										Operator: FilterOperator_Contains,
+										Value:    "Author 2",
+									},
+									{
+										Key:      FilterKey_Category,
+										Operator: FilterOperator_Fnmatch,
+										Value:    "Audiobooks - *",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := tt.config
+			config.Preprocess()
+
+			assert.Equal(t, tt.expectedResult, config)
+		})
+	}
+}
