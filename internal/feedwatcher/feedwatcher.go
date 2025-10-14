@@ -84,7 +84,11 @@ func (pe *parsedEntry) GetKeyValue(ctx context.Context, key config.FilterKey) []
 }
 
 func applyFilterOperator(ctx context.Context, operator config.FilterOperator, actualValues []string, filterValue string) bool {
+	filterValue = strings.ToLower(filterValue)
+
 	for _, actualValue := range actualValues {
+		actualValue = strings.ToLower(actualValue)
+
 		switch operator {
 		case config.FilterOperator_Equals:
 			if actualValue == filterValue {

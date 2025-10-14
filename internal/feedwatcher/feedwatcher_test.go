@@ -2,6 +2,7 @@ package feedwatcher
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -376,7 +377,456 @@ func TestNewFeedWatcher(t *testing.T) {
 	assert.IsType(t, &FeedWatcher{}, fw)
 }
 
+func TestParsedEntry_HasMatch_WithPreprocessedAuthorFilters(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name         string
+		entry        *parsedEntry
+		feedConfig   config.FeedWatcherConfigFeed
+		expectMatch  bool
+		expectFilter string
+	}{
+		{
+			name: "preprocessed author filter matches ebook",
+			entry: &parsedEntry{
+				Title:    "The Great Book",
+				Category: "Ebooks - Fantasy",
+				Authors:  []string{"John Smith"},
+				Series:   []string{"Fantasy Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author: "John Smith",
+					},
+				},
+			},
+			expectMatch:  true,
+			expectFilter: "John Smith Books",
+		},
+		{
+			name: "preprocessed author filter matches audiobook",
+			entry: &parsedEntry{
+				Title:    "The Great Audiobook",
+				Category: "Audiobooks - Science Fiction",
+				Authors:  []string{"Jane Doe"},
+				Series:   []string{"Sci-Fi Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author: "Jane Doe",
+					},
+				},
+			},
+			expectMatch:  true,
+			expectFilter: "Jane Doe Audiobooks",
+		},
+		{
+			name: "preprocessed author filter does not match wrong author",
+			entry: &parsedEntry{
+				Title:    "The Great Book",
+				Category: "Ebooks - Fantasy",
+				Authors:  []string{"Different Author"},
+				Series:   []string{"Fantasy Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author: "John Smith",
+					},
+				},
+			},
+			expectMatch:  false,
+			expectFilter: "",
+		},
+		{
+			name: "normal filter matches when author filters also present",
+			entry: &parsedEntry{
+				Title:    "Special Series Book",
+				Category: "Ebooks - Mystery",
+				Authors:  []string{"Unknown Author"},
+				Series:   []string{"Mystery Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				Filters: []config.FeedWatcherConfigFeedFilter{
+					{
+						Name:     "Mystery Series Filter",
+						Category: "mystery-books",
+						Matches: []config.FeedWatcherConfigFeedFilterMatch{
+							{
+								Key:      config.FilterKey_Series,
+								Operator: config.FilterOperator_Contains,
+								Value:    "Mystery Series",
+							},
+						},
+					},
+				},
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author: "John Smith",
+					},
+				},
+			},
+			expectMatch:  true,
+			expectFilter: "Mystery Series Filter",
+		},
+		{
+			name: "normal filter takes precedence when it comes first",
+			entry: &parsedEntry{
+				Title:    "Premium Book",
+				Category: "Ebooks - Fantasy",
+				Authors:  []string{"John Smith"},
+				Series:   []string{"Premium Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				Filters: []config.FeedWatcherConfigFeedFilter{
+					{
+						Name:     "Premium Series Filter",
+						Category: "premium-books",
+						Matches: []config.FeedWatcherConfigFeedFilterMatch{
+							{
+								Key:      config.FilterKey_Series,
+								Operator: config.FilterOperator_Contains,
+								Value:    "Premium",
+							},
+						},
+					},
+				},
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author: "John Smith",
+					},
+				},
+			},
+			expectMatch:  true,
+			expectFilter: "Premium Series Filter",
+		},
+		{
+			name: "author filter takes precedence when normal filter doesn't match",
+			entry: &parsedEntry{
+				Title:    "Regular Book",
+				Category: "Ebooks - Fantasy",
+				Authors:  []string{"John Smith"},
+				Series:   []string{"Regular Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				Filters: []config.FeedWatcherConfigFeedFilter{
+					{
+						Name:     "Premium Series Filter",
+						Category: "premium-books",
+						Matches: []config.FeedWatcherConfigFeedFilterMatch{
+							{
+								Key:      config.FilterKey_Series,
+								Operator: config.FilterOperator_Contains,
+								Value:    "Premium",
+							},
+						},
+					},
+				},
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author: "John Smith",
+					},
+				},
+			},
+			expectMatch:  true,
+			expectFilter: "John Smith Books",
+		},
+		{
+			name: "multiple author filters create multiple preprocessed filters",
+			entry: &parsedEntry{
+				Title:    "The Book",
+				Category: "Audiobooks - Fantasy",
+				Authors:  []string{"Jane Doe"},
+				Series:   []string{"Fantasy Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author: "John Smith",
+					},
+					{
+						Author: "Jane Doe",
+					},
+				},
+			},
+			expectMatch:  true,
+			expectFilter: "Jane Doe Audiobooks",
+		},
+		{
+			name: "author filter with notification preserves notification",
+			entry: &parsedEntry{
+				Title:    "The Book",
+				Category: "Ebooks - Fantasy",
+				Authors:  []string{"John Smith"},
+				Series:   []string{"Fantasy Series"},
+			},
+			feedConfig: config.FeedWatcherConfigFeed{
+				Name: "TestFeed",
+				URL:  "https://example.com/feed",
+				AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+					{
+						Author:       "John Smith",
+						Notification: "https://webhook.site/test",
+					},
+				},
+			},
+			expectMatch:  true,
+			expectFilter: "John Smith Books",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a FeedWatcherConfig and preprocess it
+			config := config.FeedWatcherConfig{
+				Feeds: []config.FeedWatcherConfigFeed{tt.feedConfig},
+			}
+			config.Preprocess()
+
+			// Now test matching against the preprocessed feed config
+			matched, filter, err := tt.entry.HasMatch(ctx, &config.Feeds[0])
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectMatch, matched, "Match result mismatch")
+
+			if tt.expectMatch {
+				require.NotNil(t, filter, "Expected filter to be non-nil")
+				assert.Equal(t, tt.expectFilter, filter.Name, "Filter name mismatch")
+
+				// Verify notification is preserved if it was set
+				if len(tt.feedConfig.AuthorFilters) > 0 {
+					for _, af := range tt.feedConfig.AuthorFilters {
+						if af.Notification != "" && filter.Name == fmt.Sprintf("%s Books", af.Author) || filter.Name == fmt.Sprintf("%s Audiobooks", af.Author) {
+							assert.Equal(t, af.Notification, filter.Notification, "Notification should be preserved")
+						}
+					}
+				}
+			} else {
+				assert.Nil(t, filter, "Expected filter to be nil")
+			}
+		})
+	}
+}
+
+func TestParsedEntry_HasMatch_NormalFilterBugWithAuthorFilters(t *testing.T) {
+	ctx := context.Background()
+
+	// This test specifically checks if normal filters still work when author filters are present
+	entry := &parsedEntry{
+		Title:       "The Special Book",
+		Category:    "Ebooks - Mystery",
+		Authors:     []string{"Random Author"},
+		Series:      []string{"Detective Series"},
+		Description: "A thrilling mystery",
+	}
+
+	feedConfig := config.FeedWatcherConfigFeed{
+		Name: "TestFeed",
+		URL:  "https://example.com/feed",
+		Filters: []config.FeedWatcherConfigFeedFilter{
+			{
+				Name:     "Mystery Filter",
+				Category: "mystery-category",
+				Matches: []config.FeedWatcherConfigFeedFilterMatch{
+					{
+						Key:      config.FilterKey_Description,
+						Operator: config.FilterOperator_Contains,
+						Value:    "mystery",
+					},
+				},
+			},
+		},
+		AuthorFilters: []config.FeedWatcherConfigFilterByAuthor{
+			{
+				Author: "John Smith",
+			},
+		},
+	}
+
+	// Preprocess the config
+	config := config.FeedWatcherConfig{
+		Feeds: []config.FeedWatcherConfigFeed{feedConfig},
+	}
+	config.Preprocess()
+
+	// The normal filter should still match
+	matched, filter, err := entry.HasMatch(ctx, &config.Feeds[0])
+	require.NoError(t, err)
+	assert.True(t, matched, "Normal filter should match even when author filters are present")
+	require.NotNil(t, filter)
+	assert.Equal(t, "Mystery Filter", filter.Name, "Should match the normal filter, not an author filter")
+}
+
 // Benchmark tests
+func TestApplyFilterOperator_CaseInsensitive(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name         string
+		operator     config.FilterOperator
+		actualValues []string
+		filterValue  string
+		expected     bool
+	}{
+		// Equals operator - case insensitive tests
+		{
+			name:         "equals - lowercase matches uppercase",
+			operator:     config.FilterOperator_Equals,
+			actualValues: []string{"TEST", "VALUE"},
+			filterValue:  "test",
+			expected:     true,
+		},
+		{
+			name:         "equals - uppercase matches lowercase",
+			operator:     config.FilterOperator_Equals,
+			actualValues: []string{"test", "value"},
+			filterValue:  "TEST",
+			expected:     true,
+		},
+		{
+			name:         "equals - mixed case matches",
+			operator:     config.FilterOperator_Equals,
+			actualValues: []string{"TeSt", "VaLuE"},
+			filterValue:  "tEsT",
+			expected:     true,
+		},
+		{
+			name:         "equals - case insensitive no match",
+			operator:     config.FilterOperator_Equals,
+			actualValues: []string{"TEST", "VALUE"},
+			filterValue:  "nomatch",
+			expected:     false,
+		},
+
+		// Contains operator - case insensitive tests
+		{
+			name:         "contains - lowercase matches uppercase",
+			operator:     config.FilterOperator_Contains,
+			actualValues: []string{"THIS IS A TEST"},
+			filterValue:  "test",
+			expected:     true,
+		},
+		{
+			name:         "contains - uppercase matches lowercase",
+			operator:     config.FilterOperator_Contains,
+			actualValues: []string{"this is a test"},
+			filterValue:  "TEST",
+			expected:     true,
+		},
+		{
+			name:         "contains - mixed case matches",
+			operator:     config.FilterOperator_Contains,
+			actualValues: []string{"ThIs Is A TeSt"},
+			filterValue:  "iS a Te",
+			expected:     true,
+		},
+		{
+			name:         "contains - case insensitive no match",
+			operator:     config.FilterOperator_Contains,
+			actualValues: []string{"THIS IS A VALUE"},
+			filterValue:  "test",
+			expected:     false,
+		},
+
+		// Fnmatch operator - case insensitive tests (already implemented)
+		{
+			name:         "fnmatch - lowercase pattern matches uppercase",
+			operator:     config.FilterOperator_Fnmatch,
+			actualValues: []string{"TEST FILE.TXT"},
+			filterValue:  "*.txt",
+			expected:     true,
+		},
+		{
+			name:         "fnmatch - uppercase pattern matches lowercase",
+			operator:     config.FilterOperator_Fnmatch,
+			actualValues: []string{"test file.txt"},
+			filterValue:  "*.TXT",
+			expected:     true,
+		},
+		{
+			name:         "fnmatch - mixed case wildcard match",
+			operator:     config.FilterOperator_Fnmatch,
+			actualValues: []string{"TeSt FiLe.TxT"},
+			filterValue:  "test *.txt",
+			expected:     true,
+		},
+		{
+			name:         "fnmatch - case insensitive no match",
+			operator:     config.FilterOperator_Fnmatch,
+			actualValues: []string{"TEST FILE.PDF"},
+			filterValue:  "*.txt",
+			expected:     false,
+		},
+
+		// Regex operator - case insensitive tests
+		{
+			name:         "regex - lowercase pattern matches uppercase",
+			operator:     config.FilterOperator_Regex,
+			actualValues: []string{"TEST123"},
+			filterValue:  `test\d+`,
+			expected:     true,
+		},
+		{
+			name:         "regex - uppercase pattern matches lowercase",
+			operator:     config.FilterOperator_Regex,
+			actualValues: []string{"test123"},
+			filterValue:  `TEST\d+`,
+			expected:     true,
+		},
+		{
+			name:         "regex - mixed case pattern matches",
+			operator:     config.FilterOperator_Regex,
+			actualValues: []string{"TeSt123"},
+			filterValue:  `test\d+`,
+			expected:     true,
+		},
+		{
+			name:         "regex - case insensitive word boundary",
+			operator:     config.FilterOperator_Regex,
+			actualValues: []string{"The AUTHOR is John Doe"},
+			filterValue:  `\bauthor\b`,
+			expected:     true,
+		},
+		{
+			name:         "regex - case insensitive character class",
+			operator:     config.FilterOperator_Regex,
+			actualValues: []string{"FANTASY"},
+			filterValue:  `[a-z]+`,
+			expected:     true,
+		},
+		{
+			name:         "regex - case insensitive no match",
+			operator:     config.FilterOperator_Regex,
+			actualValues: []string{"TESTABC"},
+			filterValue:  `test\d+`,
+			expected:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := applyFilterOperator(ctx, tt.operator, tt.actualValues, tt.filterValue)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func BenchmarkApplyFilterOperator_Equals(b *testing.B) {
 	ctx := context.Background()
 	actualValues := []string{"test", "value", "benchmark"}
