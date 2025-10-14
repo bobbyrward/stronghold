@@ -69,6 +69,9 @@ func (pe *parsedEntry) GetKeyValue(ctx context.Context, key config.FilterKey) []
 	case config.FilterKey_Summary:
 		return []string{pe.Summary}
 
+	case config.FilterKey_Tags:
+		return []string{pe.Tags}
+
 	default:
 		slog.WarnContext(ctx, "Unknown filter key", slog.String("key", key.String()))
 
