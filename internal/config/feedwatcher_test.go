@@ -149,6 +149,11 @@ func TestFilterKey_String(t *testing.T) {
 			expected: "summary",
 		},
 		{
+			name:     "tags key",
+			key:      FilterKey_Tags,
+			expected: "tags",
+		},
+		{
 			name:     "invalid key returns empty string",
 			key:      FilterKey(999),
 			expected: "",
@@ -194,6 +199,11 @@ func TestFilterKey_UnmarshalYAML(t *testing.T) {
 			name:      "summary key",
 			yamlValue: "summary",
 			expected:  FilterKey_Summary,
+		},
+		{
+			name:      "tags key",
+			yamlValue: "tags",
+			expected:  FilterKey_Tags,
 		},
 		{
 			name:        "invalid key",
@@ -259,6 +269,11 @@ func TestFilterKey_MarshalYAML(t *testing.T) {
 			name:     "summary key",
 			key:      FilterKey_Summary,
 			expected: "summary",
+		},
+		{
+			name:     "tags key",
+			key:      FilterKey_Tags,
+			expected: "tags",
 		},
 		{
 			name:        "invalid key",

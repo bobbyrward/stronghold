@@ -19,6 +19,7 @@ func TestParsedEntry_GetKeyValue(t *testing.T) {
 		Authors:   []string{"Author 1", "Author 2"},
 		Narrators: []string{"Narrator 1"},
 		Summary:   "Test summary",
+		Tags:      "tag1,tag2,tag3",
 	}
 
 	tests := []struct {
@@ -50,6 +51,11 @@ func TestParsedEntry_GetKeyValue(t *testing.T) {
 			name:     "get summary",
 			key:      config.FilterKey_Summary,
 			expected: []string{"Test summary"},
+		},
+		{
+			name:     "get tags",
+			key:      config.FilterKey_Tags,
+			expected: []string{"tag1,tag2,tag3"},
 		},
 		{
 			name:     "unknown key returns empty slice",
