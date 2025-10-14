@@ -191,6 +191,12 @@ func (fw *FeedWatcher) Run(ctx context.Context, db *gorm.DB) error {
 	config.Config.FeedWatcher.Preprocess()
 
 	for _, feed := range config.Config.FeedWatcher.Feeds {
+		slog.DebugContext(ctx, "Watching feed", slog.String("name", feed.Name), slog.String("url", feed.URL))
+
+		for _, filter := range feed.Filters {
+			slog.DebugContext(ctx, "Filter", slog.String("name", filter.Name), slog.String("category", filter.Category), slog.String("notification", filter.Notification), slog.Any("matches", filter.Matches))
+		}
+
 		err := fw.watchFeed(ctx, &feed, client, db)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to watch feed", slog.String("name", feed.Name))
