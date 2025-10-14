@@ -13,13 +13,14 @@ import (
 func TestParsedEntry_GetKeyValue(t *testing.T) {
 	ctx := context.Background()
 	entry := &parsedEntry{
-		Title:     "Test Book",
-		Category:  "Fiction",
-		Series:    []string{"Series 1", "Series 2"},
-		Authors:   []string{"Author 1", "Author 2"},
-		Narrators: []string{"Narrator 1"},
-		Summary:   "Test summary",
-		Tags:      "tag1,tag2,tag3",
+		Title:       "Test Book",
+		Category:    "Fiction",
+		Series:      []string{"Series 1", "Series 2"},
+		Authors:     []string{"Author 1", "Author 2"},
+		Narrators:   []string{"Narrator 1"},
+		Summary:     "Test summary",
+		Tags:        "tag1,tag2,tag3",
+		Description: "Test description",
 	}
 
 	tests := []struct {
@@ -56,6 +57,11 @@ func TestParsedEntry_GetKeyValue(t *testing.T) {
 			name:     "get tags",
 			key:      config.FilterKey_Tags,
 			expected: []string{"tag1,tag2,tag3"},
+		},
+		{
+			name:     "get description",
+			key:      config.FilterKey_Description,
+			expected: []string{"Test description"},
 		},
 		{
 			name:     "unknown key returns empty slice",
