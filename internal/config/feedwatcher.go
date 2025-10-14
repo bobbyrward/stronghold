@@ -61,6 +61,7 @@ const (
 	FilterKey_Title
 	FilterKey_Category
 	FilterKey_Summary
+	FilterKey_Tags
 )
 
 func (fk FilterKey) String() string {
@@ -79,6 +80,7 @@ var matchKeyToString = map[FilterKey]string{
 	FilterKey_Title:    "title",
 	FilterKey_Category: "category",
 	FilterKey_Summary:  "summary",
+	FilterKey_Tags:     "tags",
 }
 
 var stringToMatchKey = map[string]FilterKey{
@@ -87,6 +89,7 @@ var stringToMatchKey = map[string]FilterKey{
 	"title":    FilterKey_Title,
 	"category": FilterKey_Category,
 	"summary":  FilterKey_Summary,
+	"tags":     FilterKey_Tags,
 }
 
 type FeedWatcherConfig struct {
