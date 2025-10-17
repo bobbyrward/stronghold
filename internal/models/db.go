@@ -9,6 +9,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/config"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -129,7 +130,8 @@ func AutoMigrate(db *gorm.DB) error {
 	}
 
 	slog.InfoContext(ctx, "Successfully completed database auto-migration")
-	return nil
+
+	return PopulateData(db)
 }
 
 func PopulateData(db *gorm.DB) error {
@@ -159,4 +161,40 @@ func PopulateData(db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// ConnectTestDB creates an in-memory SQLite database for testing
+func ConnectTestDB() (*gorm.DB, error) {
+	ctx := context.Background()
+
+	slog.InfoContext(ctx, "Connecting to test database (SQLite in-memory)")
+
+	gormConfig := &gorm.Config{
+		Logger: NewSlogGormLogger(),
+	}
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), gormConfig)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to connect to test database", slog.Any("err", err))
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "Successfully connected to test database")
+
+	// Run auto migration
+	err = AutoMigrate(db)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to auto-migrate test database", slog.Any("err", err))
+		return nil, err
+	}
+
+	// Populate reference data
+	err = PopulateData(db)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to populate test database", slog.Any("err", err))
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "Test database ready with migrations and seed data")
+	return db, nil
 }
