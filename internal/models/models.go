@@ -45,8 +45,8 @@ type NotificationType struct {
 
 type Notifier struct {
 	gorm.Model
-	Name string           `gorm:"not null"`
-	Type NotificationType `gorm:"foreignKey:TypeID"`
+	Name string `gorm:"not null"`
+	Type NotificationType
 	URL  string
 }
 
