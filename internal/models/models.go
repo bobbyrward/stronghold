@@ -45,9 +45,10 @@ type NotificationType struct {
 
 type Notifier struct {
 	gorm.Model
-	Name string `gorm:"not null"`
-	Type NotificationType
-	URL  string
+	Name               string `gorm:"not null;uniqueIndex"`
+	NotificationTypeID uint
+	NotificationType   *NotificationType
+	URL                string
 }
 
 type Feed struct {
@@ -58,15 +59,20 @@ type Feed struct {
 
 type FeedAuthorFilter struct {
 	gorm.Model
-	Category     TorrentCategory
-	Notification Notifier
+	TorrentCategoryID uint `gorm:"not null"`
+	TorrentCategory   TorrentCategory
+	NotifierID        uint `gorm:"not null"`
+	Notifier          Notifier
+	Author            string `gorm:"not null"`
 }
 
 type FeedFilter struct {
 	gorm.Model
-	Name         string
-	Category     TorrentCategory
-	Notification Notifier
+	Name              string
+	TorrentCategoryID uint `gorm:"not null"`
+	TorrentCategory   TorrentCategory
+	NotifierID        uint `gorm:"not null"`
+	Notifier          Notifier
 }
 
 type FilterKey struct {
@@ -86,14 +92,19 @@ type FeedFilterSetType struct {
 
 type FeedFilterSet struct {
 	gorm.Model
-	Filter  FeedFilter
-	SetType FeedFilterSetType
+	FeedFilterID        uint `gorm:"not null"`
+	FeedFilter          FeedFilter
+	FeedFilterSetTypeID uint `gorm:"not null"`
+	FeedFilterSetType   FeedFilterSetType
 }
 
 type FeedFilterSetEntry struct {
 	gorm.Model
-	FilterSet FeedFilterSet
-	Key       FilterKey
-	Operator  FilterOperator
-	Value     string
+	FeedFilterSetID  uint `gorm:"not null"`
+	FeedFilterSet    FeedFilterSet
+	FilterKeyID      uint `gorm:"not null"`
+	FilterKey        FilterKey
+	FilterOperatorID uint `gorm:"not null"`
+	FilterOperator   FilterOperator
+	Value            string
 }
