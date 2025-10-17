@@ -25,7 +25,8 @@ match any of the filters
 Interactive Discord bot that provides book request functionality through slash commands.
 
 **Features:**
-- `/requestbook <query>` - Search for books and add them to qBittorrent
-- Interactive book selection using Discord buttons
-- Mock book search API with 10 sample books (Rothfuss, Herbert, Sanderson)
-- Mock qBittorrent integration for adding torrents
+
+* `/requestbook <query>` - Search for books and add them to qBittorrent
+* Interactive book selection using Discord buttons
+* Mock book search API with 10 sample books (Rothfuss, Herbert, Sanderson)
+* Mock qBittorrent integration for adding torrents
