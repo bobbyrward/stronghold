@@ -7,7 +7,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/stronghold .
 
 # Stage 2: Create the final image
-FROM alpine:3.21
+FROM alpine:3.22
 WORKDIR /app
 COPY --from=builder /out/stronghold .
 CMD ["./stronghold", "/etc/stronghold/config.yaml"]
