@@ -188,13 +188,6 @@ func ConnectTestDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	// Populate reference data
-	err = PopulateData(db)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to populate test database", slog.Any("err", err))
-		return nil, err
-	}
-
 	slog.InfoContext(ctx, "Test database ready with migrations and seed data")
 	return db, nil
 }
