@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -10,6 +12,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/bobbyrward/stronghold/internal/models"
 )
 
 func Run() error {
@@ -19,9 +23,23 @@ func Run() error {
 
 	slog.InfoContext(ctx, "Starting API server")
 
+	// Connect to database
+	db, err := models.ConnectDB()
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("err", err))
+		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+	}
+
+	// Run auto migration
+	err = models.AutoMigrate(db)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
+		return errors.Join(err, fmt.Errorf("failed to automigrate database"))
+	}
+
 	echoServer := echo.New()
 	echoServer.HideBanner = true
-	
+
 	// Add slog middleware for request logging
 	echoServer.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
@@ -51,9 +69,11 @@ func Run() error {
 
 	echoServer.GET("/", func(c echo.Context) error {
 		slog.InfoContext(c.Request().Context(), "Health check endpoint called")
-		time.Sleep(5 * time.Second)
-		return c.JSON(http.StatusOK, "OK")
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
+
+	// Register all API routes
+	RegisterRoutes(echoServer, db)
 
 	go func() {
 		slog.InfoContext(ctx, "Starting HTTP server on :8000")
