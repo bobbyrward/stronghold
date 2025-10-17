@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/bobbyrward/stronghold/cmd/apiclient"
 	"github.com/bobbyrward/stronghold/internal/config"
 )
 
@@ -35,6 +36,7 @@ func init() {
 	rootCmd.AddCommand(createApiCmd())
 	rootCmd.AddCommand(createDiscordBotCmd())
 	rootCmd.AddCommand(createBookSearchCmd())
+	rootCmd.AddCommand(apiclient.CreateAPIClientCmd())
 }
 
 func internalCobraInit() error {

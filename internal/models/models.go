@@ -59,6 +59,8 @@ type Feed struct {
 
 type FeedAuthorFilter struct {
 	gorm.Model
+	FeedID            uint `gorm:"not null"`
+	Feed              Feed
 	TorrentCategoryID uint `gorm:"not null"`
 	TorrentCategory   TorrentCategory
 	NotifierID        uint `gorm:"not null"`
@@ -69,6 +71,8 @@ type FeedAuthorFilter struct {
 type FeedFilter struct {
 	gorm.Model
 	Name              string
+	FeedID            uint `gorm:"not null"`
+	Feed              Feed
 	TorrentCategoryID uint `gorm:"not null"`
 	TorrentCategory   TorrentCategory
 	NotifierID        uint `gorm:"not null"`
