@@ -3,7 +3,7 @@ module github.com/bobbyrward/stronghold
 go 1.24.2
 
 require (
-	github.com/autobrr/go-qbittorrent v1.11.0
+	github.com/autobrr/go-qbittorrent v1.14.0
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/cappuccinotm/slogx v1.4.2
 	github.com/carlmjohnson/requests v0.24.3
@@ -47,6 +47,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
