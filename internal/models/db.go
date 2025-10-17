@@ -15,16 +15,16 @@ import (
 
 // SlogGormLogger integrates slog with GORM
 type SlogGormLogger struct {
-	SlowThreshold         time.Duration
-	LogLevel              logger.LogLevel
+	SlowThreshold             time.Duration
+	LogLevel                  logger.LogLevel
 	IgnoreRecordNotFoundError bool
 }
 
 // NewSlogGormLogger creates a new GORM logger that uses slog
 func NewSlogGormLogger() *SlogGormLogger {
 	return &SlogGormLogger{
-		SlowThreshold:         200 * time.Millisecond,
-		LogLevel:              logger.Info,
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  logger.Info,
 		IgnoreRecordNotFoundError: true,
 	}
 }
@@ -83,17 +83,17 @@ func (l *SlogGormLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 
 func ConnectDB() (*gorm.DB, error) {
 	ctx := context.Background()
-	
-	slog.InfoContext(ctx, "Connecting to database", 
+
+	slog.InfoContext(ctx, "Connecting to database",
 		slog.String("url", config.Config.Postgres.URL))
-	
+
 	gormConfig := &gorm.Config{
 		Logger: NewSlogGormLogger(),
 	}
-	
+
 	db, err := gorm.Open(postgres.Open(config.Config.Postgres.URL), gormConfig)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to connect to database", 
+		slog.ErrorContext(ctx, "Failed to connect to database",
 			slog.String("url", config.Config.Postgres.URL),
 			slog.Any("err", err))
 		return nil, errors.Join(err, fmt.Errorf("failed to connect to db"))
@@ -105,12 +105,23 @@ func ConnectDB() (*gorm.DB, error) {
 
 func AutoMigrate(db *gorm.DB) error {
 	ctx := context.Background()
-	
+
 	slog.InfoContext(ctx, "Starting database auto-migration")
-	
+
 	err := db.AutoMigrate(
 		&FeedItem{},
 		&SearchResponseItem{},
+		&TorrentCategory{},
+		&NotificationType{},
+		&Notifier{},
+		&Feed{},
+		&FeedAuthorFilter{},
+		&FeedFilter{},
+		&FilterKey{},
+		&FilterOperator{},
+		&FeedFilterSetType{},
+		&FeedFilterSet{},
+		&FeedFilterSetEntry{},
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
@@ -118,5 +129,34 @@ func AutoMigrate(db *gorm.DB) error {
 	}
 
 	slog.InfoContext(ctx, "Successfully completed database auto-migration")
+	return nil
+}
+
+func PopulateData(db *gorm.DB) error {
+	err := populateTorrentCategories(db)
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to populate torrent categories"))
+	}
+
+	err = populateNotificationType(db)
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to populate notification types"))
+	}
+
+	err = populateFilterKeys(db)
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to populate filter keys"))
+	}
+
+	err = populateFilterOperators(db)
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to populate filter operators"))
+	}
+
+	err = populateFilterSetTypes(db)
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to populate filter set types"))
+	}
+
 	return nil
 }

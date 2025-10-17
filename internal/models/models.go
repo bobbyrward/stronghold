@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type FeedItem struct {
@@ -29,4 +31,69 @@ type SearchResponseItem struct {
 	Narrators    string `gorm:"notnull"`
 	Size         string `gorm:"notnull"`
 	Tags         string `gorm:"notnull"`
+}
+
+type TorrentCategory struct {
+	gorm.Model
+	Name string `gorm:"not null;uniqueIndex"`
+}
+
+type NotificationType struct {
+	gorm.Model
+	Name string `gorm:"not null;uniqueIndex"`
+}
+
+type Notifier struct {
+	gorm.Model
+	Name string           `gorm:"not null"`
+	Type NotificationType `gorm:"foreignKey:TypeID"`
+	URL  string
+}
+
+type Feed struct {
+	gorm.Model
+	Name string `gorm:"not null;uniqueIndex"`
+	URL  string
+}
+
+type FeedAuthorFilter struct {
+	gorm.Model
+	Category     TorrentCategory
+	Notification Notifier
+}
+
+type FeedFilter struct {
+	gorm.Model
+	Name         string
+	Category     TorrentCategory
+	Notification Notifier
+}
+
+type FilterKey struct {
+	gorm.Model
+	Name string `gorm:"not null;uniqueIndex"`
+}
+
+type FilterOperator struct {
+	gorm.Model
+	Name string `gorm:"not null;uniqueIndex"`
+}
+
+type FeedFilterSetType struct {
+	gorm.Model
+	Name string `gorm:"not null;uniqueIndex"`
+}
+
+type FeedFilterSet struct {
+	gorm.Model
+	Filter  FeedFilter
+	SetType FeedFilterSetType
+}
+
+type FeedFilterSetEntry struct {
+	gorm.Model
+	FilterSet FeedFilterSet
+	Key       FilterKey
+	Operator  FilterOperator
+	Value     string
 }
