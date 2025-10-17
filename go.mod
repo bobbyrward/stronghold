@@ -6,7 +6,7 @@ require (
 	github.com/autobrr/go-qbittorrent v1.11.0
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/cappuccinotm/slogx v1.4.2
-	github.com/carlmjohnson/requests v0.24.3
+	github.com/carlmjohnson/requests v0.25.1
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/mmcdole/gofeed v1.3.0
