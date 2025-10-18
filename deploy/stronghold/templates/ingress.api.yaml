@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api
+  labels:
+    {{- include "stronghold.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - stronghold.home.ohnozombi.es
+      secretName: stronghold-web-web-tls
+  rules:
+    - host: stronghold.home.ohnozombi.es
+      http:
+        paths:
+          - backend:
+              service:
+                name: api
+                port:
+                  number: 8000
+            path: /
+            pathType: Prefix
+
