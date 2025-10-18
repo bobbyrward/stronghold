@@ -31,7 +31,7 @@ api:
   resources:
     requests:
       cpu: 100m
-      memoryy: 128Mi
+      memory: 128Mi
 
 feedWatcher:
   serviceAccount:
