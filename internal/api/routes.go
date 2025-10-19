@@ -65,6 +65,13 @@ func RegisterRoutes(e *echo.Echo, db *gorm.DB) {
 	e.PUT("/feed-filters/:id", handlers.UpdateFeedFilter(db))
 	e.DELETE("/feed-filters/:id", handlers.DeleteFeedFilter(db))
 
+	// Feed Author Filters
+	e.GET("/feed-author-filters", handlers.ListFeedAuthorFilters(db))
+	e.POST("/feed-author-filters", handlers.CreateFeedAuthorFilter(db))
+	e.GET("/feed-author-filters/:id", handlers.GetFeedAuthorFilter(db))
+	e.PUT("/feed-author-filters/:id", handlers.UpdateFeedAuthorFilter(db))
+	e.DELETE("/feed-author-filters/:id", handlers.DeleteFeedAuthorFilter(db))
+
 	// Feed Filter Sets
 	e.GET("/feed-filter-sets", handlers.ListFeedFilterSets(db))
 	e.POST("/feed-filter-sets", handlers.CreateFeedFilterSet(db))

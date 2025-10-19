@@ -38,6 +38,7 @@ func CreateAPIClientCmd() *cobra.Command {
 	cmd.AddCommand(createFeedsCmd())
 	cmd.AddCommand(createNotifiersCmd())
 	cmd.AddCommand(createFeedFiltersCmd())
+	cmd.AddCommand(createFeedAuthorFiltersCmd())
 	cmd.AddCommand(createFeedFilterSetsCmd())
 	cmd.AddCommand(createFeedFilterSetEntriesCmd())
 

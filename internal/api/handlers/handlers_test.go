@@ -71,6 +71,13 @@ func setupTestServer(t *testing.T) (*echo.Echo, func()) {
 	e.PUT("/feed-filters/:id", UpdateFeedFilter(db))
 	e.DELETE("/feed-filters/:id", DeleteFeedFilter(db))
 
+	// Register feed author filter routes
+	e.GET("/feed-author-filters", ListFeedAuthorFilters(db))
+	e.POST("/feed-author-filters", CreateFeedAuthorFilter(db))
+	e.GET("/feed-author-filters/:id", GetFeedAuthorFilter(db))
+	e.PUT("/feed-author-filters/:id", UpdateFeedAuthorFilter(db))
+	e.DELETE("/feed-author-filters/:id", DeleteFeedAuthorFilter(db))
+
 	// Register feed filter set routes
 	e.GET("/feed-filter-sets", ListFeedFilterSets(db))
 	e.POST("/feed-filter-sets", CreateFeedFilterSet(db))
@@ -537,4 +544,376 @@ func TestFeedFilterValidation(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Validation Test Feed", createdFilter.FeedName)
 	assert.NotZero(t, createdFilter.FeedID)
+}
+
+// TestFeedAuthorFilters tests CRUD operations for FeedAuthorFilters
+func TestFeedAuthorFilters(t *testing.T) {
+	e, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// Step 1: Create required entities for testing
+	// Create a torrent category
+	categoryReq := TorrentCategoryRequest{Name: "test-author-category"}
+	body, _ := json.Marshal(categoryReq)
+	req := httptest.NewRequest(http.MethodPost, "/torrent-categories", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	// Create a notifier
+	notifierReq := NotifierRequest{
+		Name:     "test-author-notifier",
+		TypeName: "discord",
+		URL:      "https://discord.com/webhook/test",
+	}
+	body, _ = json.Marshal(notifierReq)
+	req = httptest.NewRequest(http.MethodPost, "/notifiers", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	// Create two feeds for testing
+	feedReq := FeedRequest{
+		Name: "Test Author Feed 1",
+		URL:  "https://example.com/feed1",
+	}
+	body, _ = json.Marshal(feedReq)
+	req = httptest.NewRequest(http.MethodPost, "/feeds", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	var createdFeed1 FeedResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &createdFeed1)
+	require.NoError(t, err)
+
+	feedReq2 := FeedRequest{
+		Name: "Test Author Feed 2",
+		URL:  "https://example.com/feed2",
+	}
+	body, _ = json.Marshal(feedReq2)
+	req = httptest.NewRequest(http.MethodPost, "/feeds", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	// Step 2: Test List - should be empty initially
+	req = httptest.NewRequest(http.MethodGet, "/feed-author-filters", nil)
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var initialList []FeedAuthorFilterResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &initialList)
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(initialList), "Should start with no feed author filters")
+
+	// Step 3: Test Create
+	createReq := FeedAuthorFilterRequest{
+		Author:       "John Doe",
+		FeedName:     "Test Author Feed 1",
+		CategoryName: "test-author-category",
+		NotifierName: "test-author-notifier",
+	}
+	body, _ = json.Marshal(createReq)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusCreated, rec.Code)
+
+	var createdFilter FeedAuthorFilterResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &createdFilter)
+	require.NoError(t, err)
+	assert.NotZero(t, createdFilter.ID)
+	assert.Equal(t, "John Doe", createdFilter.Author)
+	assert.Equal(t, "Test Author Feed 1", createdFilter.FeedName)
+	assert.Equal(t, createdFeed1.ID, createdFilter.FeedID)
+	assert.Equal(t, "test-author-category", createdFilter.Category)
+	assert.Equal(t, "test-author-notifier", createdFilter.Notifier)
+
+	// Step 4: Test Get by ID
+	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/feed-author-filters/%d", createdFilter.ID), nil)
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var retrievedFilter FeedAuthorFilterResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &retrievedFilter)
+	require.NoError(t, err)
+	assert.Equal(t, createdFilter.ID, retrievedFilter.ID)
+	assert.Equal(t, "John Doe", retrievedFilter.Author)
+
+	// Step 5: Test Update
+	updateReq := FeedAuthorFilterRequest{
+		Author:       "Jane Smith",
+		FeedName:     "Test Author Feed 2",
+		CategoryName: "test-author-category",
+		NotifierName: "test-author-notifier",
+	}
+	body, _ = json.Marshal(updateReq)
+	req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("/feed-author-filters/%d", createdFilter.ID), bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var updatedFilter FeedAuthorFilterResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &updatedFilter)
+	require.NoError(t, err)
+	assert.Equal(t, createdFilter.ID, updatedFilter.ID)
+	assert.Equal(t, "Jane Smith", updatedFilter.Author)
+	assert.Equal(t, "Test Author Feed 2", updatedFilter.FeedName)
+
+	// Step 6: Test List after create
+	req = httptest.NewRequest(http.MethodGet, "/feed-author-filters", nil)
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var filters []FeedAuthorFilterResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &filters)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(filters))
+
+	// Step 7: Test query parameter filtering by feed_id
+	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/feed-author-filters?feed_id=%d", updatedFilter.FeedID), nil)
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var filteredList []FeedAuthorFilterResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &filteredList)
+	require.NoError(t, err)
+	require.Len(t, filteredList, 1, "Should have exactly 1 filter for this feed")
+	assert.Equal(t, updatedFilter.ID, filteredList[0].ID)
+
+	// Step 8: Test Delete
+	req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/feed-author-filters/%d", createdFilter.ID), nil)
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+
+	// Verify deletion
+	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/feed-author-filters/%d", createdFilter.ID), nil)
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+// TestFeedAuthorFilterValidation tests validation for FeedAuthorFilter
+func TestFeedAuthorFilterValidation(t *testing.T) {
+	e, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// Setup: Create required entities
+	categoryReq := TorrentCategoryRequest{Name: "validation-author-category"}
+	body, _ := json.Marshal(categoryReq)
+	req := httptest.NewRequest(http.MethodPost, "/torrent-categories", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	notifierReq := NotifierRequest{
+		Name:     "validation-author-notifier",
+		TypeName: "discord",
+		URL:      "https://discord.com/webhook/test",
+	}
+	body, _ = json.Marshal(notifierReq)
+	req = httptest.NewRequest(http.MethodPost, "/notifiers", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	feedReq := FeedRequest{
+		Name: "Validation Author Feed",
+		URL:  "https://example.com/feed",
+	}
+	body, _ = json.Marshal(feedReq)
+	req = httptest.NewRequest(http.MethodPost, "/feeds", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	// Test: Missing author
+	invalidFilter := FeedAuthorFilterRequest{
+		FeedName:     "Validation Author Feed",
+		CategoryName: "validation-author-category",
+		NotifierName: "validation-author-notifier",
+	}
+	body, _ = json.Marshal(invalidFilter)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	// Test: Missing feed_name
+	invalidFilter = FeedAuthorFilterRequest{
+		Author:       "Test Author",
+		CategoryName: "validation-author-category",
+		NotifierName: "validation-author-notifier",
+	}
+	body, _ = json.Marshal(invalidFilter)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	// Test: Invalid feed_name
+	invalidFilter = FeedAuthorFilterRequest{
+		Author:       "Test Author",
+		FeedName:     "nonexistent-feed",
+		CategoryName: "validation-author-category",
+		NotifierName: "validation-author-notifier",
+	}
+	body, _ = json.Marshal(invalidFilter)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	// Test: Invalid category_name
+	invalidFilter = FeedAuthorFilterRequest{
+		Author:       "Test Author",
+		FeedName:     "Validation Author Feed",
+		CategoryName: "nonexistent-category",
+		NotifierName: "validation-author-notifier",
+	}
+	body, _ = json.Marshal(invalidFilter)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	// Test: Invalid notifier_name
+	invalidFilter = FeedAuthorFilterRequest{
+		Author:       "Test Author",
+		FeedName:     "Validation Author Feed",
+		CategoryName: "validation-author-category",
+		NotifierName: "nonexistent-notifier",
+	}
+	body, _ = json.Marshal(invalidFilter)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	// Test: Valid request
+	validFilter := FeedAuthorFilterRequest{
+		Author:       "Test Author",
+		FeedName:     "Validation Author Feed",
+		CategoryName: "validation-author-category",
+		NotifierName: "validation-author-notifier",
+	}
+	body, _ = json.Marshal(validFilter)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusCreated, rec.Code)
+
+	var createdFilter FeedAuthorFilterResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &createdFilter)
+	require.NoError(t, err)
+	assert.Equal(t, "Test Author", createdFilter.Author)
+	assert.Equal(t, "Validation Author Feed", createdFilter.FeedName)
+	assert.NotZero(t, createdFilter.FeedID)
+}
+
+// TestFeedAuthorFilterUniqueConstraint tests the unique constraint on (feed_id, author)
+func TestFeedAuthorFilterUniqueConstraint(t *testing.T) {
+	e, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// Setup: Create required entities
+	categoryReq := TorrentCategoryRequest{Name: "unique-test-category"}
+	body, _ := json.Marshal(categoryReq)
+	req := httptest.NewRequest(http.MethodPost, "/torrent-categories", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	notifierReq := NotifierRequest{
+		Name:     "unique-test-notifier",
+		TypeName: "discord",
+		URL:      "https://discord.com/webhook/test",
+	}
+	body, _ = json.Marshal(notifierReq)
+	req = httptest.NewRequest(http.MethodPost, "/notifiers", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	feedReq := FeedRequest{
+		Name: "Unique Test Feed",
+		URL:  "https://example.com/feed",
+	}
+	body, _ = json.Marshal(feedReq)
+	req = httptest.NewRequest(http.MethodPost, "/feeds", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	// Create first feed author filter
+	createReq := FeedAuthorFilterRequest{
+		Author:       "Unique Author",
+		FeedName:     "Unique Test Feed",
+		CategoryName: "unique-test-category",
+		NotifierName: "unique-test-notifier",
+	}
+	body, _ = json.Marshal(createReq)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusCreated, rec.Code)
+
+	// Try to create duplicate (same feed_id and author) - should fail
+	body, _ = json.Marshal(createReq)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+
+	// Create another feed
+	feedReq2 := FeedRequest{
+		Name: "Unique Test Feed 2",
+		URL:  "https://example.com/feed2",
+	}
+	body, _ = json.Marshal(feedReq2)
+	req = httptest.NewRequest(http.MethodPost, "/feeds", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	// Same author but different feed - should succeed
+	createReq2 := FeedAuthorFilterRequest{
+		Author:       "Unique Author",
+		FeedName:     "Unique Test Feed 2",
+		CategoryName: "unique-test-category",
+		NotifierName: "unique-test-notifier",
+	}
+	body, _ = json.Marshal(createReq2)
+	req = httptest.NewRequest(http.MethodPost, "/feed-author-filters", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusCreated, rec.Code)
 }
