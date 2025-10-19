@@ -19,6 +19,10 @@ func generateDefaultConfig() string {
 logging:
   level: ""
 
+# API Configuration
+apiClient:
+  url: "http://localhost:8000"  # API server URL for CLI client
+
 # PostgreSQL Database Configuration
 postgres:
   url: ""  # Example: postgresql://user:password@localhost:5432/stronghold
