@@ -18,7 +18,7 @@ func CreateAPIClientCmd() *cobra.Command {
 	}
 
 	// Global flags
-	cmd.PersistentFlags().StringVarP(&apiURL, "api-url", "u", "https://stronghold.home.ohnozombi.es", "API server URL")
+	cmd.PersistentFlags().StringVarP(&apiURL, "api-url", "u", "http://localhost:8000", "API server URL")
 	cmd.PersistentFlags().StringVarP(&format, "format", "f", "table", "Output format: table or json")
 
 	// Add subcommands for CRUD resources
