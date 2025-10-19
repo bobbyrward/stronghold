@@ -44,17 +44,13 @@ func createFeedsListCmd() *cobra.Command {
 			}
 
 			// Table output
-			headers := []string{"ID", "Name", "URL", "Enabled"}
+			headers := []string{"ID", "Name", "URL"}
 			rows := [][]string{}
 			for _, feed := range feeds {
 				id := fmt.Sprintf("%.0f", feed["id"].(float64))
 				name := feed["name"].(string)
 				url := feed["url"].(string)
-				enabled := "false"
-				if e, ok := feed["enabled"].(bool); ok && e {
-					enabled = "true"
-				}
-				rows = append(rows, []string{id, name, url, enabled})
+				rows = append(rows, []string{id, name, url})
 			}
 
 			return OutputTable(headers, rows)
@@ -89,7 +85,6 @@ func createFeedsGetCmd() *cobra.Command {
 				{"ID", fmt.Sprintf("%.0f", feed["id"].(float64))},
 				{"Name", feed["name"].(string)},
 				{"URL", feed["url"].(string)},
-				{"Enabled", fmt.Sprintf("%v", feed["enabled"])},
 			}
 
 			return OutputTable(headers, rows)
@@ -99,7 +94,6 @@ func createFeedsGetCmd() *cobra.Command {
 
 func createFeedsCreateCmd() *cobra.Command {
 	var name, url string
-	var enabled bool
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -109,9 +103,8 @@ func createFeedsCreateCmd() *cobra.Command {
 			ctx := context.Background()
 
 			body := map[string]interface{}{
-				"name":    name,
-				"url":     url,
-				"enabled": enabled,
+				"name": name,
+				"url":  url,
 			}
 
 			var feed map[string]interface{}
@@ -132,7 +125,6 @@ func createFeedsCreateCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&name, "name", "", "Feed name (required)")
 	cmd.Flags().StringVar(&url, "url", "", "Feed URL (required)")
-	cmd.Flags().BoolVar(&enabled, "enabled", true, "Whether the feed is enabled")
 	_ = cmd.MarkFlagRequired("name")
 	_ = cmd.MarkFlagRequired("url")
 
@@ -141,7 +133,6 @@ func createFeedsCreateCmd() *cobra.Command {
 
 func createFeedsUpdateCmd() *cobra.Command {
 	var name, url string
-	var enabled bool
 
 	cmd := &cobra.Command{
 		Use:   "update <id>",
@@ -159,9 +150,6 @@ func createFeedsUpdateCmd() *cobra.Command {
 			}
 			if cmd.Flags().Changed("url") {
 				body["url"] = url
-			}
-			if cmd.Flags().Changed("enabled") {
-				body["enabled"] = enabled
 			}
 
 			var feed map[string]interface{}
@@ -182,7 +170,6 @@ func createFeedsUpdateCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&name, "name", "", "Feed name")
 	cmd.Flags().StringVar(&url, "url", "", "Feed URL")
-	cmd.Flags().BoolVar(&enabled, "enabled", true, "Whether the feed is enabled")
 
 	return cmd
 }

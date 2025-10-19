@@ -260,7 +260,6 @@ func TestNotifiersCreateCmd(t *testing.T) {
 				"--name", "New Notifier",
 				"--type", "slack",
 				"--webhook-url", "https://slack.com/webhook/new",
-				"--enabled=false",
 			},
 			format:      "json",
 			expectError: false,

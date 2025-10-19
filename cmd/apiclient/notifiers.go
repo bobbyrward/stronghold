@@ -44,7 +44,7 @@ func createNotifiersListCmd() *cobra.Command {
 			}
 
 			// Table output
-			headers := []string{"ID", "Name", "Type", "Enabled"}
+			headers := []string{"ID", "Name", "Type"}
 			rows := [][]string{}
 			for _, notifier := range notifiers {
 				id := fmt.Sprintf("%.0f", notifier["id"].(float64))
@@ -58,12 +58,7 @@ func createNotifiersListCmd() *cobra.Command {
 					typeStr = FormatRelation(typeName, uint(typeID))
 				}
 
-				enabled := "false"
-				if e, ok := notifier["enabled"].(bool); ok && e {
-					enabled = "true"
-				}
-
-				rows = append(rows, []string{id, name, typeStr, enabled})
+				rows = append(rows, []string{id, name, typeStr})
 			}
 
 			return OutputTable(headers, rows)
@@ -106,7 +101,6 @@ func createNotifiersGetCmd() *cobra.Command {
 				{"Name", notifier["name"].(string)},
 				{"Type", typeStr},
 				{"Webhook URL", fmt.Sprintf("%v", notifier["webhook_url"])},
-				{"Enabled", fmt.Sprintf("%v", notifier["enabled"])},
 			}
 
 			return OutputTable(headers, rows)
@@ -116,7 +110,6 @@ func createNotifiersGetCmd() *cobra.Command {
 
 func createNotifiersCreateCmd() *cobra.Command {
 	var name, typeName, webhookURL string
-	var enabled bool
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -129,7 +122,6 @@ func createNotifiersCreateCmd() *cobra.Command {
 				"name":        name,
 				"type_name":   typeName,
 				"webhook_url": webhookURL,
-				"enabled":     enabled,
 			}
 
 			var notifier map[string]interface{}
@@ -151,7 +143,6 @@ func createNotifiersCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "Notifier name (required)")
 	cmd.Flags().StringVar(&typeName, "type", "", "Notification type name (required)")
 	cmd.Flags().StringVar(&webhookURL, "webhook-url", "", "Webhook URL (required)")
-	cmd.Flags().BoolVar(&enabled, "enabled", true, "Whether the notifier is enabled")
 	_ = cmd.MarkFlagRequired("name")
 	_ = cmd.MarkFlagRequired("type")
 	_ = cmd.MarkFlagRequired("webhook-url")
@@ -161,7 +152,6 @@ func createNotifiersCreateCmd() *cobra.Command {
 
 func createNotifiersUpdateCmd() *cobra.Command {
 	var name, typeName, webhookURL string
-	var enabled bool
 
 	cmd := &cobra.Command{
 		Use:   "update <id>",
@@ -183,9 +173,6 @@ func createNotifiersUpdateCmd() *cobra.Command {
 			if cmd.Flags().Changed("webhook-url") {
 				body["webhook_url"] = webhookURL
 			}
-			if cmd.Flags().Changed("enabled") {
-				body["enabled"] = enabled
-			}
 
 			var notifier map[string]interface{}
 			err := client.Put(ctx, "/notifiers/"+id, body, &notifier)
@@ -206,7 +193,6 @@ func createNotifiersUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "Notifier name")
 	cmd.Flags().StringVar(&typeName, "type", "", "Notification type name")
 	cmd.Flags().StringVar(&webhookURL, "webhook-url", "", "Webhook URL")
-	cmd.Flags().BoolVar(&enabled, "enabled", true, "Whether the notifier is enabled")
 
 	return cmd
 }
