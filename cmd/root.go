@@ -40,7 +40,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(onCobraInit)
 
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "none", "Log level: debug, info, warn, error, none")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "", "Log level: debug, info, warn, error, none")
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Path to the config file (default: $XDG_CONFIG_HOME/stronghold/config.yaml or $STRONGHOLD_CONFIG)")
 	rootCmd.AddCommand(createBookImportCmd())
 	rootCmd.AddCommand(createFeedWatcherCmd())

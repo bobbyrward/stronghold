@@ -8,6 +8,14 @@ import (
 
 type LoggingLevel slog.Level
 
+const (
+	LoggingLevel_None  = LoggingLevel(1000)
+	LoggingLevel_Debug = LoggingLevel(slog.LevelDebug)
+	LoggingLevel_Info  = LoggingLevel(slog.LevelInfo)
+	LoggingLevel_Warn  = LoggingLevel(slog.LevelWarn)
+	LoggingLevel_Error = LoggingLevel(slog.LevelError)
+)
+
 type LoggingConfig struct {
 	Level LoggingLevel `yaml:"level"`
 }
@@ -15,37 +23,37 @@ type LoggingConfig struct {
 func LoggingLevelFromString(levelStr string) LoggingLevel {
 	switch levelStr {
 	case "dbg":
-		return LoggingLevel(slog.LevelDebug)
+		return LoggingLevel_Debug
 	case "debug":
-		return LoggingLevel(slog.LevelDebug)
+		return LoggingLevel_Debug
 	case "info":
-		return LoggingLevel(slog.LevelInfo)
+		return LoggingLevel_Info
 	case "warn":
-		return LoggingLevel(slog.LevelWarn)
+		return LoggingLevel_Warn
 	case "warning":
-		return LoggingLevel(slog.LevelWarn)
+		return LoggingLevel_Warn
 	case "error":
-		return LoggingLevel(slog.LevelError)
+		return LoggingLevel_Error
 	case "":
-		return LoggingLevel(slog.LevelInfo)
+		return LoggingLevel_Info
 	case "none":
-		return LoggingLevel(1000)
+		return LoggingLevel_None
 	default:
-		return LoggingLevel(1000)
+		return LoggingLevel_None
 	}
 }
 
 func LoggingLevelToString(level LoggingLevel) string {
 	switch level {
-	case LoggingLevel(slog.LevelDebug):
+	case LoggingLevel_Debug:
 		return "debug"
-	case LoggingLevel(slog.LevelInfo):
+	case LoggingLevel_Info:
 		return "info"
-	case LoggingLevel(slog.LevelWarn):
+	case LoggingLevel_Warn:
 		return "warn"
-	case LoggingLevel(slog.LevelError):
+	case LoggingLevel_Error:
 		return "error"
-	case LoggingLevel(1000):
+	case LoggingLevel_None:
 		return "none"
 	default:
 		return "none"
