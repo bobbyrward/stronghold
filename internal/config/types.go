@@ -9,4 +9,5 @@ type ClusterConfig struct {
 	DiscordBot    DiscordBotConfig    `yaml:"discordBot"`
 	BookSearch    BookSearchConfig    `yaml:"bookSearch"`
 	Logging       LoggingConfig       `yaml:"logging"`
+	APIClient     APIClientConfig     `yaml:"apiClient"`
 }
