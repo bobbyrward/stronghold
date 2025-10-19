@@ -8,4 +8,5 @@ type ClusterConfig struct {
 	FeedWatcher   FeedWatcherConfig   `yaml:"feedWatcher"`
 	DiscordBot    DiscordBotConfig    `yaml:"discordBot"`
 	BookSearch    BookSearchConfig    `yaml:"bookSearch"`
+	Logging       LoggingConfig       `yaml:"logging"`
 }
