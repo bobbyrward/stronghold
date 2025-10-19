@@ -225,7 +225,7 @@ func TestFeedsCreateCmd(t *testing.T) {
 		},
 		{
 			name:        "create feed with JSON output",
-			args:        []string{"--name", "New Feed", "--url", "http://example.com/newfeed", "--enabled=false"},
+			args:        []string{"--name", "New Feed", "--url", "http://example.com/newfeed"},
 			format:      "json",
 			expectError: false,
 		},
