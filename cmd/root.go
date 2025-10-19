@@ -3,20 +3,30 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/bobbyrward/stronghold/cmd/apiclient"
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/logging"
 )
 
 var (
-	cfgFile string
-	rootCmd = &cobra.Command{
+	cfgFile  string
+	logLevel string
+	rootCmd  = &cobra.Command{
 		Use:          "stronghold",
 		SilenceUsage: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			level := config.Config.Logging.Level
+
+			if logLevel != "" {
+				level = config.LoggingLevelFromString(logLevel)
+			}
+
+			logging.SetupLogging(level)
+		},
 	}
 )
 
@@ -30,7 +40,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(onCobraInit)
 
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Path to the config file")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "none", "Log level: debug, info, warn, error, none")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Path to the config file (default: $XDG_CONFIG_HOME/stronghold/config.yaml or $STRONGHOLD_CONFIG)")
 	rootCmd.AddCommand(createBookImportCmd())
 	rootCmd.AddCommand(createFeedWatcherCmd())
 	rootCmd.AddCommand(createApiCmd())
@@ -44,11 +55,6 @@ func internalCobraInit() error {
 	if err != nil {
 		return errors.Join(err, fmt.Errorf("failed to load config"))
 	}
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))
-	slog.SetDefault(logger)
 
 	return nil
 }
