@@ -59,13 +59,13 @@ type Feed struct {
 
 type FeedAuthorFilter struct {
 	gorm.Model
-	FeedID            uint `gorm:"not null"`
+	FeedID            uint   `gorm:"not null;uniqueIndex:idx_feed_author"`
 	Feed              Feed
-	TorrentCategoryID uint `gorm:"not null"`
+	TorrentCategoryID uint   `gorm:"not null"`
 	TorrentCategory   TorrentCategory
-	NotifierID        uint `gorm:"not null"`
+	NotifierID        uint   `gorm:"not null"`
 	Notifier          Notifier
-	Author            string `gorm:"not null"`
+	Author            string `gorm:"not null;uniqueIndex:idx_feed_author"`
 }
 
 type FeedFilter struct {
