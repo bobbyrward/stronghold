@@ -8,7 +8,7 @@ require (
 	github.com/cappuccinotm/slogx v1.4.2
 	github.com/carlmjohnson/requests v0.25.1
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
-	github.com/jedib0t/go-pretty/v6 v6.6.8
+	github.com/jedib0t/go-pretty/v6 v6.6.9
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/spf13/cobra v1.10.1
