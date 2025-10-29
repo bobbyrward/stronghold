@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/autobrr/go-qbittorrent"
 	"github.com/danwakefield/fnmatch"
 	"github.com/mmcdole/gofeed"
 	"gorm.io/gorm"
@@ -210,7 +209,7 @@ func (fw *FeedWatcher) Run(ctx context.Context, db *gorm.DB) error {
 	return nil
 }
 
-func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWatcherConfigFeed, qbitClient *qbittorrent.Client, db *gorm.DB) error {
+func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWatcherConfigFeed, qbitClient qbit.QbitClient, db *gorm.DB) error {
 	parser := gofeed.NewParser()
 
 	feed, err := parser.ParseURL(feedConfig.URL)

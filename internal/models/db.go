@@ -110,6 +110,7 @@ func AutoMigrate(db *gorm.DB) error {
 	slog.InfoContext(ctx, "Starting database auto-migration")
 
 	err := db.AutoMigrate(
+		// Existing models
 		&FeedItem{},
 		&SearchResponseItem{},
 		&TorrentCategory{},
@@ -123,6 +124,18 @@ func AutoMigrate(db *gorm.DB) error {
 		&FeedFilterSetType{},
 		&FeedFilterSet{},
 		&FeedFilterSetEntry{},
+
+		// Book library models (order matters for foreign key constraints)
+		&Person{},
+		&Series{},
+		&Book{},
+		&BookAuthor{},
+		&BookNarrator{},
+		&BookSeries{},
+		&BookIdentifier{},
+		&BookFile{},
+		&Download{},
+		&ImportHistory{},
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))

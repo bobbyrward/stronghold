@@ -46,9 +46,12 @@ func init() {
 	rootCmd.AddCommand(createApiCmd())
 	rootCmd.AddCommand(createDiscordBotCmd())
 	rootCmd.AddCommand(createBookSearchCmd())
+	rootCmd.AddCommand(createAudiobookImporterCmd())
 }
 
 func internalCobraInit() error {
+	logging.SetupLogging(config.LoggingLevel_Warn)
+
 	err := config.LoadConfig(cfgFile)
 	if err != nil {
 		return errors.Join(err, fmt.Errorf("failed to load config"))

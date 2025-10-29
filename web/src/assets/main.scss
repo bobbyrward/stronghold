@@ -1,0 +1,92 @@
+@import "bootswatch/dist/darkly/variables";
+@import "bootstrap/scss/bootstrap";
+@import "bootswatch/dist/darkly/bootswatch";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+// Layout styles
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  width: 250px;
+  background-color: $gray-900;
+  transition: width 0.3s ease;
+  flex-shrink: 0;
+
+  &.collapsed {
+    width: 60px;
+
+    .nav-text {
+      display: none;
+    }
+
+    .section-title {
+      display: none;
+    }
+  }
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-header {
+  background-color: $gray-800;
+  border-bottom: 1px solid $gray-700;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.app-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.sidebar-nav {
+  padding: 0.5rem;
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    color: $gray-400;
+    border-radius: 0.25rem;
+    text-decoration: none;
+
+    &:hover {
+      background-color: $gray-800;
+      color: $white;
+    }
+
+    &.router-link-active {
+      background-color: $primary;
+      color: $white;
+    }
+
+    i {
+      font-size: 1.1rem;
+      width: 1.5rem;
+      text-align: center;
+    }
+
+    .nav-text {
+      margin-left: 0.75rem;
+      white-space: nowrap;
+    }
+  }
+
+  .section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: $gray-500;
+    padding: 1rem 0.75rem 0.5rem;
+    letter-spacing: 0.05em;
+  }
+}
