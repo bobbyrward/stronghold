@@ -32,6 +32,37 @@ qbit:
   url: ""       # Example: http://localhost:8080/
   username: ""
   password: ""
+  downloadPath: ""  # Base download path for qBittorrent
+  localDownloadPath: ""  # Local path where downloads are stored
+
+importers:
+  importedTag: imported
+  manualInterventionTag: needs-manual
+
+  ebooks:
+    libraries: []
+    # Example:
+    # - name: personal-book
+    #   path: /mnt/other/books/incoming
+    importTypes: []
+    # Example:
+    # - category: books
+    #   calibreDesktopURL: https://calibre-desktop.example.com/
+    #   calibreWebURL: https://calibre.example.com
+    #   notification: my-discord-notifier
+
+  audiobooks:
+    libraries: []
+    # Example:
+    # - name: audiobooks
+    #   path: /audiobooks
+    importTypes: []
+    # Example:
+    # - category: audiobooks
+    #   library: audiobooks
+    #   notification: my-discord-notifier
+
+
 
 # Notification Configuration
 notifications:
@@ -53,6 +84,12 @@ bookImporter:
   #   calibreDesktopURL: https://calibre-desktop.example.com/
   #   calibreWebURL: https://calibre.example.com
   #   manualInterventionTag: needs-manual
+
+# Audiobook Import Configuration
+audiobookImport:
+  libraries: []
+  # - name: ""
+  #   path: ""
 
 # Feed Watcher Configuration
 feedWatcher:
