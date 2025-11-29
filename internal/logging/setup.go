@@ -8,7 +8,7 @@ import (
 )
 
 func SetupLogging(level config.LoggingLevel) {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.Level(level),
 	}))
 

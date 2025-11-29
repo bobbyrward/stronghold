@@ -6,6 +6,7 @@ metadata:
     {{- include "stronghold.labels" . | nindent 4 }}
     app.kubernetes.io/component: feed-watcher
 spec:
+  suspend: {{ .feedWatcher.suspend | not }}
   schedule: "*/5 * * * *"
   timeZone: "America/Chicago"
   jobTemplate:

@@ -1,0 +1,1918 @@
+openapi: 3.0.3
+info:
+  title: Stronghold API
+  description: Feed monitoring and notification system API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  # Filter Keys
+  /api/filter-keys:
+    get:
+      summary: List all filter keys
+      operationId: listFilterKeys
+      tags:
+        - Filter Keys
+      responses:
+        '200':
+          description: List of filter keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FilterKeyResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a filter key
+      operationId: createFilterKey
+      tags:
+        - Filter Keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilterKeyRequest'
+      responses:
+        '201':
+          description: Filter key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterKeyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/filter-keys/{id}:
+    get:
+      summary: Get a filter key by ID
+      operationId: getFilterKey
+      tags:
+        - Filter Keys
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Filter key details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterKeyResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a filter key
+      operationId: updateFilterKey
+      tags:
+        - Filter Keys
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilterKeyRequest'
+      responses:
+        '200':
+          description: Filter key updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterKeyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a filter key
+      operationId: deleteFilterKey
+      tags:
+        - Filter Keys
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Filter key deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Filter Operators
+  /api/filter-operators:
+    get:
+      summary: List all filter operators
+      operationId: listFilterOperators
+      tags:
+        - Filter Operators
+      responses:
+        '200':
+          description: List of filter operators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FilterOperatorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a filter operator
+      operationId: createFilterOperator
+      tags:
+        - Filter Operators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilterOperatorRequest'
+      responses:
+        '201':
+          description: Filter operator created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterOperatorResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/filter-operators/{id}:
+    get:
+      summary: Get a filter operator by ID
+      operationId: getFilterOperator
+      tags:
+        - Filter Operators
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Filter operator details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterOperatorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a filter operator
+      operationId: updateFilterOperator
+      tags:
+        - Filter Operators
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilterOperatorRequest'
+      responses:
+        '200':
+          description: Filter operator updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterOperatorResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a filter operator
+      operationId: deleteFilterOperator
+      tags:
+        - Filter Operators
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Filter operator deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Notification Types
+  /api/notification-types:
+    get:
+      summary: List all notification types
+      operationId: listNotificationTypes
+      tags:
+        - Notification Types
+      responses:
+        '200':
+          description: List of notification types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationTypeResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a notification type
+      operationId: createNotificationType
+      tags:
+        - Notification Types
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationTypeRequest'
+      responses:
+        '201':
+          description: Notification type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationTypeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/notification-types/{id}:
+    get:
+      summary: Get a notification type by ID
+      operationId: getNotificationType
+      tags:
+        - Notification Types
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Notification type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationTypeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a notification type
+      operationId: updateNotificationType
+      tags:
+        - Notification Types
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationTypeRequest'
+      responses:
+        '200':
+          description: Notification type updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationTypeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a notification type
+      operationId: deleteNotificationType
+      tags:
+        - Notification Types
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Notification type deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Feed Filter Set Types
+  /api/feed-filter-set-types:
+    get:
+      summary: List all feed filter set types
+      operationId: listFeedFilterSetTypes
+      tags:
+        - Feed Filter Set Types
+      responses:
+        '200':
+          description: List of feed filter set types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedFilterSetTypeResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a feed filter set type
+      operationId: createFeedFilterSetType
+      tags:
+        - Feed Filter Set Types
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterSetTypeRequest'
+      responses:
+        '201':
+          description: Feed filter set type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetTypeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/feed-filter-set-types/{id}:
+    get:
+      summary: Get a feed filter set type by ID
+      operationId: getFeedFilterSetType
+      tags:
+        - Feed Filter Set Types
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Feed filter set type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetTypeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a feed filter set type
+      operationId: updateFeedFilterSetType
+      tags:
+        - Feed Filter Set Types
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterSetTypeRequest'
+      responses:
+        '200':
+          description: Feed filter set type updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetTypeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a feed filter set type
+      operationId: deleteFeedFilterSetType
+      tags:
+        - Feed Filter Set Types
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Feed filter set type deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Torrent Categories
+  /api/torrent-categories:
+    get:
+      summary: List all torrent categories
+      operationId: listTorrentCategories
+      tags:
+        - Torrent Categories
+      responses:
+        '200':
+          description: List of torrent categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TorrentCategoryResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a torrent category
+      operationId: createTorrentCategory
+      tags:
+        - Torrent Categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TorrentCategoryRequest'
+      responses:
+        '201':
+          description: Torrent category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TorrentCategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/torrent-categories/{id}:
+    get:
+      summary: Get a torrent category by ID
+      operationId: getTorrentCategory
+      tags:
+        - Torrent Categories
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Torrent category details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TorrentCategoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a torrent category
+      operationId: updateTorrentCategory
+      tags:
+        - Torrent Categories
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TorrentCategoryRequest'
+      responses:
+        '200':
+          description: Torrent category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TorrentCategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a torrent category
+      operationId: deleteTorrentCategory
+      tags:
+        - Torrent Categories
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Torrent category deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Feeds
+  /api/feeds:
+    get:
+      summary: List all feeds
+      operationId: listFeeds
+      tags:
+        - Feeds
+      responses:
+        '200':
+          description: List of feeds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a feed
+      operationId: createFeed
+      tags:
+        - Feeds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedRequest'
+      responses:
+        '201':
+          description: Feed created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/feeds/{id}:
+    get:
+      summary: Get a feed by ID
+      operationId: getFeed
+      tags:
+        - Feeds
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Feed details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a feed
+      operationId: updateFeed
+      tags:
+        - Feeds
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedRequest'
+      responses:
+        '200':
+          description: Feed updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a feed
+      operationId: deleteFeed
+      tags:
+        - Feeds
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Feed deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Notifiers
+  /api/notifiers:
+    get:
+      summary: List all notifiers
+      operationId: listNotifiers
+      tags:
+        - Notifiers
+      responses:
+        '200':
+          description: List of notifiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotifierResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a notifier
+      operationId: createNotifier
+      tags:
+        - Notifiers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotifierRequest'
+      responses:
+        '201':
+          description: Notifier created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifierResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/notifiers/{id}:
+    get:
+      summary: Get a notifier by ID
+      operationId: getNotifier
+      tags:
+        - Notifiers
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Notifier details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifierResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a notifier
+      operationId: updateNotifier
+      tags:
+        - Notifiers
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotifierRequest'
+      responses:
+        '200':
+          description: Notifier updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifierResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a notifier
+      operationId: deleteNotifier
+      tags:
+        - Notifiers
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Notifier deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Feed Filters
+  /api/feed-filters:
+    get:
+      summary: List all feed filters
+      operationId: listFeedFilters
+      tags:
+        - Feed Filters
+      parameters:
+        - name: feed_id
+          in: query
+          description: Filter by feed ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of feed filters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedFilterResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a feed filter
+      operationId: createFeedFilter
+      tags:
+        - Feed Filters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterRequest'
+      responses:
+        '201':
+          description: Feed filter created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/feed-filters/{id}:
+    get:
+      summary: Get a feed filter by ID
+      operationId: getFeedFilter
+      tags:
+        - Feed Filters
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Feed filter details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a feed filter
+      operationId: updateFeedFilter
+      tags:
+        - Feed Filters
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterRequest'
+      responses:
+        '200':
+          description: Feed filter updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a feed filter
+      operationId: deleteFeedFilter
+      tags:
+        - Feed Filters
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Feed filter deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Feed Author Filters
+  /api/feed-author-filters:
+    get:
+      summary: List all feed author filters
+      operationId: listFeedAuthorFilters
+      tags:
+        - Feed Author Filters
+      parameters:
+        - name: feed_id
+          in: query
+          description: Filter by feed ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of feed author filters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedAuthorFilterResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a feed author filter
+      operationId: createFeedAuthorFilter
+      tags:
+        - Feed Author Filters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedAuthorFilterRequest'
+      responses:
+        '201':
+          description: Feed author filter created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedAuthorFilterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/feed-author-filters/{id}:
+    get:
+      summary: Get a feed author filter by ID
+      operationId: getFeedAuthorFilter
+      tags:
+        - Feed Author Filters
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Feed author filter details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedAuthorFilterResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a feed author filter
+      operationId: updateFeedAuthorFilter
+      tags:
+        - Feed Author Filters
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedAuthorFilterRequest'
+      responses:
+        '200':
+          description: Feed author filter updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedAuthorFilterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a feed author filter
+      operationId: deleteFeedAuthorFilter
+      tags:
+        - Feed Author Filters
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Feed author filter deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Feed Filter Sets
+  /api/feed-filter-sets:
+    get:
+      summary: List all feed filter sets
+      operationId: listFeedFilterSets
+      tags:
+        - Feed Filter Sets
+      parameters:
+        - name: feed_filter_id
+          in: query
+          description: Filter by feed filter ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of feed filter sets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedFilterSetResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a feed filter set
+      operationId: createFeedFilterSet
+      tags:
+        - Feed Filter Sets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterSetRequest'
+      responses:
+        '201':
+          description: Feed filter set created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/feed-filter-sets/{id}:
+    get:
+      summary: Get a feed filter set by ID
+      operationId: getFeedFilterSet
+      tags:
+        - Feed Filter Sets
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Feed filter set details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a feed filter set
+      operationId: updateFeedFilterSet
+      tags:
+        - Feed Filter Sets
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterSetRequest'
+      responses:
+        '200':
+          description: Feed filter set updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a feed filter set
+      operationId: deleteFeedFilterSet
+      tags:
+        - Feed Filter Sets
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Feed filter set deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Feed Filter Set Entries
+  /api/feed-filter-set-entries:
+    get:
+      summary: List all feed filter set entries
+      operationId: listFeedFilterSetEntries
+      tags:
+        - Feed Filter Set Entries
+      parameters:
+        - name: feed_filter_set_id
+          in: query
+          description: Filter by feed filter set ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of feed filter set entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedFilterSetEntryResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Create a feed filter set entry
+      operationId: createFeedFilterSetEntry
+      tags:
+        - Feed Filter Set Entries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterSetEntryRequest'
+      responses:
+        '201':
+          description: Feed filter set entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetEntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/feed-filter-set-entries/{id}:
+    get:
+      summary: Get a feed filter set entry by ID
+      operationId: getFeedFilterSetEntry
+      tags:
+        - Feed Filter Set Entries
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Feed filter set entry details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetEntryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Update a feed filter set entry
+      operationId: updateFeedFilterSetEntry
+      tags:
+        - Feed Filter Set Entries
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedFilterSetEntryRequest'
+      responses:
+        '200':
+          description: Feed filter set entry updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedFilterSetEntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a feed filter set entry
+      operationId: deleteFeedFilterSetEntry
+      tags:
+        - Feed Filter Set Entries
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Feed filter set entry deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Torrents
+  /api/torrents/unimported:
+    get:
+      summary: List all unimported torrents
+      operationId: listUnimportedTorrents
+      tags:
+        - Torrents
+      responses:
+        '200':
+          description: List of unimported torrents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TorrentResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/torrents/manual:
+    get:
+      summary: List all torrents requiring manual intervention
+      operationId: listManualInterventionTorrents
+      tags:
+        - Torrents
+      responses:
+        '200':
+          description: List of torrents requiring manual intervention
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TorrentResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/torrents/{hash}/category:
+    post:
+      summary: Set torrent category
+      operationId: setTorrentCategory
+      tags:
+        - Torrents
+      parameters:
+        - $ref: '#/components/parameters/HashPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TorrentChangeCategoryRequest'
+      responses:
+        '204':
+          description: Category updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/torrents/{hash}/tags:
+    post:
+      summary: Set torrent tags
+      operationId: setTorrentTags
+      tags:
+        - Torrents
+      parameters:
+        - $ref: '#/components/parameters/HashPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TorrentChangeTagsRequest'
+      responses:
+        '204':
+          description: Tags updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Audiobook Wizard
+  /api/audiobook-wizard/torrent/{hash}/info:
+    get:
+      summary: Get torrent information for audiobook import
+      operationId: getTorrentInfo
+      tags:
+        - Audiobook Wizard
+      parameters:
+        - $ref: '#/components/parameters/HashPath'
+      responses:
+        '200':
+          description: Torrent import information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TorrentImportInfo'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/audiobook-wizard/search-asin:
+    post:
+      summary: Search for audiobooks by title and author
+      operationId: searchASIN
+      tags:
+        - Audiobook Wizard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchASINRequest'
+      responses:
+        '200':
+          description: List of matching audiobook metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookMetadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/audiobook-wizard/asin/{asin}/metadata:
+    get:
+      summary: Get audiobook metadata by ASIN
+      operationId: getASINMetadata
+      tags:
+        - Audiobook Wizard
+      parameters:
+        - name: asin
+          in: path
+          required: true
+          description: Audible ASIN
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audiobook metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookMetadata'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/audiobook-wizard/preview-directory:
+    post:
+      summary: Preview directory name for audiobook metadata
+      operationId: previewDirectory
+      tags:
+        - Audiobook Wizard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewDirectoryRequest'
+      responses:
+        '200':
+          description: Previewed directory name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewDirectoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/audiobook-wizard/libraries:
+    get:
+      summary: Get list of available audiobook libraries
+      operationId: getLibraries
+      tags:
+        - Audiobook Wizard
+      responses:
+        '200':
+          description: List of available libraries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImportLibrary'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/audiobook-wizard/execute-import:
+    post:
+      summary: Execute audiobook import operation
+      operationId: executeImport
+      tags:
+        - Audiobook Wizard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteImportRequest'
+      responses:
+        '200':
+          description: Import executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecuteImportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      description: Resource ID
+      schema:
+        type: integer
+    HashPath:
+      name: hash
+      in: path
+      required: true
+      description: Torrent hash
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    # Filter Keys
+    FilterKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    FilterKeyResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    # Filter Operators
+    FilterOperatorRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    FilterOperatorResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    # Notification Types
+    NotificationTypeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    NotificationTypeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    # Feed Filter Set Types
+    FeedFilterSetTypeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    FeedFilterSetTypeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    # Torrent Categories
+    TorrentCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    TorrentCategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    # Torrents
+    TorrentResponse:
+      type: object
+      properties:
+        hash:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        state:
+          type: string
+        tags:
+          type: string
+
+    TorrentChangeCategoryRequest:
+      type: object
+      properties:
+        category:
+          type: string
+      required:
+        - category
+
+    TorrentChangeTagsRequest:
+      type: object
+      properties:
+        tags:
+          type: string
+      required:
+        - tags
+
+    # Feeds
+    FeedRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+      required:
+        - name
+        - url
+
+    FeedResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: string
+
+    # Notifiers
+    NotifierRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        type_id:
+          type: integer
+        url:
+          type: string
+      required:
+        - name
+        - type_id
+
+    NotifierResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type_id:
+          type: integer
+        type_name:
+          type: string
+        url:
+          type: string
+
+    # Feed Filters
+    FeedFilterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        feed_id:
+          type: integer
+        category_id:
+          type: integer
+        notifier_id:
+          type: integer
+      required:
+        - name
+        - feed_id
+        - category_id
+        - notifier_id
+
+    FeedFilterResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        feed_id:
+          type: integer
+        feed_name:
+          type: string
+        category_id:
+          type: integer
+        category_name:
+          type: string
+        notifier_id:
+          type: integer
+        notifier_name:
+          type: string
+
+    # Feed Author Filters
+    FeedAuthorFilterRequest:
+      type: object
+      properties:
+        author:
+          type: string
+        feed_id:
+          type: integer
+        category_id:
+          type: integer
+        notifier_id:
+          type: integer
+      required:
+        - author
+        - feed_id
+        - category_id
+        - notifier_id
+
+    FeedAuthorFilterResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        author:
+          type: string
+        feed_id:
+          type: integer
+        feed_name:
+          type: string
+        category_id:
+          type: integer
+        category_name:
+          type: string
+        notifier_id:
+          type: integer
+        notifier_name:
+          type: string
+
+    # Feed Filter Sets
+    FeedFilterSetRequest:
+      type: object
+      properties:
+        feed_filter_id:
+          type: integer
+        type_id:
+          type: integer
+      required:
+        - feed_filter_id
+        - type_id
+
+    FeedFilterSetResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        feed_filter_id:
+          type: integer
+        type_id:
+          type: integer
+        type_name:
+          type: string
+
+    # Feed Filter Set Entries
+    FeedFilterSetEntryRequest:
+      type: object
+      properties:
+        feed_filter_set_id:
+          type: integer
+        key_id:
+          type: integer
+        operator_id:
+          type: integer
+        value:
+          type: string
+      required:
+        - feed_filter_set_id
+        - key_id
+        - operator_id
+        - value
+
+    FeedFilterSetEntryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        feed_filter_set_id:
+          type: integer
+        key_id:
+          type: integer
+        key_name:
+          type: string
+        operator_id:
+          type: integer
+        operator_name:
+          type: string
+        value:
+          type: string
+
+    # Audiobook Wizard
+    TorrentImportInfo:
+      type: object
+      properties:
+        hash:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        tags:
+          type: string
+        asin:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        suggested_library:
+          type: string
+        local_path:
+          type: string
+
+    SearchASINRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        author:
+          type: string
+      required:
+        - title
+
+    Person:
+      type: object
+      properties:
+        name:
+          type: string
+        asin:
+          type: string
+          nullable: true
+
+    Genre:
+      type: object
+      properties:
+        name:
+          type: string
+        asin:
+          type: string
+        type:
+          type: string
+
+    Series:
+      type: object
+      properties:
+        name:
+          type: string
+        asin:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+
+    BookMetadata:
+      type: object
+      properties:
+        asin:
+          type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+        copyright:
+          type: integer
+          nullable: true
+        description:
+          type: string
+        formatType:
+          type: string
+        genres:
+          type: array
+          items:
+            $ref: '#/components/schemas/Genre'
+        image:
+          type: string
+          nullable: true
+        isAdult:
+          type: boolean
+          nullable: true
+        isbn:
+          type: string
+          nullable: true
+        language:
+          type: string
+        literatureType:
+          type: string
+          nullable: true
+        narrators:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+        publisherName:
+          type: string
+        rating:
+          type: string
+        region:
+          type: string
+        releaseDate:
+          type: string
+          format: date-time
+        runtimeLengthMin:
+          type: integer
+        seriesPrimary:
+          $ref: '#/components/schemas/Series'
+          nullable: true
+        seriesSecondary:
+          $ref: '#/components/schemas/Series'
+          nullable: true
+        subtitle:
+          type: string
+          nullable: true
+        summary:
+          type: string
+        title:
+          type: string
+
+    PreviewDirectoryRequest:
+      type: object
+      properties:
+        metadata:
+          $ref: '#/components/schemas/BookMetadata'
+      required:
+        - metadata
+
+    PreviewDirectoryResponse:
+      type: object
+      properties:
+        directory_name:
+          type: string
+
+    ImportLibrary:
+      type: object
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+
+    ExecuteImportRequest:
+      type: object
+      properties:
+        hash:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/BookMetadata'
+        library_name:
+          type: string
+      required:
+        - hash
+        - metadata
+        - library_name
+
+    ExecuteImportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        destination_path:
+          type: string
+        message:
+          type: string
+
+tags:
+  - name: Filter Keys
+    description: Filter key reference data
+  - name: Filter Operators
+    description: Filter operator reference data
+  - name: Notification Types
+    description: Notification type reference data
+  - name: Feed Filter Set Types
+    description: Feed filter set type reference data
+  - name: Torrent Categories
+    description: Torrent category reference data
+  - name: Torrents
+    description: Torrent management via qBittorrent
+  - name: Feeds
+    description: Feed management
+  - name: Notifiers
+    description: Notifier management
+  - name: Feed Filters
+    description: Feed filter management
+  - name: Feed Author Filters
+    description: Feed author filter management
+  - name: Feed Filter Sets
+    description: Feed filter set management
+  - name: Feed Filter Set Entries
+    description: Feed filter set entry management
+  - name: Audiobook Wizard
+    description: Audiobook import wizard for manual intervention torrents

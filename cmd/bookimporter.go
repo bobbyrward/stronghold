@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/cappuccinotm/slogx"
 	"github.com/spf13/cobra"
 
-	"github.com/bobbyrward/stronghold/internal/bookimporter"
+	"github.com/bobbyrward/stronghold/internal/importers/ebooks"
 )
 
 func createBookImportCmd() *cobra.Command {
@@ -22,12 +23,16 @@ func createBookImportCmd() *cobra.Command {
 
 func runBookImport(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-	
+
 	slog.InfoContext(ctx, "Starting book import command")
 
-	bookImporterSystem := bookimporter.NewBookImporterSystem()
+	bookImporterSystem, err := ebooks.NewBookImporterSystem()
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create bookimporter", slogx.Error(err))
+		return errors.Join(err, fmt.Errorf("failed to run book importer"))
+	}
 
-	err := bookImporterSystem.Run(ctx)
+	err = bookImporterSystem.Run(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "Book import failed", slog.Any("err", err))
 		return errors.Join(err, fmt.Errorf("failed to run book importer"))

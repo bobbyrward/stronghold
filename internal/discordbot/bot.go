@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/autobrr/go-qbittorrent"
 	"github.com/bwmarrin/discordgo"
 	"gorm.io/gorm"
 
@@ -23,7 +22,7 @@ type Bot struct {
 	session    *discordgo.Session
 	config     *config.DiscordBotConfig
 	bookSearch *booksearch.BookSearchService
-	qbitClient *qbittorrent.Client
+	qbitClient qbit.QbitClient
 	db         *gorm.DB
 }
 

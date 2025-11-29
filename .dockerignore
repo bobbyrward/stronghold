@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+web/node_modules/
+
+# Build outputs
+web/dist/
+bin/
+
+# Version control
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Environment and config
+.env*
+config.yaml
+stronghold.yaml
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Task management
+.taskmaster/
+.claude/
+
+# Temporary files
+*.log
+*.tmp
