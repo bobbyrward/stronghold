@@ -6,7 +6,7 @@ metadata:
     {{- include "stronghold.labels" . | nindent 4 }}
     app.kubernetes.io/component: audiobook-importer
 spec:
-  suspend: {{ .audiobookImporter.suspend | not }}
+  suspend: {{ .audiobookImporter.enabled | not }}
   schedule: "*/5 * * * *"
   timeZone: "America/Chicago"
   jobTemplate:
