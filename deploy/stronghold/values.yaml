@@ -4,6 +4,15 @@ image:
   tag: ""
 
 bookImporter:
+  enabled: true
+  serviceAccount:
+    # Automatically mount a ServiceAccount's API credentials?
+    automount: false
+    # Annotations to add to the service account
+    annotations: {}
+
+audiobookImporter:
+  enabled: true
   serviceAccount:
     # Automatically mount a ServiceAccount's API credentials?
     automount: false
@@ -34,6 +43,7 @@ api:
       memory: 128Mi
 
 feedWatcher:
+  enabled: true
   serviceAccount:
     # Automatically mount a ServiceAccount's API credentials?
     automount: false
