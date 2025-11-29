@@ -1,0 +1,27 @@
+name: Pull Request - Helm
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    paths:
+      - deploy/**
+      - .github/workflows/pull-request-helm.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-helm
+  cancel-in-progress: true
+
+jobs:
+  check-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - name: setup-helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+      - name: helm lint
+        run: helm lint deploy/stronghold
+      - name: helm template
+        run: helm template test deploy/stronghold

@@ -6,7 +6,7 @@ metadata:
     {{- include "stronghold.labels" . | nindent 4 }}
     app.kubernetes.io/component: book-importer
 spec:
-  suspend: {{ .bookImporter.enabled | not }}
+  suspend: {{ .Values.bookImporter.enabled | not }}
   schedule: "*/5 * * * *"
   timeZone: "America/Chicago"
   jobTemplate:
