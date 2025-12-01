@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /out/stronghold .
 
 # Stage 3: Production image
 FROM alpine:3.21
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates ffmpeg
 WORKDIR /app
 COPY --from=backend-builder /out/stronghold .
 COPY --from=backend-builder /app/web/dist ./web/dist
