@@ -40,7 +40,7 @@ jobs:
           tags: tag:github-actions
           version: 1.84.2
 
-      - run: curl https://harbor.home.ohnozombi.es/api/health
+      - run: echo "different dns setup"
 
       - uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
         with:
