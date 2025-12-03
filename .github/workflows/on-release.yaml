@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   generate-version:
-    runs-on: ubuntu-latest
+    runs-on: ohnozombiesrun
     outputs:
       releaseVersion: ${{ github.event.release.name }}
       chartVersion: ${{ steps.generate-version.outputs.version }}
@@ -27,7 +27,7 @@ jobs:
           echo ${{ github.event.release.name }} | sed 's/^v//' | awk '{print "version="$1}' >> "$GITHUB_OUTPUT"
 
   deliver-image:
-    runs-on: ubuntu-latest
+    runs-on: ohnozombiesrun
     needs:
       - generate-version
     env:
@@ -54,7 +54,7 @@ jobs:
             ${{ secrets.DOCKER_REPO_PREFIX }}/stronghold:latest
 
   deliver-chart:
-    runs-on: ubuntu-latest
+    runs-on: ohnozombiesrun
     needs:
       - generate-version
       - deliver-image
