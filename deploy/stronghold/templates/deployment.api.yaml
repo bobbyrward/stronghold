@@ -29,18 +29,25 @@ spec:
             - --config=/etc/stronghold/config.yaml
           envFrom:
             {{- include "stronghold.envFrom" . | nindent 16 }}
-          volumeMounts:
-            - name: config
-              mountPath: /etc/stronghold
-              readOnly: true
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
           ports:
             - name: http
               containerPort: 8000
               protocol: TCP
+          volumeMounts:
+            {{- if .Values.volumeMounts }}
+              {{- toYaml .Values.volumeMounts | nindent 12 }}
+            {{- end }}
+            - name: config
+              mountPath: /etc/stronghold
+              readOnly: true
       volumes:
+        {{- if .Values.volumes }}
+          {{- toYaml .Values.volumes | nindent 8 }}
+        {{- end }}
         - name: config
           configMap:
-            name: "stronghold-config"
+            name: stronghold-config
+
 
