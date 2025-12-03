@@ -42,12 +42,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
         with:
-          config-inline: |
-            [dns]
-              nameservers="10.0.3.1"
-          buildkitd-config-inline: |
-            [dns]
-              nameservers=["10.0.3.1"]
+          driver-opts: |
+            network=host
 
       - uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
         with:
