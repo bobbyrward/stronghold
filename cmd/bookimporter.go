@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bobbyrward/stronghold/internal/importers/ebooks"
+	"github.com/bobbyrward/stronghold/internal/qbit"
 )
 
 func createBookImportCmd() *cobra.Command {
@@ -26,11 +27,13 @@ func runBookImport(cmd *cobra.Command, args []string) error {
 
 	slog.InfoContext(ctx, "Starting book import command")
 
-	bookImporterSystem, err := ebooks.NewBookImporterSystem()
+	qbitClient, err := qbit.CreateClient()
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create bookimporter", slogx.Error(err))
-		return errors.Join(err, fmt.Errorf("failed to run book importer"))
+		slog.ErrorContext(ctx, "failed to create qBittorrent client", slogx.Error(err))
+		return errors.Join(err, fmt.Errorf("failed to create qBittorrent client"))
 	}
+
+	bookImporterSystem := ebooks.NewBookImporterSystem(qbitClient)
 
 	err = bookImporterSystem.Run(ctx)
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/autobrr/go-qbittorrent"
 	"github.com/cappuccinotm/slogx"
@@ -23,17 +22,10 @@ type BookImporterSystem struct {
 	qbitClient qbit.QbitClient
 }
 
-func NewBookImporterSystem() (*BookImporterSystem, error) {
-	client, err := qbit.CreateClient()
-	if err != nil {
-		return nil, errors.Join(err, fmt.Errorf("failed to create qBittorrent client"))
+func NewBookImporterSystem(qbitClient qbit.QbitClient) *BookImporterSystem {
+	return &BookImporterSystem{
+		qbitClient: qbitClient,
 	}
-
-	importer := &BookImporterSystem{
-		qbitClient: client,
-	}
-
-	return importer, nil
 }
 
 func (bis *BookImporterSystem) Run(ctx context.Context) error {
@@ -94,19 +86,13 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 	books := make([]common.MappedTorrentFile, 0, len(files))
 
 	for _, mappedFile := range files {
-		if strings.HasSuffix(mappedFile.BaseName, ".epub") {
+		switch filepath.Ext(mappedFile.BaseName) {
+		case ".azw3":
+			fallthrough
+		case ".mobi":
+			fallthrough
+		case ".epub":
 			books = append(books, mappedFile)
-			continue
-		}
-
-		if strings.HasSuffix(mappedFile.BaseName, ".mobi") {
-			books = append(books, mappedFile)
-			continue
-		}
-
-		if strings.HasSuffix(mappedFile.BaseName, ".azw3") {
-			books = append(books, mappedFile)
-			continue
 		}
 	}
 
@@ -126,7 +112,9 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 	for _, mappedFile := range books {
 		slog.InfoContext(ctx, "Copying file", slog.Any("mappedFile", mappedFile))
 
-		err = copyFile(mappedFile.LocalPath, filepath.Join(library.Path, mappedFile.BaseName))
+		// Use only the base filename to flatten directory structure
+		destPath := filepath.Join(library.Path, filepath.Base(mappedFile.BaseName))
+		err = copyFile(mappedFile.LocalPath, destPath)
 		if err != nil {
 			slog.InfoContext(ctx, "Unable to copy file", slog.Any("mappedFile", mappedFile), slog.String("name", torrent.Name), slog.Any("err", err))
 
