@@ -124,7 +124,7 @@
         button.textContent = '⚡ Download to Stronghold';
         button.title = 'Send this torrent to Stronghold for automatic import';
 
-        // Inline styles (required due to book sites's CSP)
+        // Inline styles (required due to book sites' CSP)
         Object.assign(button.style, {
             backgroundColor: '#4CAF50',
             color: 'white',
