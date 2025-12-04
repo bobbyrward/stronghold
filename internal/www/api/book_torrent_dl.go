@@ -17,7 +17,7 @@ type BookTorrentDLRequest struct {
 }
 
 // DownloadBookTorrent handles requests to download a book torrent using the provided category and torrent information.
-func DownloadBookTorrent(db *gorm.DB) echo.HandlerFunc {
+func DownloadBookTorrent(db *gorm.DB, qbitClient *qbit.QbitClient) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 
@@ -30,9 +30,13 @@ func DownloadBookTorrent(db *gorm.DB) echo.HandlerFunc {
 			return BadRequest(c, ctx, "invalid request body")
 		}
 
-		qbitClient, err := qbit.CreateClient()
-		if err != nil {
-			return InternalError(c, ctx, "failed to create qBittorrent client", err)
+		if qbitClient == nil {
+			client, err := qbit.CreateClient()
+			if err != nil {
+				return InternalError(c, ctx, "failed to create qBittorrent client", err)
+			}
+
+			qbitClient = &client
 		}
 
 		slog.InfoContext(ctx, "Downloading book torrent",
@@ -40,7 +44,7 @@ func DownloadBookTorrent(db *gorm.DB) echo.HandlerFunc {
 			slog.Any("torrent_id", req.TorrentID),
 		)
 
-		err = qbitClient.AddTorrentFromUrlCtx(
+		err := (*qbitClient).AddTorrentFromUrlCtx(
 			ctx,
 			req.TorrentURL,
 			map[string]string{
