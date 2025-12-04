@@ -17,6 +17,7 @@ import (
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/metadata"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/torrent"
 	"github.com/bobbyrward/stronghold/internal/importers/common"
+	"github.com/bobbyrward/stronghold/internal/notifications"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 	"github.com/cappuccinotm/slogx"
 )
@@ -115,6 +116,75 @@ func (abis *AudiobookImporterSystem) MarkAsImported(ctx context.Context, importT
 			slog.String("name", importTorrent.Name),
 			slog.String("hash", importTorrent.Hash),
 		)
+	}
+}
+
+func (abis *AudiobookImporterSystem) SendDiscordNotification(ctx context.Context, bookMetadata metadata.BookMetadata, importType config.ImportType) {
+	if importType.DiscordNotifier == "" {
+		return
+	}
+
+	// Build description with title and series info
+	description := fmt.Sprintf("**%s**", bookMetadata.Title)
+	if bookMetadata.PrimarySeries != nil {
+		description += fmt.Sprintf(" - %s", bookMetadata.PrimarySeries.Name)
+		if bookMetadata.PrimarySeries.Position != nil {
+			description += fmt.Sprintf(" - Book %s", *bookMetadata.PrimarySeries.Position)
+		}
+	}
+
+	// Build author list
+	authorNames := make([]string, len(bookMetadata.Authors))
+	for i, author := range bookMetadata.Authors {
+		authorNames[i] = author.Name
+	}
+	authorsStr := strings.Join(authorNames, ", ")
+
+	// Build fields
+	fields := []notifications.DiscordEmbedField{
+		{
+			Name:   "Author(s)",
+			Value:  authorsStr,
+			Inline: false,
+		},
+	}
+
+	// Add series field if applicable
+	if bookMetadata.PrimarySeries != nil {
+		seriesStr := bookMetadata.PrimarySeries.Name
+		if bookMetadata.PrimarySeries.Position != nil {
+			seriesStr += fmt.Sprintf(" - Book %s", *bookMetadata.PrimarySeries.Position)
+		}
+		fields = append(fields, notifications.DiscordEmbedField{
+			Name:   "Series",
+			Value:  seriesStr,
+			Inline: true,
+		})
+	}
+
+	// Add Audible link
+	audibleURL := fmt.Sprintf("https://www.audible.com/pd/%s", bookMetadata.Asin)
+	fields = append(fields, notifications.DiscordEmbedField{
+		Name:   "Audible",
+		Value:  fmt.Sprintf("[View on Audible](%s)", audibleURL),
+		Inline: true,
+	})
+
+	message := notifications.DiscordWebhookMessage{
+		Username: "Stronghold Audiobook Importer",
+		Embeds: []notifications.DiscordEmbed{
+			{
+				Title:       "🎧 New Audiobook Imported",
+				Description: description,
+				Color:       0x00ff00,
+				Fields:      fields,
+			},
+		},
+	}
+
+	err := notifications.SendNotification(ctx, importType.DiscordNotifier, message)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to send Discord notification", slog.String("title", bookMetadata.Title), slog.Any("err", err))
 	}
 }
 
@@ -297,6 +367,7 @@ func (abis *AudiobookImporterSystem) importTorrent(ctx context.Context, importTo
 	}
 
 	abis.MarkAsImported(ctx, importTorrent)
+	abis.SendDiscordNotification(ctx, bookMetadata, importType)
 }
 
 func (abis *AudiobookImporterSystem) lookupMetadataByAsin(ctx context.Context, asin string) (metadata.BookMetadata, error) {
