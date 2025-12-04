@@ -58,7 +58,7 @@ func DownloadBookTorrent(db *gorm.DB, qbitClient *qbit.QbitClient) echo.HandlerF
 
 		slog.InfoContext(ctx, "Successfully downloaded book torrent",
 			slog.String("category", req.Category),
-			slog.Any("torrent_id", req.TorrentID),
+			slog.String("torrent_id", req.TorrentID),
 		)
 
 		return c.JSON(http.StatusOK, map[string]string{})
