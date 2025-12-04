@@ -97,4 +97,7 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB) {
 	e.POST("/audiobook-wizard/preview-directory", PreviewDirectory(db))
 	e.GET("/audiobook-wizard/libraries", GetLibraries(db))
 	e.POST("/audiobook-wizard/execute-import", ExecuteImport(db))
+
+	// Downloads
+	e.POST("/book-torrent-dl", DownloadBookTorrent(db, nil))
 }
