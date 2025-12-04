@@ -16,7 +16,7 @@ type BookTorrentDLRequest struct {
 	TorrentURL string `json:"torrent_url" validate:"required"`
 }
 
-// SearchASIN searches for audiobooks by title and author, returning ASINs and metadata
+// DownloadBookTorrent handles requests to download a book torrent using the provided category and torrent information.
 func DownloadBookTorrent(db *gorm.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
