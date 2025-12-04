@@ -343,6 +343,15 @@ func ExecuteImport(db *gorm.DB) echo.HandlerFunc {
 				slog.Any("error", err))
 		}
 
+		// Find import type by category to get notification settings
+		for _, importType := range config.Config.Importers.AudiobookImporter.ImportTypes {
+			if importType.Category == torrent.Category {
+				// Send notification if configured
+				importer.SendDiscordNotification(ctx, req.Metadata, importType)
+				break
+			}
+		}
+
 		response := ExecuteImportResponse{
 			Success:         true,
 			DestinationPath: destinationPath,
