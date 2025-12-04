@@ -3,7 +3,6 @@
 // @namespace    https://github.com/bobbyrward/stronghold
 // @version      1.0.0
 // @description  Add torrents from BookSite to Stronghold for automatic book import
-// @author       Your Name
 // @match        https://www.*.net/t/*
 // @grant        GM_xmlhttpRequest
 // @connect      stronghold.home.ohnozombi.es
