@@ -442,6 +442,9 @@
             modalElement = null;
         }
 
+        // Remove ESC key listener to prevent memory leak
+        document.removeEventListener('keydown', handleEscKey);
+
         isModalOpen = false;
         debug('Modal closed');
     }
@@ -531,6 +534,10 @@
         if (!torrentData.torrentName) {
             errors.push('Torrent name could not be found');
         }
+        if (!torrentData.torrentUrl) {
+            errors.push('Torrent url could not be found');
+        }
+
         if (!torrentData.category) {
             errors.push('Please select a category');
         }

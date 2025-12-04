@@ -39,7 +39,7 @@ func DownloadBookTorrent(db *gorm.DB, qbitClient *qbit.QbitClient) echo.HandlerF
 			qbitClient = &client
 		}
 
-		slog.InfoContext(ctx, "Downloading book torrent",
+		slog.InfoContext(ctx, "Adding book torrent to qbit",
 			slog.String("category", req.Category),
 			slog.Any("torrent_id", req.TorrentID),
 		)
@@ -56,7 +56,7 @@ func DownloadBookTorrent(db *gorm.DB, qbitClient *qbit.QbitClient) echo.HandlerF
 			return InternalError(c, ctx, "failed to add torrent to qbit", err)
 		}
 
-		slog.InfoContext(ctx, "Successfully downloaded book torrent",
+		slog.InfoContext(ctx, "Successfully added book torrent to qbit",
 			slog.String("category", req.Category),
 			slog.String("torrent_id", req.TorrentID),
 		)
