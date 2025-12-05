@@ -113,7 +113,6 @@ discordBot:
   bookSearchApi:
     baseUrl: ""
     searchEndpoint: ""
-    apiKey: ""
     httpProxy: ""
     httpsProxy: ""
 
@@ -121,7 +120,8 @@ discordBot:
 bookSearch:
   baseUrl: ""
   searchEndpoint: ""
-  apiKey: ""
+  cookieDomain: ""
+  tokenRefreshUrl: ""
   httpProxy: ""
   httpsProxy: ""
 `
