@@ -65,7 +65,7 @@ func (b *Bot) handleRequestBookCommand(s *discordgo.Session, i *discordgo.Intera
 		MaxResults: 5,
 	}
 
-	searchResponse, err := b.bookSearch.Search(context.Background(), params)
+	searchResponse, err := b.bookSearch.Search(context.Background(), b.db, params)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to search books", slog.Any("error", err), slog.String("query", query))
 		b.editResponseWithError(s, i, "Failed to search for books")
