@@ -16,8 +16,11 @@ import (
 	"time"
 
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/cookies"
+	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/cappuccinotm/slogx/logger"
 	"github.com/carlmjohnson/requests"
+	"gorm.io/gorm"
 )
 
 type BookSearchService struct{}
@@ -34,28 +37,10 @@ func (params *SearchParameters) Validate() error {
 	return nil
 }
 
-/*
-func logRequest(req *http.Request, res *http.Response, err error, d time.Duration) {
-	slog.Info(
-		"REQUEST",
-		slog.String("url", req.URL.String()),
-		slog.String("method", req.Method),
-		slog.String("status", res.Status),
-		slog.Int("status_code", res.StatusCode),
-		slogx.Error(err),
-	)
-}
-*/
-
-func createHttpClient() *http.Client {
+func createHttpClient(enableLogging bool) *http.Client {
 	searchConfig := &config.Config.BookSearch
 
 	transport := &http.Transport{}
-
-	l := logger.New(
-		logger.WithLogger(slog.Default()),
-		logger.WithBody(10240),
-	)
 
 	if searchConfig.HttpsProxy != "" {
 		transport.Proxy = http.ProxyURL(&url.URL{
@@ -66,15 +51,30 @@ func createHttpClient() *http.Client {
 
 	client := &http.Client{
 		Timeout:   15 * time.Second,
-		Transport: l.HTTPClientRoundTripper(transport),
+		Transport: transport,
+	}
+
+	if enableLogging {
+		l := logger.New(
+			logger.WithLogger(slog.Default()),
+			logger.WithBody(10240),
+		)
+
+		client.Transport = l.HTTPClientRoundTripper(transport)
 	}
 
 	return client
 }
 
-func (s *BookSearchService) Search(ctx context.Context, params *SearchParameters) (*SearchResponse, error) {
+func (s *BookSearchService) Search(ctx context.Context, db *gorm.DB, params *SearchParameters) (*SearchResponse, error) {
 	if params == nil {
 		return nil, fmt.Errorf("params is required")
+	}
+
+	searchConfig := &config.Config.BookSearch
+
+	if searchConfig.TokenCookieName == "" {
+		return nil, errors.New("tokenCookieName not configured")
 	}
 
 	err := params.Validate()
@@ -82,7 +82,13 @@ func (s *BookSearchService) Search(ctx context.Context, params *SearchParameters
 		return nil, err
 	}
 
-	searchConfig := &config.Config.BookSearch
+	// Get API key from database
+	credential, err := models.GetBookSearchCredential(db)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to get book search credential", slog.Any("err", err))
+		return nil, fmt.Errorf("book search credential not found in database")
+	}
+
 	baseUrl := searchConfig.BaseURL
 	searchEndpoint := searchConfig.SearchEndpoint
 
@@ -122,8 +128,8 @@ func (s *BookSearchService) Search(ctx context.Context, params *SearchParameters
 
 	err = requests.
 		URL(url).
-		Client(createHttpClient()).
-		Cookie("mam_id", config.Config.BookSearch.APIKey).
+		Client(createHttpClient(false)).
+		Cookie(searchConfig.TokenCookieName, credential.APIKey).
 		Method("POST").
 		CheckStatus(200).
 		BodyJSON(&request).
@@ -228,4 +234,72 @@ func (s *BookSearchService) displayTable(searchParams *SearchParameters, result 
 	}
 
 	return w.Flush()
+}
+
+type refreshTokenResponse struct {
+	Success   bool   `json:"Success"`
+	Message   string `json:"msg"`
+	IPAddress string `json:"ip"`
+	ASN       int    `json:"ASN"`
+	AS        string `json:"AS"`
+}
+
+func (s *BookSearchService) RefreshToken(ctx context.Context, db *gorm.DB) error {
+	searchConfig := &config.Config.BookSearch
+
+	if searchConfig.TokenRefreshURL == "" {
+		return errors.New("tokenRefreshUrl not configured")
+	}
+
+	if searchConfig.CookieDomain == "" {
+		return errors.New("cookieDomain not configured")
+	}
+
+	if searchConfig.TokenCookieName == "" {
+		return errors.New("tokenCookieName not configured")
+	}
+
+	// Get API key from database
+	credential, err := models.GetBookSearchCredential(db)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to get book search credential", slog.Any("err", err))
+		return fmt.Errorf("book search credential not found in database")
+	}
+
+	slog.InfoContext(ctx, "Token refresh requested")
+
+	client := createHttpClient(false)
+	client.Jar = requests.NewCookieJar()
+
+	var response refreshTokenResponse
+
+	err = requests.
+		URL(searchConfig.TokenRefreshURL).
+		Client(client).
+		Cookie(searchConfig.TokenCookieName, credential.APIKey).
+		ToJSON(&response).
+		Fetch(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to refresh token", slog.Any("err", err))
+		return errors.Join(err, fmt.Errorf("unable to search"))
+	}
+
+	responseCookies := client.Jar.Cookies(&url.URL{
+		Scheme: "https",
+		Host:   searchConfig.CookieDomain,
+	})
+
+	tokenCookie, found := cookies.FindCookieByName(responseCookies, searchConfig.TokenCookieName)
+	if !found {
+		slog.ErrorContext(ctx, "Token cookie not found in response", slog.String("cookieName", searchConfig.TokenCookieName))
+		return fmt.Errorf("token cookie '%s' not found in response", searchConfig.TokenCookieName)
+	}
+
+	err = models.UpsertBookSearchCredential(db, tokenCookie.Value, response.IPAddress, fmt.Sprintf("%d", response.ASN))
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to upsert book search credential", slog.Any("err", err))
+		return errors.Join(err, fmt.Errorf("failed to upsert book search credential"))
+	}
+
+	return nil
 }

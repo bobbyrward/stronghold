@@ -1,6 +1,6 @@
 module github.com/bobbyrward/stronghold
 
-go 1.24.2
+go 1.25
 
 require (
 	github.com/autobrr/go-qbittorrent v1.14.0

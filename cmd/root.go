@@ -46,7 +46,9 @@ func init() {
 	rootCmd.AddCommand(createApiCmd())
 	rootCmd.AddCommand(createDiscordBotCmd())
 	rootCmd.AddCommand(createBookSearchCmd())
+	rootCmd.AddCommand(createRefreshTokenCmd())
 	rootCmd.AddCommand(createAudiobookImporterCmd())
+	rootCmd.AddCommand(createDoctorCmd())
 }
 
 func internalCobraInit() error {

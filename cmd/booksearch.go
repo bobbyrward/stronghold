@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bobbyrward/stronghold/internal/booksearch"
+	"github.com/bobbyrward/stronghold/internal/models"
 )
 
 func createBookSearchCmd() *cobra.Command {
@@ -41,6 +42,12 @@ func runBookSearch(cmd *cobra.Command, args []string, query, hash, format string
 		return fmt.Errorf("one of query or hash must be specified")
 	}
 
+	// Connect to database
+	db, err := models.ConnectDB()
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+	}
+
 	searchService := booksearch.NewBookSearchService()
 
 	params := booksearch.SearchParameters{MaxResults: limit}
@@ -51,9 +58,7 @@ func runBookSearch(cmd *cobra.Command, args []string, query, hash, format string
 		params.Query = query
 	}
 
-	results, err := searchService.Search(ctx,
-		&params,
-	)
+	results, err := searchService.Search(ctx, db, &params)
 	if err != nil {
 		return errors.Join(err, fmt.Errorf("failed to search for books"))
 	}

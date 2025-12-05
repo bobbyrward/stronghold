@@ -1,0 +1,63 @@
+{{- range .Values.cronJobs }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "stronghold.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}
+spec:
+  suspend: {{ .enabled | not }}
+  schedule: {{ .schedule | quote }}
+  timeZone: "America/Chicago"
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "stronghold.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ .name }}
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "stronghold.selectorLabels" $ | nindent 12 }}
+            app.kubernetes.io/component: {{ .name }}
+        spec:
+          serviceAccountName: {{ .name }}
+          restartPolicy: Never
+          containers:
+            - name: stronghold
+              image: {{ include "stronghold.image" $ }}
+              args:
+                {{- .command | toYaml | nindent 16 }}
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              envFrom:
+                {{- include "stronghold.envFrom" $ | nindent 16 }}
+              volumeMounts:
+                {{- if $.Values.volumeMounts }}
+                  {{- toYaml $.Values.volumeMounts | nindent 16 }}
+                {{- end }}
+                - name: config
+                  mountPath: /etc/stronghold/
+          volumes:
+            {{- if $.Values.volumes }}
+              {{- toYaml $.Values.volumes | nindent 12 }}
+            {{- end }}
+            - name: config
+              configMap:
+                name: stronghold-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "stronghold.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}
+  {{- with .serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+automountServiceAccountToken: {{ .serviceAccount.automount }}
+{{- end }}

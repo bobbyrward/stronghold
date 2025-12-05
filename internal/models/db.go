@@ -124,6 +124,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&FeedFilterSetType{},
 		&FeedFilterSet{},
 		&FeedFilterSetEntry{},
+		&BookSearchCredential{},
 
 		// Book library models (order matters for foreign key constraints)
 		&Person{},

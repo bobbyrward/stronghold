@@ -3,21 +3,54 @@ image:
   pullPolicy: IfNotPresent
   tag: ""
 
-bookImporter:
-  enabled: true
-  serviceAccount:
-    # Automatically mount a ServiceAccount's API credentials?
-    automount: false
-    # Annotations to add to the service account
-    annotations: {}
+cronJobs:
+  - name: refresh-token
+    schedule: "2 2 * * *"
+    command:
+      - ./stronghold
+      - "-c"
+      - "/etc/stronghold/config.yaml"
+      - "refresh-token"
+    enabled: true
+    serviceAccount:
+      automount: false
+      annotations: {}
 
-audiobookImporter:
-  enabled: true
-  serviceAccount:
-    # Automatically mount a ServiceAccount's API credentials?
-    automount: false
-    # Annotations to add to the service account
-    annotations: {}
+  - name: book-importer
+    schedule: "*/5 * * * *"
+    command:
+      - ./stronghold
+      - "-c"
+      - "/etc/stronghold/config.yaml"
+      - "book-import"
+    enabled: true
+    serviceAccount:
+      automount: false
+      annotations: {}
+
+  - name: audiobook-importer
+    schedule: "*/5 * * * *"
+    command:
+      - ./stronghold
+      - "-c"
+      - "/etc/stronghold/config.yaml"
+      - "audiobook-importer"
+    enabled: true
+    serviceAccount:
+      automount: false
+      annotations: {}
+
+  - name: feed-watcher
+    schedule: "*/5 * * * *"
+    command:
+      - ./stronghold
+      - "-c"
+      - "/etc/stronghold/config.yaml"
+      - "feed-watcher"
+    enabled: true
+    serviceAccount:
+      automount: false
+      annotations: {}
 
 discordBot:
   replicaCount: 1
@@ -42,42 +75,7 @@ api:
       cpu: 100m
       memory: 128Mi
 
-feedWatcher:
-  enabled: true
-  serviceAccount:
-    # Automatically mount a ServiceAccount's API credentials?
-    automount: false
-    # Annotations to add to the service account
-    annotations: {}
-
-config:
-  postgres:
-    url: ""
-  qbit:
-    url: ""
-    username: ""
-    password: ""
-  bookImporter:
-    importTypes:
-      - category: books
-        sourcePath: ""
-        destinationPath: ""
-        importedTag: imported
-        sourcePrefixPath: ""
-        calibreDesktopURL: ""
-        calibreWebURL: ""
-        manualInterventionTag: needs-manual
-  feedWatcher:
-    feeds: []
-  discordBot:
-    token: ""
-    guildId: ""
-    bookSearchApi:
-      baseUrl: ""
-      apiKey: ""
-
-postgres:
-  uri: ""
+config: {}
 
 nodeSelector: {}
 tolerations: []
