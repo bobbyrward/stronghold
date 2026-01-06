@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+)
 
 type (
 	existsFunc func(name string) error
@@ -24,24 +28,75 @@ func populateTable(db *gorm.DB, names []string, exists existsFunc, create create
 	return nil
 }
 
-func populateTorrentCategories(db *gorm.DB) error {
+func populateSubscriptionScopes(db *gorm.DB) error {
 	return populateTable(
 		db,
 		[]string{
-			"audiobooks",
-			"books",
-			"personal-books",
-			"personal-audiobooks",
+			"personal",
+			"family",
 		},
 		func(name string) error {
-			var record TorrentCategory
+			var record SubscriptionScope
 			return db.Where("name = ?", name).First(&record).Error
 		},
 		func(name string) error {
-			record := TorrentCategory{Name: name}
+			record := SubscriptionScope{Name: name}
 			return db.Create(&record).Error
 		},
 	)
+}
+
+func populateTorrentCategories(db *gorm.DB) error {
+	// Must run after populateSubscriptionScopes
+	type categoryDef struct {
+		Name      string
+		ScopeName string
+		MediaType string
+	}
+
+	categories := []categoryDef{
+		{"audiobooks", "family", "audiobook"},
+		{"books", "family", "ebook"},
+		{"personal-audiobooks", "personal", "audiobook"},
+		{"personal-books", "personal", "ebook"},
+	}
+
+	// Build scope lookup map
+	var scopes []SubscriptionScope
+	if err := db.Find(&scopes).Error; err != nil {
+		return err
+	}
+
+	scopeMap := make(map[string]uint)
+	for _, s := range scopes {
+		scopeMap[s.Name] = s.ID
+	}
+
+	for _, cat := range categories {
+		scopeID, ok := scopeMap[cat.ScopeName]
+		if !ok {
+			return fmt.Errorf("scope not found: %s", cat.ScopeName)
+		}
+
+		var record TorrentCategory
+		err := db.Where("name = ?", cat.Name).First(&record).Error
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				record := TorrentCategory{
+					Name:      cat.Name,
+					ScopeID:   scopeID,
+					MediaType: cat.MediaType,
+				}
+				if err := db.Create(&record).Error; err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func populateNotificationType(db *gorm.DB) error {

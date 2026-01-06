@@ -9,9 +9,8 @@ import (
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
-type FeedFilterSetTypeRequest struct {
-	Name string `json:"name" validate:"required"`
-}
+// FeedFilterSetTypeRequest is unused but required to satisfy the ModelHandler interface
+type FeedFilterSetTypeRequest struct{}
 
 type FeedFilterSetTypeResponse struct {
 	ID   uint   `json:"id"`
@@ -27,14 +26,13 @@ func (handler FeedFilterSetTypeHandler) ModelToResponse(c echo.Context, ctx cont
 	}
 }
 
+// RequestToModel is unused for read-only resources but required by interface
 func (handler FeedFilterSetTypeHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req FeedFilterSetTypeRequest) (models.FeedFilterSetType, error) {
-	return models.FeedFilterSetType{
-		Name: req.Name,
-	}, nil
+	return models.FeedFilterSetType{}, nil
 }
 
+// UpdateModel is unused for read-only resources but required by interface
 func (handler FeedFilterSetTypeHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.FeedFilterSetType, req FeedFilterSetTypeRequest) error {
-	row.Name = req.Name
 	return nil
 }
 
@@ -55,22 +53,7 @@ func ListFeedFilterSetTypes(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.FeedFilterSetType, FeedFilterSetTypeRequest, FeedFilterSetTypeResponse](db, FeedFilterSetTypeHandler{})
 }
 
-// CreateFeedFilterSetType creates a new feed filter set type
-func CreateFeedFilterSetType(db *gorm.DB) echo.HandlerFunc {
-	return genericCreateHandler[models.FeedFilterSetType, FeedFilterSetTypeRequest, FeedFilterSetTypeResponse](db, FeedFilterSetTypeHandler{})
-}
-
 // GetFeedFilterSetType returns a single feed filter set type by ID
 func GetFeedFilterSetType(db *gorm.DB) echo.HandlerFunc {
 	return genericGetHandler[models.FeedFilterSetType, FeedFilterSetTypeRequest, FeedFilterSetTypeResponse](db, FeedFilterSetTypeHandler{})
-}
-
-// UpdateFeedFilterSetType updates an existing feed filter set type
-func UpdateFeedFilterSetType(db *gorm.DB) echo.HandlerFunc {
-	return genericUpdateHandler[models.FeedFilterSetType, FeedFilterSetTypeRequest, FeedFilterSetTypeResponse](db, FeedFilterSetTypeHandler{})
-}
-
-// DeleteFeedFilterSetType deletes a feed filter set type
-func DeleteFeedFilterSetType(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.FeedFilterSetType](db)
 }

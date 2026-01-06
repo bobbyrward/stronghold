@@ -9,9 +9,8 @@ import (
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
-type NotificationTypeRequest struct {
-	Name string `json:"name" validate:"required"`
-}
+// NotificationTypeRequest is unused but required to satisfy the ModelHandler interface
+type NotificationTypeRequest struct{}
 
 type NotificationTypeResponse struct {
 	ID   uint   `json:"id"`
@@ -27,14 +26,13 @@ func (handler NotificationTypeHandler) ModelToResponse(c echo.Context, ctx conte
 	}
 }
 
+// RequestToModel is unused for read-only resources but required by interface
 func (handler NotificationTypeHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req NotificationTypeRequest) (models.NotificationType, error) {
-	return models.NotificationType{
-		Name: req.Name,
-	}, nil
+	return models.NotificationType{}, nil
 }
 
+// UpdateModel is unused for read-only resources but required by interface
 func (handler NotificationTypeHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.NotificationType, req NotificationTypeRequest) error {
-	row.Name = req.Name
 	return nil
 }
 
@@ -55,22 +53,7 @@ func ListNotificationTypes(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.NotificationType, NotificationTypeRequest, NotificationTypeResponse](db, NotificationTypeHandler{})
 }
 
-// CreateNotificationType creates a new notification type
-func CreateNotificationType(db *gorm.DB) echo.HandlerFunc {
-	return genericCreateHandler[models.NotificationType, NotificationTypeRequest, NotificationTypeResponse](db, NotificationTypeHandler{})
-}
-
 // GetNotificationType returns a single notification type by ID
 func GetNotificationType(db *gorm.DB) echo.HandlerFunc {
 	return genericGetHandler[models.NotificationType, NotificationTypeRequest, NotificationTypeResponse](db, NotificationTypeHandler{})
-}
-
-// UpdateNotificationType updates an existing notification type
-func UpdateNotificationType(db *gorm.DB) echo.HandlerFunc {
-	return genericUpdateHandler[models.NotificationType, NotificationTypeRequest, NotificationTypeResponse](db, NotificationTypeHandler{})
-}
-
-// DeleteNotificationType deletes a notification type
-func DeleteNotificationType(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.NotificationType](db)
 }

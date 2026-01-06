@@ -22,6 +22,9 @@ export interface FeedFilterSetType {
 export interface TorrentCategory {
     id: number
     name: string
+    scope_id: number
+    scope_name: string
+    media_type: string
 }
 
 // Main resource types
@@ -79,25 +82,8 @@ export interface FeedFilterSetEntry {
 }
 
 // Request types (for create/update operations)
-export interface FilterKeyRequest {
-    name: string
-}
-
-export interface FilterOperatorRequest {
-    name: string
-}
-
-export interface NotificationTypeRequest {
-    name: string
-}
-
-export interface FeedFilterSetTypeRequest {
-    name: string
-}
-
-export interface TorrentCategoryRequest {
-    name: string
-}
+// Reference data types are read-only - no request types needed
+// (FilterKey, FilterOperator, NotificationType, FeedFilterSetType, TorrentCategory)
 
 export interface FeedRequest {
     name: string

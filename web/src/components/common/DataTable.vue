@@ -15,13 +15,15 @@ interface Props {
     columns: Column[]
     data: any[]
     loading: boolean
-    editable: boolean
-    onSave: (item: any, isNew: boolean) => Promise<void>
-    onDelete: (id: number) => Promise<void>
+    editable?: boolean
+    onSave?: (item: any, isNew: boolean) => Promise<void>
+    onDelete?: (id: number) => Promise<void>
 }
 
 const props = withDefaults(defineProps<Props>(), {
     editable: true,
+    onSave: async () => {},
+    onDelete: async () => {},
 })
 
 const editingId = ref<number | null>(null)
@@ -97,7 +99,7 @@ function getCellValue(item: any, column: Column): string {
     <div class="position-relative">
         <LoadingSpinner v-if="loading" />
 
-        <div class="mb-3">
+        <div v-if="editable" class="mb-3">
             <button class="btn btn-primary btn-sm" @click="addNew" :disabled="editingId !== null">
                 <i class="bi bi-plus-lg me-1"></i>
                 Add New
@@ -110,12 +112,12 @@ function getCellValue(item: any, column: Column): string {
                     <th v-for="column in columns" :key="column.key">
                         {{ column.label }}
                     </th>
-                    <th style="width: 120px">Actions</th>
+                    <th v-if="editable" style="width: 120px">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-if="tableData.length === 0">
-                    <td :colspan="columns.length + 1" class="text-center text-muted py-4">
+                    <td :colspan="columns.length + (editable ? 1 : 0)" class="text-center text-muted py-4">
                         No data available
                     </td>
                 </tr>
@@ -137,7 +139,7 @@ function getCellValue(item: any, column: Column): string {
                             {{ getCellValue(item, column) }}
                         </template>
                     </td>
-                    <td>
+                    <td v-if="editable">
                         <template v-if="editingId === item.id">
                             <button class="btn btn-success btn-sm me-1" @click="saveEdit" title="Save">
                                 <i class="bi bi-check"></i>
@@ -146,7 +148,7 @@ function getCellValue(item: any, column: Column): string {
                                 <i class="bi bi-x"></i>
                             </button>
                         </template>
-                        <template v-else-if="editable">
+                        <template v-else>
                             <button class="btn btn-primary btn-sm me-1" @click="startEdit(item)"
                                 :disabled="editingId !== null" title="Edit">
                                 <i class="bi bi-pencil"></i>

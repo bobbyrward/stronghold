@@ -9,9 +9,8 @@ import (
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
-type FilterOperatorRequest struct {
-	Name string `json:"name" validate:"required"`
-}
+// FilterOperatorRequest is unused but required to satisfy the ModelHandler interface
+type FilterOperatorRequest struct{}
 
 type FilterOperatorResponse struct {
 	ID   uint   `json:"id"`
@@ -27,14 +26,13 @@ func (handler FilterOperatorHandler) ModelToResponse(c echo.Context, ctx context
 	}
 }
 
+// RequestToModel is unused for read-only resources but required by interface
 func (handler FilterOperatorHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req FilterOperatorRequest) (models.FilterOperator, error) {
-	return models.FilterOperator{
-		Name: req.Name,
-	}, nil
+	return models.FilterOperator{}, nil
 }
 
+// UpdateModel is unused for read-only resources but required by interface
 func (handler FilterOperatorHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.FilterOperator, req FilterOperatorRequest) error {
-	row.Name = req.Name
 	return nil
 }
 
@@ -55,22 +53,7 @@ func ListFilterOperators(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.FilterOperator, FilterOperatorRequest, FilterOperatorResponse](db, FilterOperatorHandler{})
 }
 
-// CreateFilterOperator creates a new filter operator
-func CreateFilterOperator(db *gorm.DB) echo.HandlerFunc {
-	return genericCreateHandler[models.FilterOperator, FilterOperatorRequest, FilterOperatorResponse](db, FilterOperatorHandler{})
-}
-
 // GetFilterOperator returns a single filter operator by ID
 func GetFilterOperator(db *gorm.DB) echo.HandlerFunc {
 	return genericGetHandler[models.FilterOperator, FilterOperatorRequest, FilterOperatorResponse](db, FilterOperatorHandler{})
-}
-
-// UpdateFilterOperator updates an existing filter operator
-func UpdateFilterOperator(db *gorm.DB) echo.HandlerFunc {
-	return genericUpdateHandler[models.FilterOperator, FilterOperatorRequest, FilterOperatorResponse](db, FilterOperatorHandler{})
-}
-
-// DeleteFilterOperator deletes a filter operator
-func DeleteFilterOperator(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.FilterOperator](db)
 }

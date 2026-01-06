@@ -23,6 +23,19 @@ func setupTestServer(t *testing.T) (*httptest.Server, func()) {
 	return server, cleanup
 }
 
+// getTorrentCategoryByName returns a pre-populated TorrentCategory by name
+func getTorrentCategoryByName(t *testing.T, client *Client, ctx context.Context, name string) TorrentCategoryResponse {
+	categories, err := client.TorrentCategories.List(ctx)
+	require.NoError(t, err)
+	for _, cat := range categories {
+		if cat.Name == name {
+			return cat
+		}
+	}
+	t.Fatalf("TorrentCategory with name %q not found", name)
+	return TorrentCategoryResponse{}
+}
+
 func TestNewClient(t *testing.T) {
 	baseURL := "http://localhost:8000"
 	client := NewClient(baseURL)
@@ -177,34 +190,38 @@ func TestFeedFilterSetTypesClient_List(t *testing.T) {
 	assert.Greater(t, len(types), 0, "Should have seeded feed filter set types")
 }
 
-func TestTorrentCategoriesClient_CRUD(t *testing.T) {
+// TestTorrentCategoriesClient tests read-only operations for TorrentCategories
+func TestTorrentCategoriesClient(t *testing.T) {
 	server, cleanup := setupTestServer(t)
 	defer cleanup()
 
 	client := NewClient(server.URL)
 	ctx := context.Background()
 
-	// Test Create
-	createReq := TorrentCategoryRequest{Name: "test-category"}
-	created, err := client.TorrentCategories.Create(ctx, createReq)
-	require.NoError(t, err)
-	assert.NotZero(t, created.ID)
-	assert.Equal(t, "test-category", created.Name)
-
-	// Test Get
-	retrieved, err := client.TorrentCategories.Get(ctx, created.ID)
-	require.NoError(t, err)
-	assert.Equal(t, created.ID, retrieved.ID)
-	assert.Equal(t, created.Name, retrieved.Name)
-
-	// Test List
+	// Test List - should have pre-populated categories
 	categories, err := client.TorrentCategories.List(ctx)
 	require.NoError(t, err)
-	assert.Greater(t, len(categories), 0)
+	assert.Len(t, categories, 4, "Should have 4 seeded torrent categories")
 
-	// Test Delete
-	err = client.TorrentCategories.Delete(ctx, created.ID)
+	// Find a known category for Get test
+	var audiobooks TorrentCategoryResponse
+	for _, cat := range categories {
+		if cat.Name == "audiobooks" {
+			audiobooks = cat
+			break
+		}
+	}
+	require.NotZero(t, audiobooks.ID, "audiobooks category should exist")
+	assert.Equal(t, "family", audiobooks.ScopeName)
+	assert.Equal(t, "audiobook", audiobooks.MediaType)
+
+	// Test Get
+	retrieved, err := client.TorrentCategories.Get(ctx, audiobooks.ID)
 	require.NoError(t, err)
+	assert.Equal(t, audiobooks.ID, retrieved.ID)
+	assert.Equal(t, audiobooks.Name, retrieved.Name)
+	assert.Equal(t, audiobooks.ScopeName, retrieved.ScopeName)
+	assert.Equal(t, audiobooks.MediaType, retrieved.MediaType)
 }
 
 func TestNotifiersClient_CRUD(t *testing.T) {
@@ -273,9 +290,8 @@ func TestFeedAuthorFiltersClient_CRUD(t *testing.T) {
 	}
 	require.NotZero(t, discordTypeID)
 
-	// Setup: Create required entities
-	category, err := client.TorrentCategories.Create(ctx, TorrentCategoryRequest{Name: "author-test-category"})
-	require.NoError(t, err)
+	// Setup: Get pre-populated category
+	category := getTorrentCategoryByName(t, client, ctx, "personal-audiobooks")
 
 	notifier, err := client.Notifiers.Create(ctx, NotifierRequest{
 		Name:   "author-test-notifier",
@@ -307,7 +323,7 @@ func TestFeedAuthorFiltersClient_CRUD(t *testing.T) {
 	assert.NotZero(t, created.ID)
 	assert.Equal(t, "John Doe", created.Author)
 	assert.Equal(t, "Author Test Feed", created.FeedName)
-	assert.Equal(t, "author-test-category", created.CategoryName)
+	assert.Equal(t, "personal-audiobooks", created.CategoryName)
 	assert.Equal(t, "author-test-notifier", created.NotifierName)
 
 	// Test Get
@@ -382,9 +398,8 @@ func TestCompleteWorkflow(t *testing.T) {
 	}
 	require.NotZero(t, containsOpID)
 
-	// Step 1: Create a TorrentCategory
-	category, err := client.TorrentCategories.Create(ctx, TorrentCategoryRequest{Name: "workflow-books"})
-	require.NoError(t, err)
+	// Step 1: Get a pre-populated TorrentCategory
+	category := getTorrentCategoryByName(t, client, ctx, "books")
 
 	// Step 2: Create a Notifier
 	notifier, err := client.Notifiers.Create(ctx, NotifierRequest{
