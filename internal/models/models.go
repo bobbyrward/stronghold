@@ -132,7 +132,6 @@ type TorrentCategory struct {
 // Author represents a writer of books
 type Author struct {
 	CommonFields
-	ID           uint    `gorm:"primaryKey"`
 	Name         string  `gorm:"not null;uniqueIndex"`
 	HardcoverRef *string // nullable until linked; slug/UUID TBD
 }
