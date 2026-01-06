@@ -1,14 +1,9 @@
 import type {
     FilterKey,
-    FilterKeyRequest,
     FilterOperator,
-    FilterOperatorRequest,
     NotificationType,
-    NotificationTypeRequest,
     FeedFilterSetType,
-    FeedFilterSetTypeRequest,
     TorrentCategory,
-    TorrentCategoryRequest,
     Feed,
     FeedRequest,
     Notifier,
@@ -57,94 +52,34 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-    // Filter Keys
+    // Filter Keys (read-only reference data)
     filterKeys: {
         list: () => request<FilterKey[]>('/filter-keys'),
-        get: (id: number) => request<FilterKey>(`/filter-keys/${id}`),
-        create: (data: FilterKeyRequest) =>
-            request<FilterKey>('/filter-keys', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: FilterKeyRequest) =>
-            request<FilterKey>(`/filter-keys/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/filter-keys/${id}`, { method: 'DELETE' })
+        get: (id: number) => request<FilterKey>(`/filter-keys/${id}`)
     },
 
-    // Filter Operators
+    // Filter Operators (read-only reference data)
     filterOperators: {
         list: () => request<FilterOperator[]>('/filter-operators'),
-        get: (id: number) => request<FilterOperator>(`/filter-operators/${id}`),
-        create: (data: FilterOperatorRequest) =>
-            request<FilterOperator>('/filter-operators', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: FilterOperatorRequest) =>
-            request<FilterOperator>(`/filter-operators/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/filter-operators/${id}`, { method: 'DELETE' })
+        get: (id: number) => request<FilterOperator>(`/filter-operators/${id}`)
     },
 
-    // Notification Types
+    // Notification Types (read-only reference data)
     notificationTypes: {
         list: () => request<NotificationType[]>('/notification-types'),
-        get: (id: number) => request<NotificationType>(`/notification-types/${id}`),
-        create: (data: NotificationTypeRequest) =>
-            request<NotificationType>('/notification-types', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: NotificationTypeRequest) =>
-            request<NotificationType>(`/notification-types/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/notification-types/${id}`, { method: 'DELETE' })
+        get: (id: number) => request<NotificationType>(`/notification-types/${id}`)
     },
 
-    // Feed Filter Set Types
+    // Feed Filter Set Types (read-only reference data)
     feedFilterSetTypes: {
         list: () => request<FeedFilterSetType[]>('/feed-filter-set-types'),
-        get: (id: number) => request<FeedFilterSetType>(`/feed-filter-set-types/${id}`),
-        create: (data: FeedFilterSetTypeRequest) =>
-            request<FeedFilterSetType>('/feed-filter-set-types', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: FeedFilterSetTypeRequest) =>
-            request<FeedFilterSetType>(`/feed-filter-set-types/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/feed-filter-set-types/${id}`, { method: 'DELETE' })
+        get: (id: number) => request<FeedFilterSetType>(`/feed-filter-set-types/${id}`)
     },
 
-    // Torrent Categories
+    // Torrent Categories (read-only reference data)
     torrentCategories: {
         list: () => request<TorrentCategory[]>('/torrent-categories'),
-        get: (id: number) => request<TorrentCategory>(`/torrent-categories/${id}`),
-        create: (data: TorrentCategoryRequest) =>
-            request<TorrentCategory>('/torrent-categories', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: TorrentCategoryRequest) =>
-            request<TorrentCategory>(`/torrent-categories/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/torrent-categories/${id}`, { method: 'DELETE' })
+        get: (id: number) => request<TorrentCategory>(`/torrent-categories/${id}`)
     },
 
     // Feeds

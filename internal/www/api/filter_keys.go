@@ -9,9 +9,8 @@ import (
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
-type FilterKeyRequest struct {
-	Name string `json:"name" validate:"required"`
-}
+// FilterKeyRequest is unused but required to satisfy the ModelHandler interface
+type FilterKeyRequest struct{}
 
 type FilterKeyResponse struct {
 	ID   uint   `json:"id"`
@@ -27,14 +26,13 @@ func (handler FilterKeyHandler) ModelToResponse(c echo.Context, ctx context.Cont
 	}
 }
 
+// RequestToModel is unused for read-only resources but required by interface
 func (handler FilterKeyHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req FilterKeyRequest) (models.FilterKey, error) {
-	return models.FilterKey{
-		Name: req.Name,
-	}, nil
+	return models.FilterKey{}, nil
 }
 
+// UpdateModel is unused for read-only resources but required by interface
 func (handler FilterKeyHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.FilterKey, req FilterKeyRequest) error {
-	row.Name = req.Name
 	return nil
 }
 
@@ -55,22 +53,7 @@ func ListFilterKeys(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.FilterKey, FilterKeyRequest, FilterKeyResponse](db, FilterKeyHandler{})
 }
 
-// CreateFilterKey creates a new filter key
-func CreateFilterKey(db *gorm.DB) echo.HandlerFunc {
-	return genericCreateHandler[models.FilterKey, FilterKeyRequest, FilterKeyResponse](db, FilterKeyHandler{})
-}
-
 // GetFilterKey returns a single filter key by ID
 func GetFilterKey(db *gorm.DB) echo.HandlerFunc {
 	return genericGetHandler[models.FilterKey, FilterKeyRequest, FilterKeyResponse](db, FilterKeyHandler{})
-}
-
-// UpdateFilterKey updates an existing filter key
-func UpdateFilterKey(db *gorm.DB) echo.HandlerFunc {
-	return genericUpdateHandler[models.FilterKey, FilterKeyRequest, FilterKeyResponse](db, FilterKeyHandler{})
-}
-
-// DeleteFilterKey deletes a filter key
-func DeleteFilterKey(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.FilterKey](db)
 }

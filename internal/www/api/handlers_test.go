@@ -96,7 +96,26 @@ func getFilterOperatorID(t *testing.T, e *echo.Echo, name string) uint {
 	return 0
 }
 
-// TestFilterKeys tests CRUD operations for FilterKeys
+func getTorrentCategoryID(t *testing.T, e *echo.Echo, name string) uint {
+	req := httptest.NewRequest(http.MethodGet, "/api/torrent-categories", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var categories []TorrentCategoryResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &categories)
+	require.NoError(t, err)
+
+	for _, cat := range categories {
+		if cat.Name == name {
+			return cat.ID
+		}
+	}
+	t.Fatalf("Torrent category %q not found", name)
+	return 0
+}
+
+// TestFilterKeys tests read-only operations for FilterKeys
 func TestFilterKeys(t *testing.T) {
 	e, cleanup := setupTestServer(t)
 	defer cleanup()
@@ -112,23 +131,9 @@ func TestFilterKeys(t *testing.T) {
 	require.NoError(t, err)
 	assert.Greater(t, len(filterKeys), 0, "Should have seeded filter keys")
 
-	// Test Create
-	createReq := FilterKeyRequest{Name: "test-key"}
-	body, _ := json.Marshal(createReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/filter-keys", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusCreated, rec.Code)
-
-	var created FilterKeyResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &created)
-	require.NoError(t, err)
-	assert.Equal(t, "test-key", created.Name)
-	assert.NotZero(t, created.ID)
-
-	// Test Get by ID
-	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/filter-keys/%d", created.ID), nil)
+	// Test Get by ID (use first seeded item)
+	firstKey := filterKeys[0]
+	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/filter-keys/%d", firstKey.ID), nil)
 	rec = httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -136,37 +141,11 @@ func TestFilterKeys(t *testing.T) {
 	var retrieved FilterKeyResponse
 	err = json.Unmarshal(rec.Body.Bytes(), &retrieved)
 	require.NoError(t, err)
-	assert.Equal(t, created.ID, retrieved.ID)
-	assert.Equal(t, created.Name, retrieved.Name)
-
-	// Test Update
-	updateReq := FilterKeyRequest{Name: "updated-key"}
-	body, _ = json.Marshal(updateReq)
-	req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/filter-keys/%d", created.ID), bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusOK, rec.Code)
-
-	var updated FilterKeyResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &updated)
-	require.NoError(t, err)
-	assert.Equal(t, "updated-key", updated.Name)
-
-	// Test Delete
-	req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/filter-keys/%d", created.ID), nil)
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusNoContent, rec.Code)
-
-	// Verify deletion
-	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/filter-keys/%d", created.ID), nil)
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusNotFound, rec.Code)
+	assert.Equal(t, firstKey.ID, retrieved.ID)
+	assert.Equal(t, firstKey.Name, retrieved.Name)
 }
 
-// TestFilterOperators tests CRUD operations for FilterOperators
+// TestFilterOperators tests read-only operations for FilterOperators
 func TestFilterOperators(t *testing.T) {
 	e, cleanup := setupTestServer(t)
 	defer cleanup()
@@ -182,51 +161,62 @@ func TestFilterOperators(t *testing.T) {
 	require.NoError(t, err)
 	assert.Greater(t, len(filterOperators), 0, "Should have seeded filter operators")
 
-	// Test Create
-	createReq := FilterOperatorRequest{Name: "test-operator"}
-	body, _ := json.Marshal(createReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/filter-operators", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusCreated, rec.Code)
-
-	var created FilterOperatorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &created)
-	require.NoError(t, err)
-	assert.Equal(t, "test-operator", created.Name)
-	assert.NotZero(t, created.ID)
-}
-
-// TestTorrentCategories tests CRUD operations for TorrentCategories
-func TestTorrentCategories(t *testing.T) {
-	e, cleanup := setupTestServer(t)
-	defer cleanup()
-
-	// Test Create
-	createReq := TorrentCategoryRequest{Name: "test-category"}
-	body, _ := json.Marshal(createReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/torrent-categories", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusCreated, rec.Code)
-
-	var created TorrentCategoryResponse
-	err := json.Unmarshal(rec.Body.Bytes(), &created)
-	require.NoError(t, err)
-	assert.Equal(t, "test-category", created.Name)
-
-	// Test List
-	req = httptest.NewRequest(http.MethodGet, "/api/torrent-categories", nil)
+	// Test Get by ID (use first seeded item)
+	firstOperator := filterOperators[0]
+	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/filter-operators/%d", firstOperator.ID), nil)
 	rec = httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	var categories []TorrentCategoryResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &categories)
+	var retrieved FilterOperatorResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &retrieved)
 	require.NoError(t, err)
-	assert.Greater(t, len(categories), 0)
+	assert.Equal(t, firstOperator.ID, retrieved.ID)
+	assert.Equal(t, firstOperator.Name, retrieved.Name)
+}
+
+// TestTorrentCategories tests read-only operations for TorrentCategories
+func TestTorrentCategories(t *testing.T) {
+	e, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// Test List - should have seeded data
+	req := httptest.NewRequest(http.MethodGet, "/api/torrent-categories", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var categories []TorrentCategoryResponse
+	err := json.Unmarshal(rec.Body.Bytes(), &categories)
+	require.NoError(t, err)
+	assert.Equal(t, 4, len(categories), "Should have 4 seeded torrent categories")
+
+	// Verify seeded categories have expected fields
+	found := make(map[string]bool)
+	for _, cat := range categories {
+		found[cat.Name] = true
+		assert.NotZero(t, cat.ID)
+		assert.NotEmpty(t, cat.ScopeName)
+		assert.NotEmpty(t, cat.MediaType)
+	}
+	assert.True(t, found["audiobooks"], "Should have audiobooks category")
+	assert.True(t, found["books"], "Should have books category")
+	assert.True(t, found["personal-audiobooks"], "Should have personal-audiobooks category")
+	assert.True(t, found["personal-books"], "Should have personal-books category")
+
+	// Test Get by ID
+	categoryID := getTorrentCategoryID(t, e, "personal-audiobooks")
+	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/torrent-categories/%d", categoryID), nil)
+	rec = httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var category TorrentCategoryResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &category)
+	require.NoError(t, err)
+	assert.Equal(t, "personal-audiobooks", category.Name)
+	assert.Equal(t, "personal", category.ScopeName)
+	assert.Equal(t, "audiobook", category.MediaType)
 }
 
 // TestNotifiers tests CRUD operations with ID-based lookups
@@ -325,38 +315,26 @@ func TestCompleteWorkflow(t *testing.T) {
 	anyTypeID := getFeedFilterSetTypeID(t, e, "any")
 	authorKeyID := getFilterKeyID(t, e, "author")
 	containsOpID := getFilterOperatorID(t, e, "contains")
+	categoryID := getTorrentCategoryID(t, e, "personal-books")
 
-	// Step 1: Create a TorrentCategory
-	categoryReq := TorrentCategoryRequest{Name: "test-books"}
-	body, _ := json.Marshal(categoryReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/torrent-categories", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusCreated, rec.Code)
-
-	var createdCategory TorrentCategoryResponse
-	err := json.Unmarshal(rec.Body.Bytes(), &createdCategory)
-	require.NoError(t, err)
-
-	// Step 2: Create a Notifier
+	// Step 1: Create a Notifier
 	notifierReq := NotifierRequest{
 		Name:   "discord-personal",
 		TypeID: discordTypeID,
 		URL:    "https://discord.com/webhook/test",
 	}
-	body, _ = json.Marshal(notifierReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
+	body, _ := json.Marshal(notifierReq)
+	req := httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
+	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusCreated, rec.Code)
 
 	var createdNotifier NotifierResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
+	err := json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
 	require.NoError(t, err)
 
-	// Step 3: Create a Feed
+	// Step 2: Create a Feed
 	feedReq := FeedRequest{
 		Name: "MAM",
 		URL:  "https://example.com/rss",
@@ -372,11 +350,11 @@ func TestCompleteWorkflow(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), &createdFeed)
 	require.NoError(t, err)
 
-	// Step 4: Create a FeedFilter using IDs
+	// Step 3: Create a FeedFilter using IDs
 	filterReq := FeedFilterRequest{
 		Name:       "Blaise Corvin Books",
 		FeedID:     createdFeed.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(filterReq)
@@ -392,10 +370,10 @@ func TestCompleteWorkflow(t *testing.T) {
 	assert.Equal(t, "Blaise Corvin Books", createdFilter.Name)
 	assert.Equal(t, "MAM", createdFilter.FeedName)
 	assert.NotZero(t, createdFilter.FeedID)
-	assert.Equal(t, "test-books", createdFilter.CategoryName)
+	assert.Equal(t, "personal-books", createdFilter.CategoryName)
 	assert.Equal(t, "discord-personal", createdFilter.NotifierName)
 
-	// Step 5: Create a FeedFilterSet
+	// Step 4: Create a FeedFilterSet
 	setReq := FeedFilterSetRequest{
 		FeedFilterID:        createdFilter.ID,
 		FeedFilterSetTypeID: anyTypeID,
@@ -413,7 +391,7 @@ func TestCompleteWorkflow(t *testing.T) {
 	assert.Equal(t, "any", createdSet.TypeName)
 	require.NotZero(t, createdSet.ID, "FeedFilterSet ID should not be zero")
 
-	// Step 6: Create FeedFilterSetEntry
+	// Step 5: Create FeedFilterSetEntry
 	entryReq := FeedFilterSetEntryRequest{
 		FeedFilterSetID: createdSet.ID,
 		KeyID:           authorKeyID,
@@ -452,29 +430,29 @@ func TestErrorCases(t *testing.T) {
 	e, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// Test invalid ID
+	// Test invalid ID (GET still valid for reference data)
 	req := httptest.NewRequest(http.MethodGet, "/api/filter-keys/invalid", nil)
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-	// Test non-existent ID
+	// Test non-existent ID (GET still valid for reference data)
 	req = httptest.NewRequest(http.MethodGet, "/api/filter-keys/99999", nil)
 	rec = httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 
-	// Test missing required field
+	// Test missing required field (using feeds endpoint - CRUD resource)
 	invalidReq := map[string]string{}
 	body, _ := json.Marshal(invalidReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/filter-keys", bytes.NewReader(body))
+	req = httptest.NewRequest(http.MethodPost, "/api/feeds", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-	// Test invalid JSON
-	req = httptest.NewRequest(http.MethodPost, "/api/filter-keys", bytes.NewReader([]byte("invalid json")))
+	// Test invalid JSON (using feeds endpoint - CRUD resource)
+	req = httptest.NewRequest(http.MethodPost, "/api/feeds", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 	rec = httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
@@ -486,20 +464,8 @@ func TestFeedFilterValidation(t *testing.T) {
 	e, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// Setup: Create required entities
-	categoryReq := TorrentCategoryRequest{Name: "validation-test-category"}
-	body, _ := json.Marshal(categoryReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/torrent-categories", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	require.Equal(t, http.StatusCreated, rec.Code)
-
-	var createdCategory TorrentCategoryResponse
-	err := json.Unmarshal(rec.Body.Bytes(), &createdCategory)
-	require.NoError(t, err)
-
-	// Get notification type ID for "discord"
+	// Get reference data IDs
+	categoryID := getTorrentCategoryID(t, e, "books")
 	discordTypeID := getNotificationTypeID(t, e, "discord")
 
 	notifierReq := NotifierRequest{
@@ -507,15 +473,15 @@ func TestFeedFilterValidation(t *testing.T) {
 		TypeID: discordTypeID,
 		URL:    "https://discord.com/webhook/test",
 	}
-	body, _ = json.Marshal(notifierReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
+	body, _ := json.Marshal(notifierReq)
+	req := httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
+	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusCreated, rec.Code)
 
 	var createdNotifier NotifierResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
+	err := json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
 	require.NoError(t, err)
 
 	feedReq := FeedRequest{
@@ -536,7 +502,7 @@ func TestFeedFilterValidation(t *testing.T) {
 	// Test: Missing name
 	invalidFilter := FeedFilterRequest{
 		FeedID:     createdFeed.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(invalidFilter)
@@ -550,7 +516,7 @@ func TestFeedFilterValidation(t *testing.T) {
 	validFilter := FeedFilterRequest{
 		Name:       "Test Filter",
 		FeedID:     createdFeed.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(validFilter)
@@ -565,7 +531,7 @@ func TestFeedFilterValidation(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Validation Test Feed", createdFilter.FeedName)
 	assert.NotZero(t, createdFilter.FeedID)
-	assert.Equal(t, "validation-test-category", createdFilter.CategoryName)
+	assert.Equal(t, "books", createdFilter.CategoryName)
 	assert.Equal(t, "validation-test-notifier", createdFilter.NotifierName)
 }
 
@@ -576,20 +542,7 @@ func TestFeedAuthorFilters(t *testing.T) {
 
 	// Get reference data IDs
 	discordTypeID := getNotificationTypeID(t, e, "discord")
-
-	// Step 1: Create required entities for testing
-	// Create a torrent category
-	categoryReq := TorrentCategoryRequest{Name: "test-author-category"}
-	body, _ := json.Marshal(categoryReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/torrent-categories", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	require.Equal(t, http.StatusCreated, rec.Code)
-
-	var createdCategory TorrentCategoryResponse
-	err := json.Unmarshal(rec.Body.Bytes(), &createdCategory)
-	require.NoError(t, err)
+	categoryID := getTorrentCategoryID(t, e, "personal-audiobooks")
 
 	// Create a notifier
 	notifierReq := NotifierRequest{
@@ -597,15 +550,15 @@ func TestFeedAuthorFilters(t *testing.T) {
 		TypeID: discordTypeID,
 		URL:    "https://discord.com/webhook/test",
 	}
-	body, _ = json.Marshal(notifierReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
+	body, _ := json.Marshal(notifierReq)
+	req := httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
+	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusCreated, rec.Code)
 
 	var createdNotifier NotifierResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
+	err := json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
 	require.NoError(t, err)
 
 	// Create two feeds for testing
@@ -654,7 +607,7 @@ func TestFeedAuthorFilters(t *testing.T) {
 	createReq := FeedAuthorFilterRequest{
 		Author:     "John Doe",
 		FeedID:     createdFeed1.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(createReq)
@@ -671,7 +624,7 @@ func TestFeedAuthorFilters(t *testing.T) {
 	assert.Equal(t, "John Doe", createdFilter.Author)
 	assert.Equal(t, "Test Author Feed 1", createdFilter.FeedName)
 	assert.Equal(t, createdFeed1.ID, createdFilter.FeedID)
-	assert.Equal(t, "test-author-category", createdFilter.CategoryName)
+	assert.Equal(t, "personal-audiobooks", createdFilter.CategoryName)
 	assert.Equal(t, "test-author-notifier", createdFilter.NotifierName)
 
 	// Step 4: Test Get by ID
@@ -690,7 +643,7 @@ func TestFeedAuthorFilters(t *testing.T) {
 	updateReq := FeedAuthorFilterRequest{
 		Author:     "Jane Smith",
 		FeedID:     createdFeed2.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(updateReq)
@@ -750,34 +703,22 @@ func TestFeedAuthorFilterValidation(t *testing.T) {
 
 	// Get reference data IDs
 	discordTypeID := getNotificationTypeID(t, e, "discord")
-
-	// Setup: Create required entities
-	categoryReq := TorrentCategoryRequest{Name: "validation-author-category"}
-	body, _ := json.Marshal(categoryReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/torrent-categories", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	require.Equal(t, http.StatusCreated, rec.Code)
-
-	var createdCategory TorrentCategoryResponse
-	err := json.Unmarshal(rec.Body.Bytes(), &createdCategory)
-	require.NoError(t, err)
+	categoryID := getTorrentCategoryID(t, e, "audiobooks")
 
 	notifierReq := NotifierRequest{
 		Name:   "validation-author-notifier",
 		TypeID: discordTypeID,
 		URL:    "https://discord.com/webhook/test",
 	}
-	body, _ = json.Marshal(notifierReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
+	body, _ := json.Marshal(notifierReq)
+	req := httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
+	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusCreated, rec.Code)
 
 	var createdNotifier NotifierResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
+	err := json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
 	require.NoError(t, err)
 
 	feedReq := FeedRequest{
@@ -798,7 +739,7 @@ func TestFeedAuthorFilterValidation(t *testing.T) {
 	// Test: Missing author
 	invalidFilter := FeedAuthorFilterRequest{
 		FeedID:     createdFeed.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(invalidFilter)
@@ -811,7 +752,7 @@ func TestFeedAuthorFilterValidation(t *testing.T) {
 	// Test: Missing feed_id (zero value)
 	invalidFilter = FeedAuthorFilterRequest{
 		Author:     "Test Author",
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(invalidFilter)
@@ -826,7 +767,7 @@ func TestFeedAuthorFilterValidation(t *testing.T) {
 	invalidFilter = FeedAuthorFilterRequest{
 		Author:     "Test Author Invalid Feed",
 		FeedID:     99999,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(invalidFilter)
@@ -856,7 +797,7 @@ func TestFeedAuthorFilterValidation(t *testing.T) {
 	invalidFilter = FeedAuthorFilterRequest{
 		Author:     "Test Author Invalid Notifier",
 		FeedID:     createdFeed.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: 99999,
 	}
 	body, _ = json.Marshal(invalidFilter)
@@ -871,7 +812,7 @@ func TestFeedAuthorFilterValidation(t *testing.T) {
 	validFilter := FeedAuthorFilterRequest{
 		Author:     "Test Author",
 		FeedID:     createdFeed.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(validFilter)
@@ -896,34 +837,22 @@ func TestFeedAuthorFilterUniqueConstraint(t *testing.T) {
 
 	// Get reference data IDs
 	discordTypeID := getNotificationTypeID(t, e, "discord")
-
-	// Setup: Create required entities
-	categoryReq := TorrentCategoryRequest{Name: "unique-test-category"}
-	body, _ := json.Marshal(categoryReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/torrent-categories", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	require.Equal(t, http.StatusCreated, rec.Code)
-
-	var createdCategory TorrentCategoryResponse
-	err := json.Unmarshal(rec.Body.Bytes(), &createdCategory)
-	require.NoError(t, err)
+	categoryID := getTorrentCategoryID(t, e, "personal-books")
 
 	notifierReq := NotifierRequest{
 		Name:   "unique-test-notifier",
 		TypeID: discordTypeID,
 		URL:    "https://discord.com/webhook/test",
 	}
-	body, _ = json.Marshal(notifierReq)
-	req = httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
+	body, _ := json.Marshal(notifierReq)
+	req := httptest.NewRequest(http.MethodPost, "/api/notifiers", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	rec = httptest.NewRecorder()
+	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusCreated, rec.Code)
 
 	var createdNotifier NotifierResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
+	err := json.Unmarshal(rec.Body.Bytes(), &createdNotifier)
 	require.NoError(t, err)
 
 	feedReq := FeedRequest{
@@ -945,7 +874,7 @@ func TestFeedAuthorFilterUniqueConstraint(t *testing.T) {
 	createReq := FeedAuthorFilterRequest{
 		Author:     "Unique Author",
 		FeedID:     createdFeed.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(createReq)
@@ -983,7 +912,7 @@ func TestFeedAuthorFilterUniqueConstraint(t *testing.T) {
 	createReq2 := FeedAuthorFilterRequest{
 		Author:     "Unique Author",
 		FeedID:     createdFeed2.ID,
-		CategoryID: createdCategory.ID,
+		CategoryID: categoryID,
 		NotifierID: createdNotifier.ID,
 	}
 	body, _ = json.Marshal(createReq2)

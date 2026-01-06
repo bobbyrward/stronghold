@@ -113,7 +113,6 @@ func AutoMigrate(db *gorm.DB) error {
 		// Existing models
 		&FeedItem{},
 		&SearchResponseItem{},
-		&TorrentCategory{},
 		&NotificationType{},
 		&Notifier{},
 		&Feed{},
@@ -125,6 +124,13 @@ func AutoMigrate(db *gorm.DB) error {
 		&FeedFilterSet{},
 		&FeedFilterSetEntry{},
 		&BookSearchCredential{},
+		// Feedwatcher2 models
+		&SubscriptionScope{},
+		&TorrentCategory{},
+		&Author{},
+		&AuthorAlias{},
+		&AuthorSubscription{},
+		&AuthorSubscriptionItem{},
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
@@ -137,7 +143,12 @@ func AutoMigrate(db *gorm.DB) error {
 }
 
 func PopulateData(db *gorm.DB) error {
-	err := populateTorrentCategories(db)
+	err := populateSubscriptionScopes(db)
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to populate subscription scopes"))
+	}
+
+	err = populateTorrentCategories(db)
 	if err != nil {
 		return errors.Join(err, fmt.Errorf("failed to populate torrent categories"))
 	}
