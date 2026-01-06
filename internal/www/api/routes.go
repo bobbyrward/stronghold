@@ -7,40 +7,25 @@ import (
 
 // RegisterRoutes registers all API routes with the Echo server
 func RegisterRoutes(e *echo.Group, db *gorm.DB) {
-	// Filter Keys
+	// Filter Keys (read-only reference data)
 	e.GET("/filter-keys", ListFilterKeys(db))
-	e.POST("/filter-keys", CreateFilterKey(db))
 	e.GET("/filter-keys/:id", GetFilterKey(db))
-	e.PUT("/filter-keys/:id", UpdateFilterKey(db))
-	e.DELETE("/filter-keys/:id", DeleteFilterKey(db))
 
-	// Filter Operators
+	// Filter Operators (read-only reference data)
 	e.GET("/filter-operators", ListFilterOperators(db))
-	e.POST("/filter-operators", CreateFilterOperator(db))
 	e.GET("/filter-operators/:id", GetFilterOperator(db))
-	e.PUT("/filter-operators/:id", UpdateFilterOperator(db))
-	e.DELETE("/filter-operators/:id", DeleteFilterOperator(db))
 
-	// Notification Types
+	// Notification Types (read-only reference data)
 	e.GET("/notification-types", ListNotificationTypes(db))
-	e.POST("/notification-types", CreateNotificationType(db))
 	e.GET("/notification-types/:id", GetNotificationType(db))
-	e.PUT("/notification-types/:id", UpdateNotificationType(db))
-	e.DELETE("/notification-types/:id", DeleteNotificationType(db))
 
-	// Feed Filter Set Types
+	// Feed Filter Set Types (read-only reference data)
 	e.GET("/feed-filter-set-types", ListFeedFilterSetTypes(db))
-	e.POST("/feed-filter-set-types", CreateFeedFilterSetType(db))
 	e.GET("/feed-filter-set-types/:id", GetFeedFilterSetType(db))
-	e.PUT("/feed-filter-set-types/:id", UpdateFeedFilterSetType(db))
-	e.DELETE("/feed-filter-set-types/:id", DeleteFeedFilterSetType(db))
 
-	// Torrent Categories
+	// Torrent Categories (read-only reference data)
 	e.GET("/torrent-categories", ListTorrentCategories(db))
-	e.POST("/torrent-categories", CreateTorrentCategory(db))
 	e.GET("/torrent-categories/:id", GetTorrentCategory(db))
-	e.PUT("/torrent-categories/:id", UpdateTorrentCategory(db))
-	e.DELETE("/torrent-categories/:id", DeleteTorrentCategory(db))
 
 	// Notifiers
 	e.GET("/notifiers", ListNotifiers(db))
