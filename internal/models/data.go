@@ -34,6 +34,8 @@ func populateSubscriptionScopes(db *gorm.DB) error {
 		[]string{
 			"personal",
 			"family",
+			"kids",
+			"general",
 		},
 		func(name string) error {
 			var record SubscriptionScope
@@ -59,6 +61,10 @@ func populateTorrentCategories(db *gorm.DB) error {
 		{"books", "family", "ebook"},
 		{"personal-audiobooks", "personal", "audiobook"},
 		{"personal-books", "personal", "ebook"},
+		{"kids-audiobooks", "kids", "audiobook"},
+		{"kids-books", "kids", "ebook"},
+		{"general-audiobooks", "general", "audiobook"},
+		{"general-books", "general", "ebook"},
 	}
 
 	// Build scope lookup map
