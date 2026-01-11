@@ -201,7 +201,7 @@ func TestTorrentCategoriesClient(t *testing.T) {
 	// Test List - should have pre-populated categories
 	categories, err := client.TorrentCategories.List(ctx)
 	require.NoError(t, err)
-	assert.Len(t, categories, 4, "Should have 4 seeded torrent categories")
+	assert.Len(t, categories, 8, "Should have 8 seeded torrent categories")
 
 	// Find a known category for Get test
 	var audiobooks TorrentCategoryResponse
