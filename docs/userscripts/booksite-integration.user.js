@@ -13,181 +13,185 @@
 // ==/UserScript==
 
 (function () {
-    'use strict';
+  'use strict';
 
-    // ===== CONFIGURATION =====
-    const CONFIG = {
-        apiBaseUrl: 'https://stronghold.home.ohnozombi.es/api',
-        buttonSelector: '#download .torDetInnerBottom',
-        timeout: 10000,
-        debug: false
-    };
+  // ===== CONFIGURATION =====
+  const CONFIG = {
+    apiBaseUrl: 'https://stronghold.home.ohnozombi.es/api',
+    buttonSelector: '#download .torDetInnerBottom',
+    timeout: 10000,
+    debug: false
+  };
 
-    // ===== CATEGORIES =====
-    const CATEGORIES = [
-        'books',
-        'audiobooks',
-        'personal-books',
-        'personal-audiobooks'
-    ];
+  // ===== CATEGORIES =====
+  const CATEGORIES = [
+    'books',
+    'audiobooks',
+    'personal-books',
+    'personal-audiobooks',
+    'general-books',
+    'general-audiobooks',
+    'kids-books',
+    'kids-audiobooks'
+  ];
 
-    // ===== STATE =====
-    let isModalOpen = false;
-    let isSubmitting = false;
-    let modalElement = null;
+  // ===== STATE =====
+  let isModalOpen = false;
+  let isSubmitting = false;
+  let modalElement = null;
 
-    // ===== UTILITY FUNCTIONS =====
+  // ===== UTILITY FUNCTIONS =====
 
-    /**
-     * Make an API request using GM_xmlhttpRequest
-     * @param {Object} options - Request options
-     * @returns {Promise} Promise resolving to response data
-     */
-    function makeApiRequest(options) {
-        return new Promise((resolve, reject) => {
-            GM_xmlhttpRequest({
-                method: options.method || 'GET',
-                url: options.url,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                data: options.data ? JSON.stringify(options.data) : undefined,
-                timeout: CONFIG.timeout,
+  /**
+   * Make an API request using GM_xmlhttpRequest
+   * @param {Object} options - Request options
+   * @returns {Promise} Promise resolving to response data
+   */
+  function makeApiRequest(options) {
+    return new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: options.method || 'GET',
+        url: options.url,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        },
+        data: options.data ? JSON.stringify(options.data) : undefined,
+        timeout: CONFIG.timeout,
 
-                onload: function (response) {
-                    if (response.status >= 200 && response.status < 300) {
-                        try {
-                            const data = response.responseText ?
-                                JSON.parse(response.responseText) : null;
-                            resolve({ success: true, data, status: response.status });
-                        } catch (e) {
-                            reject(new Error('Invalid JSON response'));
-                        }
-                    } else {
-                        let errorMessage = `HTTP ${response.status}`;
-                        try {
-                            const errorData = JSON.parse(response.responseText);
-                            errorMessage = errorData.error || errorMessage;
-                        } catch (e) {
-                            errorMessage = response.statusText || errorMessage;
-                        }
-                        reject(new Error(errorMessage));
-                    }
-                },
+        onload: function (response) {
+          if (response.status >= 200 && response.status < 300) {
+            try {
+              const data = response.responseText ?
+                JSON.parse(response.responseText) : null;
+              resolve({ success: true, data, status: response.status });
+            } catch (e) {
+              reject(new Error('Invalid JSON response'));
+            }
+          } else {
+            let errorMessage = `HTTP ${response.status}`;
+            try {
+              const errorData = JSON.parse(response.responseText);
+              errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+              errorMessage = response.statusText || errorMessage;
+            }
+            reject(new Error(errorMessage));
+          }
+        },
 
-                onerror: function () {
-                    reject(new Error('Network error - cannot reach Stronghold API'));
-                },
+        onerror: function () {
+          reject(new Error('Network error - cannot reach Stronghold API'));
+        },
 
-                ontimeout: function () {
-                    reject(new Error('Request timeout - Stronghold API not responding'));
-                }
-            });
-        });
-    }
-
-    /**
-     * Sanitize input to prevent XSS
-     * @param {string} input - Input string
-     * @returns {string} Sanitized string
-     */
-    function sanitizeInput(input) {
-        if (typeof input !== 'string') {
-            return '';
+        ontimeout: function () {
+          reject(new Error('Request timeout - Stronghold API not responding'));
         }
-        const div = document.createElement('div');
-        div.textContent = input;
-        return div.innerHTML;
+      });
+    });
+  }
+
+  /**
+   * Sanitize input to prevent XSS
+   * @param {string} input - Input string
+   * @returns {string} Sanitized string
+   */
+  function sanitizeInput(input) {
+    if (typeof input !== 'string') {
+      return '';
+    }
+    const div = document.createElement('div');
+    div.textContent = input;
+    return div.innerHTML;
+  }
+
+  /**
+   * Log debug message
+   * @param {string} message - Debug message
+   * @param  {...any} args - Additional arguments
+   */
+  function debug(message, ...args) {
+    if (CONFIG.debug) {
+      console.log(`[Stronghold] ${message}`, ...args);
+    }
+  }
+
+  // ===== UI COMPONENT FUNCTIONS =====
+
+  /**
+   * Create the Stronghold button
+   * @returns {HTMLElement} Button element
+   */
+  function createButton() {
+    const button = document.createElement('button');
+    button.id = 'stronghold-dl-btn';
+    button.textContent = '⚡ Download to Stronghold';
+    button.title = 'Send this torrent to Stronghold for automatic import';
+
+    // Inline styles (required due to book sites' CSP)
+    Object.assign(button.style, {
+      backgroundColor: '#4CAF50',
+      color: 'white',
+      padding: '10px 20px',
+      margin: '8px',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      marginTop: '10px',
+      transition: 'background-color 0.3s ease',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+    });
+
+    // Hover effects
+    button.addEventListener('mouseenter', () => {
+      button.style.backgroundColor = '#45a049';
+    });
+    button.addEventListener('mouseleave', () => {
+      button.style.backgroundColor = '#4CAF50';
+    });
+
+    return button;
+  }
+
+  /**
+   * Inject the button into the page
+   * @returns {boolean} True if successful, false otherwise
+   */
+  function injectButton() {
+    const targetElement = document.querySelector(CONFIG.buttonSelector);
+
+    if (!targetElement) {
+      console.error('[Stronghold] Target element not found:', CONFIG.buttonSelector);
+      return false;
     }
 
-    /**
-     * Log debug message
-     * @param {string} message - Debug message
-     * @param  {...any} args - Additional arguments
-     */
-    function debug(message, ...args) {
-        if (CONFIG.debug) {
-            console.log(`[Stronghold] ${message}`, ...args);
-        }
+    // Prevent duplicate injection
+    if (document.getElementById('stronghold-dl-btn')) {
+      debug('Button already exists, skipping injection');
+      return true;
     }
 
-    // ===== UI COMPONENT FUNCTIONS =====
+    const button = createButton();
+    button.addEventListener('click', handleButtonClick);
 
-    /**
-     * Create the Stronghold button
-     * @returns {HTMLElement} Button element
-     */
-    function createButton() {
-        const button = document.createElement('button');
-        button.id = 'stronghold-dl-btn';
-        button.textContent = '⚡ Download to Stronghold';
-        button.title = 'Send this torrent to Stronghold for automatic import';
+    // Insert after target element
+    targetElement.parentNode.insertBefore(button, targetElement.nextSibling);
 
-        // Inline styles (required due to book sites' CSP)
-        Object.assign(button.style, {
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            padding: '10px 20px',
-            margin: '8px',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            marginTop: '10px',
-            transition: 'background-color 0.3s ease',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-        });
+    debug('Button injected successfully');
+    return true;
+  }
 
-        // Hover effects
-        button.addEventListener('mouseenter', () => {
-            button.style.backgroundColor = '#45a049';
-        });
-        button.addEventListener('mouseleave', () => {
-            button.style.backgroundColor = '#4CAF50';
-        });
+  /**
+   * Create the modal dialog
+   * @returns {HTMLElement} Modal element
+   */
+  function createModal() {
+    const modal = document.createElement('div');
+    modal.id = 'stronghold-modal';
 
-        return button;
-    }
-
-    /**
-     * Inject the button into the page
-     * @returns {boolean} True if successful, false otherwise
-     */
-    function injectButton() {
-        const targetElement = document.querySelector(CONFIG.buttonSelector);
-
-        if (!targetElement) {
-            console.error('[Stronghold] Target element not found:', CONFIG.buttonSelector);
-            return false;
-        }
-
-        // Prevent duplicate injection
-        if (document.getElementById('stronghold-dl-btn')) {
-            debug('Button already exists, skipping injection');
-            return true;
-        }
-
-        const button = createButton();
-        button.addEventListener('click', handleButtonClick);
-
-        // Insert after target element
-        targetElement.parentNode.insertBefore(button, targetElement.nextSibling);
-
-        debug('Button injected successfully');
-        return true;
-    }
-
-    /**
-     * Create the modal dialog
-     * @returns {HTMLElement} Modal element
-     */
-    function createModal() {
-        const modal = document.createElement('div');
-        modal.id = 'stronghold-modal';
-
-        modal.innerHTML = `
+    modal.innerHTML = `
             <div class="stronghold-modal-overlay"></div>
             <div class="stronghold-modal-content">
                 <div class="stronghold-modal-header">
@@ -217,534 +221,534 @@
             </div>
         `;
 
-        applyModalStyles(modal);
-        setupModalEventListeners(modal);
+    applyModalStyles(modal);
+    setupModalEventListeners(modal);
 
-        return modal;
+    return modal;
+  }
+
+  /**
+   * Apply inline styles to modal elements
+   * @param {HTMLElement} modal - Modal element
+   */
+  function applyModalStyles(modal) {
+    // Overlay (backdrop)
+    const overlay = modal.querySelector('.stronghold-modal-overlay');
+    Object.assign(overlay.style, {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      zIndex: '9998',
+      display: 'block'
+    });
+
+    // Modal content box
+    const content = modal.querySelector('.stronghold-modal-content');
+    Object.assign(content.style, {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      backgroundColor: '#202020',
+      borderRadius: '8px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      zIndex: '9999',
+      minWidth: '400px',
+      maxWidth: '600px',
+      padding: '0'
+    });
+
+    // Header
+    const header = modal.querySelector('.stronghold-modal-header');
+    Object.assign(header.style, {
+      padding: '20px 24px',
+      borderBottom: '1px solid #e0e0e0',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    });
+
+    const h2 = header.querySelector('h2');
+    Object.assign(h2.style, {
+      margin: '0',
+      fontSize: '20px',
+      fontWeight: 'bold',
+      color: 'rgb(188,188,188)'
+    });
+
+    const closeBtn = header.querySelector('.stronghold-modal-close');
+    Object.assign(closeBtn.style, {
+      background: 'none',
+      border: 'none',
+      fontSize: '28px',
+      cursor: 'pointer',
+      color: '#999',
+      padding: '0',
+      width: '30px',
+      height: '30px',
+      lineHeight: '1'
+    });
+
+    // Body
+    const body = modal.querySelector('.stronghold-modal-body');
+    Object.assign(body.style, {
+      padding: '24px'
+    });
+
+    // Form group
+    const formGroup = modal.querySelector('.stronghold-form-group');
+    Object.assign(formGroup.style, {
+      marginBottom: '20px'
+    });
+
+    const label = formGroup.querySelector('label');
+    Object.assign(label.style, {
+      display: 'block',
+      marginBottom: '8px',
+      fontWeight: 'bold',
+      color: 'rgb(188,188,188)',
+      fontSize: '14px'
+    });
+
+    const select = formGroup.querySelector('select');
+    Object.assign(select.style, {
+      width: '100%',
+      padding: '10px',
+      fontSize: '14px',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+      backgroundColor: '#fff',
+      cursor: 'pointer'
+    });
+
+    // Info box
+    const infoBox = modal.querySelector('.stronghold-info-box');
+    Object.assign(infoBox.style, {
+      backgroundColor: '#f5f5f5',
+      padding: '16px',
+      borderRadius: '4px',
+      fontSize: '14px'
+    });
+
+    const infoPs = infoBox.querySelectorAll('p');
+    infoPs.forEach(p => {
+      Object.assign(p.style, {
+        margin: '8px 0',
+        color: '#555'
+      });
+    });
+
+    // Footer
+    const footer = modal.querySelector('.stronghold-modal-footer');
+    Object.assign(footer.style, {
+      padding: '16px 24px',
+      borderTop: '1px solid #e0e0e0',
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '12px'
+    });
+
+    // Buttons
+    const buttons = footer.querySelectorAll('.stronghold-btn');
+    buttons.forEach(btn => {
+      Object.assign(btn.style, {
+        padding: '10px 20px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        transition: 'background-color 0.3s ease'
+      });
+    });
+
+    const submitBtn = footer.querySelector('.stronghold-btn-primary');
+    Object.assign(submitBtn.style, {
+      backgroundColor: '#4CAF50',
+      color: 'white'
+    });
+    submitBtn.addEventListener('mouseenter', () => {
+      submitBtn.style.backgroundColor = '#45a049';
+    });
+    submitBtn.addEventListener('mouseleave', () => {
+      submitBtn.style.backgroundColor = '#4CAF50';
+    });
+
+    const cancelBtn = footer.querySelector('.stronghold-btn-secondary');
+    Object.assign(cancelBtn.style, {
+      backgroundColor: '#f0f0f0',
+      color: '#333'
+    });
+    cancelBtn.addEventListener('mouseenter', () => {
+      cancelBtn.style.backgroundColor = '#e0e0e0';
+    });
+    cancelBtn.addEventListener('mouseleave', () => {
+      cancelBtn.style.backgroundColor = '#f0f0f0';
+    });
+  }
+
+  /**
+   * Setup event listeners for modal
+   * @param {HTMLElement} modal - Modal element
+   */
+  function setupModalEventListeners(modal) {
+    // Close button
+    const closeBtn = modal.querySelector('.stronghold-modal-close');
+    closeBtn.addEventListener('click', handleModalCancel);
+
+    // Cancel button
+    const cancelBtn = modal.querySelector('#stronghold-cancel-btn');
+    cancelBtn.addEventListener('click', handleModalCancel);
+
+    // Submit button
+    const submitBtn = modal.querySelector('#stronghold-submit-btn');
+    submitBtn.addEventListener('click', handleModalSubmit);
+
+    // Overlay click
+    const overlay = modal.querySelector('.stronghold-modal-overlay');
+    overlay.addEventListener('click', handleModalCancel);
+
+    // ESC key
+    document.addEventListener('keydown', handleEscKey);
+  }
+
+  /**
+   * Show the modal dialog
+   */
+  function showModal() {
+    if (!modalElement) {
+      modalElement = createModal();
+      document.body.appendChild(modalElement);
     }
 
-    /**
-     * Apply inline styles to modal elements
-     * @param {HTMLElement} modal - Modal element
-     */
-    function applyModalStyles(modal) {
-        // Overlay (backdrop)
-        const overlay = modal.querySelector('.stronghold-modal-overlay');
-        Object.assign(overlay.style, {
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            zIndex: '9998',
-            display: 'block'
-        });
+    // Populate category select
+    populateCategorySelect();
 
-        // Modal content box
-        const content = modal.querySelector('.stronghold-modal-content');
-        Object.assign(content.style, {
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: '#202020',
-            borderRadius: '8px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-            zIndex: '9999',
-            minWidth: '400px',
-            maxWidth: '600px',
-            padding: '0'
-        });
+    // Update torrent info
+    updateTorrentInfo();
 
-        // Header
-        const header = modal.querySelector('.stronghold-modal-header');
-        Object.assign(header.style, {
-            padding: '20px 24px',
-            borderBottom: '1px solid #e0e0e0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-        });
+    // Show modal
+    modalElement.style.display = 'block';
+    isModalOpen = true;
 
-        const h2 = header.querySelector('h2');
-        Object.assign(h2.style, {
-            margin: '0',
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: 'rgb(188,188,188)'
-        });
+    debug('Modal opened');
+  }
 
-        const closeBtn = header.querySelector('.stronghold-modal-close');
-        Object.assign(closeBtn.style, {
-            background: 'none',
-            border: 'none',
-            fontSize: '28px',
-            cursor: 'pointer',
-            color: '#999',
-            padding: '0',
-            width: '30px',
-            height: '30px',
-            lineHeight: '1'
-        });
-
-        // Body
-        const body = modal.querySelector('.stronghold-modal-body');
-        Object.assign(body.style, {
-            padding: '24px'
-        });
-
-        // Form group
-        const formGroup = modal.querySelector('.stronghold-form-group');
-        Object.assign(formGroup.style, {
-            marginBottom: '20px'
-        });
-
-        const label = formGroup.querySelector('label');
-        Object.assign(label.style, {
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: 'bold',
-            color: 'rgb(188,188,188)',
-            fontSize: '14px'
-        });
-
-        const select = formGroup.querySelector('select');
-        Object.assign(select.style, {
-            width: '100%',
-            padding: '10px',
-            fontSize: '14px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            backgroundColor: '#fff',
-            cursor: 'pointer'
-        });
-
-        // Info box
-        const infoBox = modal.querySelector('.stronghold-info-box');
-        Object.assign(infoBox.style, {
-            backgroundColor: '#f5f5f5',
-            padding: '16px',
-            borderRadius: '4px',
-            fontSize: '14px'
-        });
-
-        const infoPs = infoBox.querySelectorAll('p');
-        infoPs.forEach(p => {
-            Object.assign(p.style, {
-                margin: '8px 0',
-                color: '#555'
-            });
-        });
-
-        // Footer
-        const footer = modal.querySelector('.stronghold-modal-footer');
-        Object.assign(footer.style, {
-            padding: '16px 24px',
-            borderTop: '1px solid #e0e0e0',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '12px'
-        });
-
-        // Buttons
-        const buttons = footer.querySelectorAll('.stronghold-btn');
-        buttons.forEach(btn => {
-            Object.assign(btn.style, {
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s ease'
-            });
-        });
-
-        const submitBtn = footer.querySelector('.stronghold-btn-primary');
-        Object.assign(submitBtn.style, {
-            backgroundColor: '#4CAF50',
-            color: 'white'
-        });
-        submitBtn.addEventListener('mouseenter', () => {
-            submitBtn.style.backgroundColor = '#45a049';
-        });
-        submitBtn.addEventListener('mouseleave', () => {
-            submitBtn.style.backgroundColor = '#4CAF50';
-        });
-
-        const cancelBtn = footer.querySelector('.stronghold-btn-secondary');
-        Object.assign(cancelBtn.style, {
-            backgroundColor: '#f0f0f0',
-            color: '#333'
-        });
-        cancelBtn.addEventListener('mouseenter', () => {
-            cancelBtn.style.backgroundColor = '#e0e0e0';
-        });
-        cancelBtn.addEventListener('mouseleave', () => {
-            cancelBtn.style.backgroundColor = '#f0f0f0';
-        });
+  /**
+   * Hide the modal dialog
+   */
+  function hideModal() {
+    if (modalElement) {
+      modalElement.remove();
+      modalElement = null;
     }
 
-    /**
-     * Setup event listeners for modal
-     * @param {HTMLElement} modal - Modal element
-     */
-    function setupModalEventListeners(modal) {
-        // Close button
-        const closeBtn = modal.querySelector('.stronghold-modal-close');
-        closeBtn.addEventListener('click', handleModalCancel);
+    // Remove ESC key listener to prevent memory leak
+    document.removeEventListener('keydown', handleEscKey);
 
-        // Cancel button
-        const cancelBtn = modal.querySelector('#stronghold-cancel-btn');
-        cancelBtn.addEventListener('click', handleModalCancel);
+    isModalOpen = false;
+    debug('Modal closed');
+  }
 
-        // Submit button
-        const submitBtn = modal.querySelector('#stronghold-submit-btn');
-        submitBtn.addEventListener('click', handleModalSubmit);
-
-        // Overlay click
-        const overlay = modal.querySelector('.stronghold-modal-overlay');
-        overlay.addEventListener('click', handleModalCancel);
-
-        // ESC key
-        document.addEventListener('keydown', handleEscKey);
+  /**
+   * Show feedback toast notification
+   * @param {boolean} success - True for success, false for error
+   * @param {string} message - Message to display
+   */
+  function showFeedback(success, message) {
+    // Remove existing toast
+    const existingToast = document.getElementById('stronghold-toast');
+    if (existingToast) {
+      existingToast.remove();
     }
 
-    /**
-     * Show the modal dialog
-     */
-    function showModal() {
-        if (!modalElement) {
-            modalElement = createModal();
-            document.body.appendChild(modalElement);
-        }
+    // Create toast
+    const toast = document.createElement('div');
+    toast.id = 'stronghold-toast';
+    const icon = success ? '✓' : '✗';
 
-        // Populate category select
-        populateCategorySelect();
-
-        // Update torrent info
-        updateTorrentInfo();
-
-        // Show modal
-        modalElement.style.display = 'block';
-        isModalOpen = true;
-
-        debug('Modal opened');
-    }
-
-    /**
-     * Hide the modal dialog
-     */
-    function hideModal() {
-        if (modalElement) {
-            modalElement.remove();
-            modalElement = null;
-        }
-
-        // Remove ESC key listener to prevent memory leak
-        document.removeEventListener('keydown', handleEscKey);
-
-        isModalOpen = false;
-        debug('Modal closed');
-    }
-
-    /**
-     * Show feedback toast notification
-     * @param {boolean} success - True for success, false for error
-     * @param {string} message - Message to display
-     */
-    function showFeedback(success, message) {
-        // Remove existing toast
-        const existingToast = document.getElementById('stronghold-toast');
-        if (existingToast) {
-            existingToast.remove();
-        }
-
-        // Create toast
-        const toast = document.createElement('div');
-        toast.id = 'stronghold-toast';
-        const icon = success ? '✓' : '✗';
-
-        toast.innerHTML = `
+    toast.innerHTML = `
             <span class="toast-icon">${icon}</span>
             <span class="toast-message">${sanitizeInput(message)}</span>
         `;
 
-        // Styling
-        Object.assign(toast.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            backgroundColor: success ? '#4CAF50' : '#f44336',
-            color: 'white',
-            padding: '16px 24px',
-            borderRadius: '4px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            zIndex: '10000',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            maxWidth: '400px'
-        });
+    // Styling
+    Object.assign(toast.style, {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      backgroundColor: success ? '#4CAF50' : '#f44336',
+      color: 'white',
+      padding: '16px 24px',
+      borderRadius: '4px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      zIndex: '10000',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      maxWidth: '400px'
+    });
 
-        document.body.appendChild(toast);
+    document.body.appendChild(toast);
 
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, 5000);
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.remove();
+      }
+    }, 5000);
 
-        debug(`Toast shown: ${success ? 'success' : 'error'} - ${message}`);
+    debug(`Toast shown: ${success ? 'success' : 'error'} - ${message}`);
+  }
+
+  // ===== DATA FUNCTIONS =====
+
+  /**
+   * Extract torrent data from the page
+   * @returns {Object} Torrent data
+   */
+  function extractTorrentData() {
+    const torrentData = {
+      torrentId: window.location.pathname.match(/\/t\/(\d+)/)[1],
+      torrentName: document.querySelector(".TorrentTitle").textContent.trim(),
+      torrentUrl: document.querySelector("#tddl").href,
+      category: null
+    };
+
+    debug('Extracted torrent data:', torrentData);
+    return torrentData;
+  }
+
+  /**
+   * Validate torrent data
+   * @param {Object} torrentData - Torrent data to validate
+   * @returns {Object} Validation result {valid: boolean, errors: string[]}
+   */
+  function validateTorrentData(torrentData) {
+    const errors = [];
+
+    if (!torrentData.torrentId) {
+      errors.push('Torrent ID could not be determined');
+    }
+    if (!torrentData.torrentName) {
+      errors.push('Torrent name could not be found');
+    }
+    if (!torrentData.torrentUrl) {
+      errors.push('Torrent url could not be found');
     }
 
-    // ===== DATA FUNCTIONS =====
-
-    /**
-     * Extract torrent data from the page
-     * @returns {Object} Torrent data
-     */
-    function extractTorrentData() {
-        const torrentData = {
-            torrentId: window.location.pathname.match(/\/t\/(\d+)/)[1],
-            torrentName: document.querySelector(".TorrentTitle").textContent.trim(),
-            torrentUrl: document.querySelector("#tddl").href,
-            category: null
-        };
-
-        debug('Extracted torrent data:', torrentData);
-        return torrentData;
+    if (!torrentData.category) {
+      errors.push('Please select a category');
     }
 
-    /**
-     * Validate torrent data
-     * @param {Object} torrentData - Torrent data to validate
-     * @returns {Object} Validation result {valid: boolean, errors: string[]}
-     */
-    function validateTorrentData(torrentData) {
-        const errors = [];
+    return {
+      valid: errors.length === 0,
+      errors: errors
+    };
+  }
 
-        if (!torrentData.torrentId) {
-            errors.push('Torrent ID could not be determined');
-        }
-        if (!torrentData.torrentName) {
-            errors.push('Torrent name could not be found');
-        }
-        if (!torrentData.torrentUrl) {
-            errors.push('Torrent url could not be found');
-        }
+  /**
+   * Populate the category select dropdown
+   */
+  function populateCategorySelect() {
+    const select = document.getElementById('stronghold-category-select');
+    if (!select) return;
 
-        if (!torrentData.category) {
-            errors.push('Please select a category');
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors: errors
-        };
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+      select.remove(1);
     }
 
-    /**
-     * Populate the category select dropdown
-     */
-    function populateCategorySelect() {
-        const select = document.getElementById('stronghold-category-select');
-        if (!select) return;
+    // Add categories
+    CATEGORIES.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      select.appendChild(option);
+    });
 
-        // Clear existing options except the first one
-        while (select.options.length > 1) {
-            select.remove(1);
-        }
+    debug('Category select populated');
+  }
 
-        // Add categories
-        CATEGORIES.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
-            select.appendChild(option);
-        });
+  /**
+   * Update torrent info display in modal
+   */
+  function updateTorrentInfo() {
+    const torrentData = extractTorrentData();
 
-        debug('Category select populated');
+    const nameDisplay = document.getElementById('torrent-name-display');
+    const idDisplay = document.getElementById('torrent-id-display');
+
+    if (nameDisplay) {
+      nameDisplay.textContent = torrentData.torrentName || 'Unknown';
+    }
+    if (idDisplay) {
+      idDisplay.textContent = torrentData.torrentId || 'Unknown';
     }
 
-    /**
-     * Update torrent info display in modal
-     */
-    function updateTorrentInfo() {
-        const torrentData = extractTorrentData();
+    debug('Torrent info updated');
+  }
 
-        const nameDisplay = document.getElementById('torrent-name-display');
-        const idDisplay = document.getElementById('torrent-id-display');
+  // ===== API FUNCTIONS =====
 
-        if (nameDisplay) {
-            nameDisplay.textContent = torrentData.torrentName || 'Unknown';
+  /**
+   * Submit torrent download request to Stronghold API
+   * @param {Object} torrentData - Torrent data to submit
+   * @returns {Promise} Promise resolving to response data
+   */
+  async function submitTorrentDownload(torrentData) {
+    try {
+      const result = await makeApiRequest({
+        method: 'POST',
+        url: `${CONFIG.apiBaseUrl}/book-torrent-dl`,
+        data: {
+          category: torrentData.category,
+          torrent_id: torrentData.torrentId,
+          torrent_name: torrentData.torrentName,
+          torrent_url: torrentData.torrentUrl
         }
-        if (idDisplay) {
-            idDisplay.textContent = torrentData.torrentId || 'Unknown';
-        }
+      });
 
-        debug('Torrent info updated');
+      if (result.success) {
+        debug('Torrent submitted successfully:', result.data);
+        return result.data;
+      } else {
+        throw new Error('Submission failed');
+      }
+    } catch (error) {
+      console.error('[Stronghold] Submission error:', error);
+      throw error;
+    }
+  }
+
+  // ===== EVENT HANDLERS =====
+
+  /**
+   * Handle button click event
+   * @param {Event} event - Click event
+   */
+  function handleButtonClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Prevent multiple modal instances
+    if (isModalOpen) {
+      debug('Modal already open');
+      return;
     }
 
-    // ===== API FUNCTIONS =====
-
-    /**
-     * Submit torrent download request to Stronghold API
-     * @param {Object} torrentData - Torrent data to submit
-     * @returns {Promise} Promise resolving to response data
-     */
-    async function submitTorrentDownload(torrentData) {
-        try {
-            const result = await makeApiRequest({
-                method: 'POST',
-                url: `${CONFIG.apiBaseUrl}/book-torrent-dl`,
-                data: {
-                    category: torrentData.category,
-                    torrent_id: torrentData.torrentId,
-                    torrent_name: torrentData.torrentName,
-                    torrent_url: torrentData.torrentUrl
-                }
-            });
-
-            if (result.success) {
-                debug('Torrent submitted successfully:', result.data);
-                return result.data;
-            } else {
-                throw new Error('Submission failed');
-            }
-        } catch (error) {
-            console.error('[Stronghold] Submission error:', error);
-            throw error;
-        }
+    // Prevent clicks during submission
+    if (isSubmitting) {
+      debug('Submission in progress');
+      return;
     }
 
-    // ===== EVENT HANDLERS =====
+    showModal();
+  }
 
-    /**
-     * Handle button click event
-     * @param {Event} event - Click event
-     */
-    function handleButtonClick(event) {
-        event.preventDefault();
-        event.stopPropagation();
+  /**
+   * Handle modal submit event
+   * @param {Event} event - Click event
+   */
+  async function handleModalSubmit(event) {
+    event.preventDefault();
 
-        // Prevent multiple modal instances
-        if (isModalOpen) {
-            debug('Modal already open');
-            return;
-        }
-
-        // Prevent clicks during submission
-        if (isSubmitting) {
-            debug('Submission in progress');
-            return;
-        }
-
-        showModal();
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
     }
 
-    /**
-     * Handle modal submit event
-     * @param {Event} event - Click event
-     */
-    async function handleModalSubmit(event) {
-        event.preventDefault();
+    // Extract torrent data
+    const torrentData = extractTorrentData();
 
-        // Prevent double submission
-        if (isSubmitting) {
-            return;
-        }
+    // Get selected category
+    const select = document.getElementById('stronghold-category-select');
+    torrentData.category = select ? select.value : null;
 
-        // Extract torrent data
-        const torrentData = extractTorrentData();
-
-        // Get selected category
-        const select = document.getElementById('stronghold-category-select');
-        torrentData.category = select ? select.value : null;
-
-        // Validate
-        const validation = validateTorrentData(torrentData);
-        if (!validation.valid) {
-            showFeedback(false, validation.errors.join('. '));
-            return;
-        }
-
-        // Update submit button
-        const submitButton = document.getElementById('stronghold-submit-btn');
-        const originalText = submitButton.textContent;
-        submitButton.textContent = 'Submitting...';
-        submitButton.disabled = true;
-        isSubmitting = true;
-
-        try {
-            await submitTorrentDownload(torrentData);
-            hideModal();
-            showFeedback(true, 'Torrent successfully added to Stronghold!');
-        } catch (error) {
-            let errorMessage = 'Failed to submit torrent';
-
-            if (error.message.includes('Network error')) {
-                errorMessage = 'Cannot connect to Stronghold API. Is the server running?';
-            } else if (error.message.includes('timeout')) {
-                errorMessage = 'Request timed out. Please try again.';
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-
-            showFeedback(false, errorMessage);
-
-            // Re-enable submit button on error
-            submitButton.textContent = originalText;
-            submitButton.disabled = false;
-        } finally {
-            isSubmitting = false;
-        }
+    // Validate
+    const validation = validateTorrentData(torrentData);
+    if (!validation.valid) {
+      showFeedback(false, validation.errors.join('. '));
+      return;
     }
 
-    /**
-     * Handle modal cancel event
-     * @param {Event} event - Click event
-     */
-    function handleModalCancel(event) {
-        event.preventDefault();
-        hideModal();
+    // Update submit button
+    const submitButton = document.getElementById('stronghold-submit-btn');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Submitting...';
+    submitButton.disabled = true;
+    isSubmitting = true;
+
+    try {
+      await submitTorrentDownload(torrentData);
+      hideModal();
+      showFeedback(true, 'Torrent successfully added to Stronghold!');
+    } catch (error) {
+      let errorMessage = 'Failed to submit torrent';
+
+      if (error.message.includes('Network error')) {
+        errorMessage = 'Cannot connect to Stronghold API. Is the server running?';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showFeedback(false, errorMessage);
+
+      // Re-enable submit button on error
+      submitButton.textContent = originalText;
+      submitButton.disabled = false;
+    } finally {
+      isSubmitting = false;
     }
+  }
 
-    /**
-     * Handle ESC key press
-     * @param {KeyboardEvent} event - Keyboard event
-     */
-    function handleEscKey(event) {
-        if (event.key === 'Escape' && isModalOpen) {
-            hideModal();
-        }
+  /**
+   * Handle modal cancel event
+   * @param {Event} event - Click event
+   */
+  function handleModalCancel(event) {
+    event.preventDefault();
+    hideModal();
+  }
+
+  /**
+   * Handle ESC key press
+   * @param {KeyboardEvent} event - Keyboard event
+   */
+  function handleEscKey(event) {
+    if (event.key === 'Escape' && isModalOpen) {
+      hideModal();
     }
+  }
 
-    // ===== INITIALIZATION =====
+  // ===== INITIALIZATION =====
 
-    /**
-     * Initialize the userscript
-     */
-    function init() {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeScript);
-        } else {
-            initializeScript();
-        }
+  /**
+   * Initialize the userscript
+   */
+  function init() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeScript);
+    } else {
+      initializeScript();
     }
+  }
 
-    /**
-     * Initialize script after DOM is ready
-     */
-    function initializeScript() {
-        console.log('[Stronghold] Booksite Integration userscript loaded');
-        injectButton();
-    }
+  /**
+   * Initialize script after DOM is ready
+   */
+  function initializeScript() {
+    console.log('[Stronghold] Booksite Integration userscript loaded');
+    injectButton();
+  }
 
-    // Start
-    init();
+  // Start
+  init();
 })();

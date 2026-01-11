@@ -189,7 +189,7 @@ func TestTorrentCategories(t *testing.T) {
 	var categories []TorrentCategoryResponse
 	err := json.Unmarshal(rec.Body.Bytes(), &categories)
 	require.NoError(t, err)
-	assert.Equal(t, 4, len(categories), "Should have 4 seeded torrent categories")
+	assert.Equal(t, 8, len(categories), "Should have 8 seeded torrent categories")
 
 	// Verify seeded categories have expected fields
 	found := make(map[string]bool)
@@ -203,6 +203,10 @@ func TestTorrentCategories(t *testing.T) {
 	assert.True(t, found["books"], "Should have books category")
 	assert.True(t, found["personal-audiobooks"], "Should have personal-audiobooks category")
 	assert.True(t, found["personal-books"], "Should have personal-books category")
+	assert.True(t, found["kids-audiobooks"], "Should have kids-audiobooks category")
+	assert.True(t, found["kids-books"], "Should have kids-books category")
+	assert.True(t, found["general-audiobooks"], "Should have general-audiobooks category")
+	assert.True(t, found["general-books"], "Should have general-books category")
 
 	// Test Get by ID
 	categoryID := getTorrentCategoryID(t, e, "personal-audiobooks")
