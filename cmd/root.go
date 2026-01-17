@@ -50,6 +50,7 @@ func init() {
 	rootCmd.AddCommand(createAudiobookImporterCmd())
 	rootCmd.AddCommand(createDoctorCmd())
 	rootCmd.AddCommand(createFeedWatcher2Cmd())
+	rootCmd.AddCommand(createSubscribeCmd())
 }
 
 func internalCobraInit() error {
