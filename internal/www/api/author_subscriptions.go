@@ -124,7 +124,9 @@ func CreateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		// Reload with relations for response
-		db.Preload("Author").Preload("Scope").Preload("Notifier").First(&sub, sub.ID)
+		if err := db.Preload("Author").Preload("Scope").Preload("Notifier").First(&sub, sub.ID).Error; err != nil {
+			return InternalError(c, ctx, "Failed to reload subscription with relations", err)
+		}
 
 		slog.InfoContext(ctx, "Created author subscription", slog.Uint64("id", uint64(sub.ID)), slog.Uint64("author_id", uint64(authorID)))
 		return c.JSON(http.StatusCreated, subscriptionToResponse(sub))
@@ -173,7 +175,9 @@ func UpdateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		// Reload with relations for response
-		db.Preload("Author").Preload("Scope").Preload("Notifier").First(&sub, sub.ID)
+		if err := db.Preload("Author").Preload("Scope").Preload("Notifier").First(&sub, sub.ID).Error; err != nil {
+			return InternalError(c, ctx, "Failed to reload subscription with relations", err)
+		}
 
 		slog.InfoContext(ctx, "Updated author subscription", slog.Uint64("id", uint64(sub.ID)), slog.Uint64("author_id", uint64(authorID)))
 		return c.JSON(http.StatusOK, subscriptionToResponse(sub))
@@ -200,7 +204,7 @@ func DeleteAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 			return InternalError(c, ctx, "Failed to query subscription", err)
 		}
 
-		if err := db.Unscoped().Delete(&sub).Error; err != nil {
+		if err := db.Delete(&sub).Error; err != nil {
 			return InternalError(c, ctx, "Failed to delete subscription", err)
 		}
 

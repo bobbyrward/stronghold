@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -138,4 +139,12 @@ func DeleteByID(db *gorm.DB, ctx context.Context, model interface{}, id uint, re
 	}
 	slog.InfoContext(ctx, "Successfully deleted "+resourceName, slog.Uint64("id", uint64(id)))
 	return nil
+}
+
+// EscapeLikePattern escapes special characters in LIKE patterns to prevent pattern injection
+func EscapeLikePattern(pattern string) string {
+	pattern = strings.ReplaceAll(pattern, "\\", "\\\\")
+	pattern = strings.ReplaceAll(pattern, "%", "\\%")
+	pattern = strings.ReplaceAll(pattern, "_", "\\_")
+	return pattern
 }

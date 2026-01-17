@@ -210,7 +210,7 @@ func DeleteAuthorAlias(db *gorm.DB) echo.HandlerFunc {
 			return NotFound(c, ctx, "Alias", id)
 		}
 
-		if err := db.Unscoped().Delete(&alias).Error; err != nil {
+		if err := db.Delete(&alias).Error; err != nil {
 			return InternalError(c, ctx, "Failed to delete alias", err)
 		}
 

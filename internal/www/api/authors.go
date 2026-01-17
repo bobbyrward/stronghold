@@ -36,8 +36,13 @@ func (handler AuthorHandler) ModelToResponse(c echo.Context, ctx context.Context
 }
 
 func (h AuthorHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req AuthorRequest) (models.Author, error) {
+	// Treat empty string as nil
+	if req.HardcoverRef != nil && *req.HardcoverRef == "" {
+		req.HardcoverRef = nil
+	}
+
 	// Validate hardcover_ref if provided
-	if req.HardcoverRef != nil && *req.HardcoverRef != "" {
+	if req.HardcoverRef != nil {
 		slog.DebugContext(ctx, "Validating hardcover_ref", slog.String("ref", *req.HardcoverRef))
 		author, err := h.hardcoverClient.GetAuthorBySlug(ctx, *req.HardcoverRef)
 		if err != nil {
@@ -58,8 +63,13 @@ func (h AuthorHandler) RequestToModel(c echo.Context, ctx context.Context, db *g
 }
 
 func (h AuthorHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.Author, req AuthorRequest) error {
+	// Treat empty string as nil
+	if req.HardcoverRef != nil && *req.HardcoverRef == "" {
+		req.HardcoverRef = nil
+	}
+
 	// Validate hardcover_ref if provided and changed
-	if req.HardcoverRef != nil && *req.HardcoverRef != "" {
+	if req.HardcoverRef != nil {
 		// Only validate if it's different from current
 		if row.HardcoverRef == nil || *row.HardcoverRef != *req.HardcoverRef {
 			slog.DebugContext(ctx, "Validating hardcover_ref on update", slog.String("ref", *req.HardcoverRef))
@@ -89,8 +99,10 @@ func (h AuthorHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm.
 
 	slog.DebugContext(ctx, "Fuzzy searching authors", slog.String("query", query))
 
+	// Escape LIKE special characters and build pattern
 	// Case-insensitive search using LOWER() for SQLite/PostgreSQL compatibility
-	pattern := "%" + strings.ToLower(query) + "%"
+	escapedQuery := EscapeLikePattern(query)
+	pattern := "%" + strings.ToLower(escapedQuery) + "%"
 
 	// Search author name OR any alias name via subquery
 	aliasSubquery := db.Model(&models.AuthorAlias{}).
