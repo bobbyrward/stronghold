@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -17,6 +18,17 @@ func ParseIDParam(c echo.Context, ctx context.Context) (uint, error) {
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
 		slog.WarnContext(ctx, "Invalid ID parameter", slog.String("id", idStr), slog.Any("error", err))
+		return 0, err
+	}
+	return uint(id), nil
+}
+
+// ParseAuthorIDParam extracts and validates the "author_id" path parameter
+func ParseAuthorIDParam(c echo.Context, ctx context.Context) (uint, error) {
+	idStr := c.Param("author_id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		slog.WarnContext(ctx, "Invalid author_id parameter", slog.String("author_id", idStr), slog.Any("error", err))
 		return 0, err
 	}
 	return uint(id), nil
@@ -127,4 +139,12 @@ func DeleteByID(db *gorm.DB, ctx context.Context, model interface{}, id uint, re
 	}
 	slog.InfoContext(ctx, "Successfully deleted "+resourceName, slog.Uint64("id", uint64(id)))
 	return nil
+}
+
+// EscapeLikePattern escapes special characters in LIKE patterns to prevent pattern injection
+func EscapeLikePattern(pattern string) string {
+	pattern = strings.ReplaceAll(pattern, "\\", "\\\\")
+	pattern = strings.ReplaceAll(pattern, "%", "\\%")
+	pattern = strings.ReplaceAll(pattern, "_", "\\_")
+	return pattern
 }

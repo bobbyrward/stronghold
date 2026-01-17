@@ -52,6 +52,18 @@ cronJobs:
       automount: false
       annotations: {}
 
+  - name: feed-watcher
+    schedule: "1-59/5 * * * *"
+    command:
+      - ./stronghold
+      - "-c"
+      - "/etc/stronghold/config.yaml"
+      - "feedwatcher2"
+    enabled: true
+    serviceAccount:
+      automount: false
+      annotations: {}
+
 discordBot:
   replicaCount: 1
   serviceAccount:

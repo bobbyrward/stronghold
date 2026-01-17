@@ -59,6 +59,16 @@ const routes = [
     path: '/torrent-categories',
     name: 'torrent-categories',
     component: () => import('@/views/TorrentCategoriesView.vue')
+  },
+  {
+    path: '/authors',
+    name: 'authors',
+    component: () => import('@/views/AuthorsView.vue')
+  },
+  {
+    path: '/subscription-items',
+    name: 'subscription-items',
+    component: () => import('@/views/SubscriptionItemsView.vue')
   }
 ]
 

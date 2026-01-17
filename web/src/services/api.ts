@@ -4,6 +4,7 @@ import type {
     NotificationType,
     FeedFilterSetType,
     TorrentCategory,
+    SubscriptionScope,
     Feed,
     FeedRequest,
     Notifier,
@@ -25,7 +26,16 @@ import type {
     PreviewDirectoryRequest,
     PreviewDirectoryResponse,
     ExecuteImportRequest,
-    ExecuteImportResponse
+    ExecuteImportResponse,
+    // Feedwatcher2 types
+    Author,
+    AuthorRequest,
+    AuthorAlias,
+    AuthorAliasRequest,
+    AuthorSubscription,
+    AuthorSubscriptionRequest,
+    AuthorSubscriptionItem,
+    HardcoverAuthorSearchResult
 } from '@/types/api'
 
 const BASE_URL = '/api'
@@ -80,6 +90,78 @@ export const api = {
     torrentCategories: {
         list: () => request<TorrentCategory[]>('/torrent-categories'),
         get: (id: number) => request<TorrentCategory>(`/torrent-categories/${id}`)
+    },
+
+    // Subscription Scopes (read-only reference data)
+    subscriptionScopes: {
+        list: () => request<SubscriptionScope[]>('/subscription-scopes')
+    },
+
+    // Hardcover (external search)
+    hardcover: {
+        searchAuthors: (query: string) =>
+            request<HardcoverAuthorSearchResult[]>(`/hardcover/authors/search?q=${encodeURIComponent(query)}`)
+    },
+
+    // Authors (feedwatcher2)
+    authors: {
+        list: (query?: string) => {
+            const params = query ? `?q=${encodeURIComponent(query)}` : ''
+            return request<Author[]>(`/authors${params}`)
+        },
+        get: (id: number) => request<Author>(`/authors/${id}`),
+        create: (data: AuthorRequest) =>
+            request<Author>('/authors', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            }),
+        update: (id: number, data: AuthorRequest) =>
+            request<Author>(`/authors/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            }),
+        delete: (id: number) =>
+            request<void>(`/authors/${id}`, { method: 'DELETE' }),
+
+        // Nested aliases
+        aliases: {
+            list: (authorId: number) =>
+                request<AuthorAlias[]>(`/authors/${authorId}/aliases`),
+            get: (authorId: number, id: number) =>
+                request<AuthorAlias>(`/authors/${authorId}/aliases/${id}`),
+            create: (authorId: number, data: AuthorAliasRequest) =>
+                request<AuthorAlias>(`/authors/${authorId}/aliases`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                }),
+            update: (authorId: number, id: number, data: AuthorAliasRequest) =>
+                request<AuthorAlias>(`/authors/${authorId}/aliases/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                }),
+            delete: (authorId: number, id: number) =>
+                request<void>(`/authors/${authorId}/aliases/${id}`, { method: 'DELETE' })
+        },
+
+        // Nested subscription (one per author)
+        subscription: {
+            get: (authorId: number) =>
+                request<AuthorSubscription>(`/authors/${authorId}/subscription`),
+            create: (authorId: number, data: AuthorSubscriptionRequest) =>
+                request<AuthorSubscription>(`/authors/${authorId}/subscription`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                }),
+            update: (authorId: number, data: AuthorSubscriptionRequest) =>
+                request<AuthorSubscription>(`/authors/${authorId}/subscription`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                }),
+            delete: (authorId: number) =>
+                request<void>(`/authors/${authorId}/subscription`, { method: 'DELETE' }),
+            items: (authorId: number) =>
+                request<AuthorSubscriptionItem[]>(`/authors/${authorId}/subscription/items`)
+        }
     },
 
     // Feeds
