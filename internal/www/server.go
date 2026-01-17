@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/hardcover"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/www/api"
@@ -86,8 +87,7 @@ func Run() error {
 	echoServer.Validator = NewValidator()
 
 	// Create Hardcover client
-	hardcoverToken := os.Getenv("HARDCOVER_TOKEN")
-	hc := hardcover.NewClient(hardcoverToken)
+	hc := hardcover.NewClient(config.Config.Hardcover.ApiToken)
 
 	// Register all API routes first (so they take precedence)
 	api.RegisterRoutes(echoServer.Group("/api"), db, hc)

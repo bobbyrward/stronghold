@@ -4,6 +4,11 @@ export interface FilterKey {
     name: string
 }
 
+export interface SubscriptionScope {
+    id: number
+    name: string
+}
+
 export interface FilterOperator {
     id: number
     name: string
@@ -25,6 +30,43 @@ export interface TorrentCategory {
     scope_id: number
     scope_name: string
     media_type: string
+}
+
+// Hardcover search
+export interface HardcoverAuthorSearchResult {
+    slug: string
+    name: string
+}
+
+// Feedwatcher2 types
+export interface Author {
+    id: number
+    name: string
+    hardcover_ref: string | null
+}
+
+export interface AuthorAlias {
+    id: number
+    author_id: number
+    name: string
+}
+
+export interface AuthorSubscription {
+    id: number
+    author_id: number
+    author_name: string
+    scope_id: number
+    scope_name: string
+    notifier_id: number | null
+    notifier_name: string | null
+}
+
+export interface AuthorSubscriptionItem {
+    id: number
+    author_subscription_id: number
+    torrent_hash: string
+    booksearch_id: string
+    downloaded_at: string
 }
 
 // Main resource types
@@ -120,6 +162,20 @@ export interface FeedFilterSetEntryRequest {
     key_id: number
     operator_id: number
     value: string
+}
+
+export interface AuthorRequest {
+    name: string
+    hardcover_ref?: string | null
+}
+
+export interface AuthorAliasRequest {
+    name: string
+}
+
+export interface AuthorSubscriptionRequest {
+    scope_name: string
+    notifier_id?: number | null
 }
 
 export interface Torrent {
