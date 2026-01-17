@@ -71,8 +71,7 @@ function closeModal() {
                         <div class="mb-3">
                             <div class="input-group">
                                 <input v-model="searchQuery" type="text" class="form-control"
-                                    placeholder="Search for author..." autofocus
-                                    @keyup.enter="performSearch">
+                                    placeholder="Search for author..." autofocus @keyup.enter="performSearch">
                                 <button class="btn btn-primary" type="button" @click="performSearch"
                                     :disabled="loading || !searchQuery.trim()">
                                     <i class="bi bi-search"></i>
@@ -96,11 +95,30 @@ function closeModal() {
                         </div>
 
                         <div v-else-if="results.length > 0" class="list-group">
-                            <button v-for="author in results" :key="author.slug" type="button"
-                                class="list-group-item list-group-item-action" @click="selectAuthor(author)">
-                                <div class="fw-bold">{{ author.name }}</div>
-                                <small class="text-muted">{{ author.slug }}</small>
-                            </button>
+                            <div v-for="author in results" :key="author.slug"
+                                class="list-group-item list-group-item-action">
+
+                                <div class="row">
+                                    <div class="col-md-10">
+                                        <div class="fw-bold">{{ author.name }}</div>
+                                        <small class="text-muted">{{ author.slug }}</small>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <div class="row">
+                                            <a :href="`https://hardcover.app/authors/${author.slug}`" target="_blank"
+                                                class="col-sm-6 btn btn-info btn-sm">
+                                                <i class="bi bi-box-arrow-up-right"></i>
+                                            </a>
+                                            <a class="col-sm-6 btn btn-success btn-sm" @click="selectAuthor(author)">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">

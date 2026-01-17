@@ -37,20 +37,15 @@ func (c *RealClient) SearchAuthors(ctx context.Context, query string) ([]AuthorS
 		Authors []struct {
 			Name string `graphql:"name"`
 			Slug string `graphql:"slug"`
+
+			Canonical *struct {
+				Name string `graphql:"name"`
+				Slug string `graphql:"slug"`
+			}
 		} `graphql:"authors(where: {name: {_eq: $name}})"`
 	}
 
-	/*
-	   query MyQuery {
-	       authors(where: {name: {_eq: "Greg Tolley"}}) {
-	           slug
-	           identifiers
-	       }
-	   }
-
-	*/
-
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"name": query,
 	}
 
@@ -62,9 +57,17 @@ func (c *RealClient) SearchAuthors(ctx context.Context, query string) ([]AuthorS
 	searchResults := make([]AuthorSearchResult, len(q.Authors))
 
 	for idx, author := range q.Authors {
-		searchResults[idx] = AuthorSearchResult{
-			Slug: author.Slug,
-			Name: author.Name,
+		slog.DebugContext(ctx, "Found author", slog.String("name", author.Name), slog.String("slug", author.Slug), slog.Any("canonical", author.Canonical))
+		if author.Canonical != nil {
+			searchResults[idx] = AuthorSearchResult{
+				Slug: author.Canonical.Slug,
+				Name: author.Canonical.Name,
+			}
+		} else {
+			searchResults[idx] = AuthorSearchResult{
+				Slug: author.Slug,
+				Name: author.Name,
+			}
 		}
 	}
 
@@ -82,7 +85,7 @@ func (c *RealClient) GetAuthorBySlug(ctx context.Context, slug string) (*AuthorS
 		} `graphql:"authors(where: {slug: {_eq: $slug}})"`
 	}
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"slug": slug,
 	}
 
