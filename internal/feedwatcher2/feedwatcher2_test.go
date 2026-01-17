@@ -122,7 +122,7 @@ func TestWatchFeed_NoSubscriptions(t *testing.T) {
 	// Create RSS server
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "test-1", Title: "Test Book", Link: "http://torrent.example.com/1", Author: "Unknown Author", Category: "Audiobooks"},
+			{GUID: "https://www.myanonamouse.net/t/1000", Title: "Test Book", Link: "http://torrent.example.com/1", Author: "Unknown Author", Category: "Audiobooks"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -172,7 +172,7 @@ func TestWatchFeed_MatchByAuthorName(t *testing.T) {
 	// Create RSS server
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "test-guid-1", Title: "Mistborn", Link: torrentServer.URL + "/mistborn.torrent", Author: "Brandon Sanderson", Category: "Audiobooks - Fantasy"},
+			{GUID: "https://www.myanonamouse.net/t/1001", Title: "Mistborn", Link: torrentServer.URL + "/mistborn.torrent", Author: "Brandon Sanderson", Category: "Audiobooks - Fantasy"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -195,12 +195,12 @@ func TestWatchFeed_MatchByAuthorName(t *testing.T) {
 	require.Len(t, mockQbit.AddTorrentFromUrlCtxCalls, 1)
 	assert.Equal(t, "personal-audiobooks", mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
 
-	// Should have created subscription item
+	// Should have created subscription item with extracted ID
 	var items []models.AuthorSubscriptionItem
 	err = db.Find(&items).Error
 	require.NoError(t, err)
 	assert.Len(t, items, 1)
-	assert.Equal(t, "test-guid-1", items[0].BooksearchID)
+	assert.Equal(t, "1001", items[0].BooksearchID)
 }
 
 func TestWatchFeed_MatchByAlias(t *testing.T) {
@@ -234,7 +234,7 @@ func TestWatchFeed_MatchByAlias(t *testing.T) {
 	// Create RSS server - note author has dots
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "ebook-1", Title: "Some Ebook", Link: torrentServer.URL + "/ebook.torrent", Author: "J.F. Brink", Category: "Ebooks - Fiction"},
+			{GUID: "https://www.myanonamouse.net/t/1002", Title: "Some Ebook", Link: torrentServer.URL + "/ebook.torrent", Author: "J.F. Brink", Category: "Ebooks - Fiction"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -273,31 +273,21 @@ func TestWatchFeed_Deduplication(t *testing.T) {
 	err = db.Create(&subscription).Error
 	require.NoError(t, err)
 
-	// Create torrent server with consistent torrent data
-	torrentData := createTestTorrentBytes(t, "duplicate-test.mp3")
-	torrentServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/x-bittorrent")
-		_, _ = w.Write(torrentData)
-	}))
-	defer torrentServer.Close()
-
-	// Pre-create an existing subscription item with the same hash
-	existingHash, err := torrentutil.ExtractInfoHash(torrentData)
-	require.NoError(t, err)
-
+	// Pre-create an existing subscription item with the same ID (extracted from GUID URL)
+	// Deduplication happens by ID before downloading the torrent
 	existingItem := models.AuthorSubscriptionItem{
 		AuthorSubscriptionID: subscription.ID,
-		TorrentHash:          existingHash,
-		BooksearchID:         "old-guid",
+		TorrentHash:          "previoushash1234567890abcdef12345678",
+		BooksearchID:         "1003",
 		DownloadedAt:         time.Now().Add(-time.Hour),
 	}
 	err = db.Create(&existingItem).Error
 	require.NoError(t, err)
 
-	// Create RSS server
+	// Create RSS server - no torrent server needed since dedup happens before download
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "new-guid", Title: "Same Torrent", Link: torrentServer.URL + "/test.torrent", Author: "Test Author", Category: "Audiobooks"},
+			{GUID: "https://www.myanonamouse.net/t/1003", Title: "Same Item", Link: "http://torrent.example.com/test.torrent", Author: "Test Author", Category: "Audiobooks"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -314,7 +304,7 @@ func TestWatchFeed_Deduplication(t *testing.T) {
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 
-	// Should NOT add torrent since hash already exists
+	// Should NOT add torrent since ID already exists
 	assert.Empty(t, mockQbit.AddTorrentFromUrlCtxCalls)
 
 	// Should still only have one item
@@ -346,7 +336,7 @@ func TestWatchFeed_CorrectCategory_PersonalAudiobook(t *testing.T) {
 
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "audio-1", Title: "Audiobook", Link: torrentServer.URL, Author: "Audio Author", Category: "Audiobooks - Fantasy"},
+			{GUID: "https://www.myanonamouse.net/t/1004", Title: "Audiobook", Link: torrentServer.URL, Author: "Audio Author", Category: "Audiobooks - Fantasy"},
 		})
 		_, _ = w.Write([]byte(feed))
 	}))
@@ -387,7 +377,7 @@ func TestWatchFeed_CorrectCategory_FamilyEbook(t *testing.T) {
 
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "ebook-1", Title: "Ebook", Link: torrentServer.URL, Author: "Ebook Author", Category: "Ebooks - Romance"},
+			{GUID: "https://www.myanonamouse.net/t/1005", Title: "Ebook", Link: torrentServer.URL, Author: "Ebook Author", Category: "Ebooks - Romance"},
 		})
 		_, _ = w.Write([]byte(feed))
 	}))
@@ -468,7 +458,7 @@ func TestFeedWatcher2_E2E(t *testing.T) {
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
 			{
-				GUID:     "e2e-test-guid",
+				GUID:     "https://www.myanonamouse.net/t/1006",
 				Title:    "E2E Test Book",
 				Link:     torrentServer.URL + "/book.torrent",
 				Author:   "J.F. Brink", // Uses dotted alias
@@ -498,13 +488,13 @@ func TestFeedWatcher2_E2E(t *testing.T) {
 	assert.Equal(t, "personal-audiobooks", mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
 	assert.Contains(t, mockQbit.AddTorrentFromUrlCtxCalls[0].URL, torrentServer.URL)
 
-	// Verify AuthorSubscriptionItem created
+	// Verify AuthorSubscriptionItem created with extracted ID
 	var items []models.AuthorSubscriptionItem
 	err = db.Find(&items).Error
 	require.NoError(t, err)
 	require.Len(t, items, 1)
 	assert.NotEmpty(t, items[0].TorrentHash)
-	assert.Equal(t, "e2e-test-guid", items[0].BooksearchID)
+	assert.Equal(t, "1006", items[0].BooksearchID)
 	assert.Equal(t, subscription.ID, items[0].AuthorSubscriptionID)
 
 	// Verify notification sent

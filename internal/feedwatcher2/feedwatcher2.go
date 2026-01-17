@@ -22,6 +22,16 @@ const (
 	MediaTypeAudiobook = "audiobook"
 )
 
+// extractIDFromGUID extracts the numeric ID from a GUID URL.
+// Example: "https://www.myanonamouse.net/t/1213652" returns "1213652".
+func extractIDFromGUID(guid string) string {
+	lastSlash := strings.LastIndex(guid, "/")
+	if lastSlash == -1 || lastSlash == len(guid)-1 {
+		return guid
+	}
+	return guid[lastSlash+1:]
+}
+
 // FeedWatcher2 monitors RSS feeds and downloads torrents for subscribed authors.
 type FeedWatcher2 struct {
 	db                *gorm.DB
@@ -123,6 +133,9 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 	entry.Link = item.Link
 	entry.Title = item.Title
 
+	// Extract the ID from the GUID URL for deduplication and storage
+	booksearchID := extractIDFromGUID(item.GUID)
+
 	// Find matching subscription
 	subscription := fw.authorMatcher.FindMatchingSubscription(entry.Authors)
 	if subscription == nil {
@@ -146,6 +159,20 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		slog.String("category", category.Name),
 		slog.String("feed_category", entry.Category))
 
+	// Check for duplicate by booksearch ID before downloading
+	var existingItem models.AuthorSubscriptionItem
+	result := fw.db.Where("booksearch_id = ?", booksearchID).First(&existingItem)
+	if result.Error == nil {
+		// Already exists, skip
+		slog.InfoContext(ctx, "Item already downloaded, skipping",
+			slog.String("booksearch_id", booksearchID),
+			slog.String("title", entry.Title))
+		return nil
+	}
+	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to check for existing item: %w", result.Error)
+	}
+
 	// Download torrent and extract hash
 	hash, err := fw.torrentDownloader.DownloadAndHash(ctx, entry.Link)
 	if err != nil {
@@ -155,20 +182,6 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 	slog.InfoContext(ctx, "Downloaded torrent",
 		slog.String("hash", hash),
 		slog.String("title", entry.Title))
-
-	// Check for duplicate by hash
-	var existingItem models.AuthorSubscriptionItem
-	result := fw.db.Where("torrent_hash = ?", hash).First(&existingItem)
-	if result.Error == nil {
-		// Already exists, skip
-		slog.InfoContext(ctx, "Torrent already downloaded, skipping",
-			slog.String("hash", hash),
-			slog.String("title", entry.Title))
-		return nil
-	}
-	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("failed to check for existing item: %w", result.Error)
-	}
 
 	// Add torrent to qBittorrent
 	err = fw.qbitClient.AddTorrentFromUrlCtx(
@@ -192,7 +205,7 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 	subscriptionItem := models.AuthorSubscriptionItem{
 		AuthorSubscriptionID: subscription.ID,
 		TorrentHash:          hash,
-		BooksearchID:         entry.Guid,
+		BooksearchID:         booksearchID,
 		DownloadedAt:         time.Now(),
 	}
 
