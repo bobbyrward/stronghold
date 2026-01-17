@@ -19,15 +19,27 @@ type TorrentDownloader struct {
 	httpClient *http.Client
 }
 
-// NewTorrentDownloader creates a new TorrentDownloader with optional HTTP proxy support.
+// NewTestTorrentDownloader creates a TorrentDownloader with no proxy for testing purposes.
+func NewTestTorrentDownloader() *TorrentDownloader {
+	return &TorrentDownloader{
+		httpClient: &http.Client{},
+	}
+}
+
+// NewTorrentDownloader creates a new TorrentDownloader with HTTP/HTTPS proxy support.
+// Both httpProxy and httpsProxy are required and should be hostname:port (e.g., "myhost:8080").
 func NewTorrentDownloader(httpProxy, httpsProxy string) *TorrentDownloader {
 	return &TorrentDownloader{
-		httpClient: &http.Client{Transport: &http.Transport{
-			Proxy: http.ProxyURL(&url.URL{
-				Scheme: "http",
-				Host:   httpsProxy,
-			}),
-		}},
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				Proxy: func(req *http.Request) (*url.URL, error) {
+					if req.URL.Scheme == "https" {
+						return &url.URL{Scheme: "http", Host: httpsProxy}, nil
+					}
+					return &url.URL{Scheme: "http", Host: httpProxy}, nil
+				},
+			},
+		},
 	}
 }
 
@@ -52,6 +64,8 @@ func (td *TorrentDownloader) DownloadAndHash(ctx context.Context, torrentURL str
 		return "", fmt.Errorf("failed to download torrent: %w", err)
 	}
 	defer func() {
+		// Drain body before closing for connection reuse
+		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
 	}()
 

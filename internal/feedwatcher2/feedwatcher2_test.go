@@ -17,6 +17,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/notifications"
+	"github.com/bobbyrward/stronghold/internal/qbit"
 	"github.com/bobbyrward/stronghold/internal/testutil"
 	"github.com/bobbyrward/stronghold/internal/torrentutil"
 )
@@ -40,6 +41,16 @@ func createTestTorrentBytes(t *testing.T, name string) []byte {
 	require.NoError(t, err)
 
 	return buf.Bytes()
+}
+
+// createTestFeedWatcher creates a FeedWatcher2 for testing with a no-proxy TorrentDownloader.
+func createTestFeedWatcher(db *gorm.DB, qbitClient qbit.QbitClient) *FeedWatcher2 {
+	return &FeedWatcher2{
+		db:                db,
+		qbitClient:        qbitClient,
+		torrentDownloader: torrentutil.NewTestTorrentDownloader(),
+		authorMatcher:     NewAuthorMatcher(db),
+	}
 }
 
 // createMockRSSFeed creates an RSS feed XML string with the given items.
@@ -126,7 +137,7 @@ func TestWatchFeed_NoSubscriptions(t *testing.T) {
 	// Create mock qBit client
 	mockQbit := &testutil.MockQbitClient{}
 
-	fw := NewFeedWatcher2(db, mockQbit, "", "")
+	fw := createTestFeedWatcher(db, mockQbit)
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 
@@ -176,7 +187,7 @@ func TestWatchFeed_MatchByAuthorName(t *testing.T) {
 	// Create mock qBit client
 	mockQbit := &testutil.MockQbitClient{}
 
-	fw := NewFeedWatcher2(db, mockQbit, "", "")
+	fw := createTestFeedWatcher(db, mockQbit)
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 
@@ -237,7 +248,7 @@ func TestWatchFeed_MatchByAlias(t *testing.T) {
 
 	mockQbit := &testutil.MockQbitClient{}
 
-	fw := NewFeedWatcher2(db, mockQbit, "", "")
+	fw := createTestFeedWatcher(db, mockQbit)
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 
@@ -271,17 +282,8 @@ func TestWatchFeed_Deduplication(t *testing.T) {
 	defer torrentServer.Close()
 
 	// Pre-create an existing subscription item with the same hash
-	// First, extract the hash
-	var existingHash string
-	{
-		td := torrentutil.NewTorrentDownloader("", "")
-		// Create a temp server just to get the hash
-		tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _ = w.Write(torrentData)
-		}))
-		existingHash, _ = td.DownloadAndHash(context.Background(), tempServer.URL)
-		tempServer.Close()
-	}
+	existingHash, err := torrentutil.ExtractInfoHash(torrentData)
+	require.NoError(t, err)
 
 	existingItem := models.AuthorSubscriptionItem{
 		AuthorSubscriptionID: subscription.ID,
@@ -308,7 +310,7 @@ func TestWatchFeed_Deduplication(t *testing.T) {
 
 	mockQbit := &testutil.MockQbitClient{}
 
-	fw := NewFeedWatcher2(db, mockQbit, "", "")
+	fw := createTestFeedWatcher(db, mockQbit)
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 
@@ -355,7 +357,7 @@ func TestWatchFeed_CorrectCategory_PersonalAudiobook(t *testing.T) {
 	require.NoError(t, err)
 
 	mockQbit := &testutil.MockQbitClient{}
-	fw := NewFeedWatcher2(db, mockQbit, "", "")
+	fw := createTestFeedWatcher(db, mockQbit)
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 
@@ -396,7 +398,7 @@ func TestWatchFeed_CorrectCategory_FamilyEbook(t *testing.T) {
 	require.NoError(t, err)
 
 	mockQbit := &testutil.MockQbitClient{}
-	fw := NewFeedWatcher2(db, mockQbit, "", "")
+	fw := createTestFeedWatcher(db, mockQbit)
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 
@@ -487,7 +489,7 @@ func TestFeedWatcher2_E2E(t *testing.T) {
 	mockQbit := &testutil.MockQbitClient{}
 
 	// Run feedwatcher2
-	fw := NewFeedWatcher2(db, mockQbit, "", "")
+	fw := createTestFeedWatcher(db, mockQbit)
 	err = fw.Run(context.Background())
 	require.NoError(t, err)
 

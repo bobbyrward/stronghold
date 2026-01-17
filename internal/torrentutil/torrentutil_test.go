@@ -33,21 +33,13 @@ func createTestTorrent(t *testing.T, name string) []byte {
 	return buf.Bytes()
 }
 
-func TestNewTorrentDownloader_NoProxy(t *testing.T) {
-	td := NewTorrentDownloader("", "")
-	assert.NotNil(t, td)
-	assert.NotNil(t, td.httpClient)
+// createTestDownloader creates a TorrentDownloader with a default HTTP client (no proxy) for testing.
+func createTestDownloader() *TorrentDownloader {
+	return NewTestTorrentDownloader()
 }
 
-func TestNewTorrentDownloader_WithProxy(t *testing.T) {
-	td := NewTorrentDownloader("http://proxy.example.com:8080", "")
-	assert.NotNil(t, td)
-	assert.NotNil(t, td.httpClient)
-}
-
-func TestNewTorrentDownloader_InvalidProxy(t *testing.T) {
-	// Invalid proxy URL should fall back to default client
-	td := NewTorrentDownloader("://invalid", "")
+func TestNewTorrentDownloader(t *testing.T) {
+	td := NewTorrentDownloader("proxy.example.com:8080", "proxy.example.com:8080")
 	assert.NotNil(t, td)
 	assert.NotNil(t, td.httpClient)
 }
@@ -61,7 +53,7 @@ func TestDownloadAndHash(t *testing.T) {
 	}))
 	defer server.Close()
 
-	td := NewTorrentDownloader("", "")
+	td := createTestDownloader()
 	hash, err := td.DownloadAndHash(context.Background(), server.URL+"/test.torrent")
 
 	require.NoError(t, err)
@@ -75,7 +67,7 @@ func TestDownloadAndHash_HTTPError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	td := NewTorrentDownloader("", "")
+	td := createTestDownloader()
 	_, err := td.DownloadAndHash(context.Background(), server.URL+"/notfound.torrent")
 
 	assert.Error(t, err)
@@ -89,7 +81,7 @@ func TestDownloadAndHash_InvalidTorrent(t *testing.T) {
 	}))
 	defer server.Close()
 
-	td := NewTorrentDownloader("", "")
+	td := createTestDownloader()
 	_, err := td.DownloadAndHash(context.Background(), server.URL+"/invalid.torrent")
 
 	assert.Error(t, err)
@@ -97,7 +89,7 @@ func TestDownloadAndHash_InvalidTorrent(t *testing.T) {
 }
 
 func TestDownloadAndHash_ConnectionError(t *testing.T) {
-	td := NewTorrentDownloader("", "")
+	td := createTestDownloader()
 	_, err := td.DownloadAndHash(context.Background(), "http://localhost:99999/test.torrent")
 
 	assert.Error(t, err)

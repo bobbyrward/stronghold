@@ -16,6 +16,12 @@ import (
 	"github.com/bobbyrward/stronghold/internal/torrentutil"
 )
 
+// Media type constants for torrent categorization.
+const (
+	MediaTypeEbook     = "ebook"
+	MediaTypeAudiobook = "audiobook"
+)
+
 // FeedWatcher2 monitors RSS feeds and downloads torrents for subscribed authors.
 type FeedWatcher2 struct {
 	db                *gorm.DB
@@ -220,9 +226,9 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 // determineTorrentCategory determines the appropriate TorrentCategory based on scope and media type.
 func (fw *FeedWatcher2) determineTorrentCategory(ctx context.Context, scope *models.SubscriptionScope, feedCategory string) (*models.TorrentCategory, error) {
 	// Determine media type from feed category
-	mediaType := "ebook"
+	mediaType := MediaTypeEbook
 	if strings.HasPrefix(feedCategory, "Audiobooks") {
-		mediaType = "audiobook"
+		mediaType = MediaTypeAudiobook
 	}
 
 	slog.DebugContext(ctx, "Determining torrent category",
