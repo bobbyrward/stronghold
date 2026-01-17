@@ -379,13 +379,13 @@ func (b *Bot) handleAddSelectedBooks(s *discordgo.Session, i *discordgo.Interact
 			if i.ChannelID == ChannelID_BobbysBookRequests {
 				qbitCategory = "personal-books"
 			} else {
-				qbitCategory = "books"
+				qbitCategory = "general-books"
 			}
 		case booksearch.MainCategory_Audiobooks:
 			if i.ChannelID == ChannelID_BobbysBookRequests {
-				qbitCategory = "personal-audiobooks"
-			} else {
 				qbitCategory = "audiobooks"
+			} else {
+				qbitCategory = "general-audiobooks"
 			}
 		default:
 			qbitCategory = "unknown"

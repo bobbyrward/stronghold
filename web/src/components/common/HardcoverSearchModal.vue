@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { api } from '@/services/api'
 import type { HardcoverAuthorSearchResult } from '@/types/api'
 
-defineProps<{
+const props = defineProps<{
     show: boolean
+    initialQuery?: string
 }>()
 
 const emit = defineEmits<{
@@ -13,6 +14,13 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
+
+// Initialize search query when modal opens
+watch(() => props.show, (isShowing) => {
+    if (isShowing && props.initialQuery) {
+        searchQuery.value = props.initialQuery
+    }
+})
 const results = ref<HardcoverAuthorSearchResult[]>([])
 const loading = ref(false)
 const error = ref('')
