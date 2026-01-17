@@ -66,6 +66,8 @@ export interface AuthorSubscriptionItem {
     author_subscription_id: number
     torrent_hash: string
     booksearch_id: string
+    torrent_url: string
+    title: string
     downloaded_at: string
 }
 

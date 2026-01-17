@@ -162,5 +162,6 @@ type AuthorSubscriptionItem struct {
 	AuthorSubscription   AuthorSubscription `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	TorrentHash          string             `gorm:"not null"`
 	BooksearchID         string             `gorm:"not null;uniqueIndex"` // torrent ID extracted from feed GUID URL
+	Title                string             `gorm:"not null"`
 	DownloadedAt         time.Time          `gorm:"not null"`
 }

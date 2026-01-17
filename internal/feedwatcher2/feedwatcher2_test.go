@@ -279,6 +279,7 @@ func TestWatchFeed_Deduplication(t *testing.T) {
 		AuthorSubscriptionID: subscription.ID,
 		TorrentHash:          "previoushash1234567890abcdef12345678",
 		BooksearchID:         "1003",
+		Title:                "Previously Downloaded Book",
 		DownloadedAt:         time.Now().Add(-time.Hour),
 	}
 	err = db.Create(&existingItem).Error

@@ -206,6 +206,7 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		AuthorSubscriptionID: subscription.ID,
 		TorrentHash:          hash,
 		BooksearchID:         booksearchID,
+		Title:                entry.Title,
 		DownloadedAt:         time.Now(),
 	}
 

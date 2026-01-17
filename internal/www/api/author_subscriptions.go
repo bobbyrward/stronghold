@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -219,16 +220,20 @@ type AuthorSubscriptionItemResponse struct {
 	AuthorSubscriptionID uint      `json:"author_subscription_id"`
 	TorrentHash          string    `json:"torrent_hash"`
 	BooksearchID         string    `json:"booksearch_id"`
+	TorrentUrl           string    `json:"torrent_url"`
+	Title                string    `json:"title"`
 	DownloadedAt         time.Time `json:"downloaded_at"`
 }
 
 // itemToResponse converts an AuthorSubscriptionItem model to a response
-func itemToResponse(item models.AuthorSubscriptionItem) AuthorSubscriptionItemResponse {
+func itemToResponse(item models.AuthorSubscriptionItem, torrentUrlPrefix string) AuthorSubscriptionItemResponse {
 	return AuthorSubscriptionItemResponse{
 		ID:                   item.ID,
 		AuthorSubscriptionID: item.AuthorSubscriptionID,
 		TorrentHash:          item.TorrentHash,
 		BooksearchID:         item.BooksearchID,
+		TorrentUrl:           torrentUrlPrefix + item.BooksearchID,
+		Title:                item.Title,
 		DownloadedAt:         item.DownloadedAt,
 	}
 }
@@ -262,9 +267,10 @@ func ListAuthorSubscriptionItems(db *gorm.DB) echo.HandlerFunc {
 			return InternalError(c, ctx, "Failed to list subscription items", err)
 		}
 
+		torrentUrlPrefix := config.Config.BookSearch.TorrentUrlPrefix
 		response := make([]AuthorSubscriptionItemResponse, len(items))
 		for i, item := range items {
-			response[i] = itemToResponse(item)
+			response[i] = itemToResponse(item, torrentUrlPrefix)
 		}
 
 		slog.InfoContext(ctx, "Listed subscription items",
