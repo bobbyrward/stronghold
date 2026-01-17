@@ -74,8 +74,35 @@ func (c *RealClient) SearchAuthors(ctx context.Context, query string) ([]AuthorS
 // GetAuthorBySlug retrieves an author by their unique slug using the Hardcover GraphQL API.
 func (c *RealClient) GetAuthorBySlug(ctx context.Context, slug string) (*AuthorSearchResult, error) {
 	slog.InfoContext(ctx, "Getting Hardcover author by slug", slog.String("slug", slug))
-	// TODO: Implement GraphQL query
-	// POST to c.baseURL with Bearer token c.token
-	// GraphQL query for getting author by slug
-	return nil, nil
+
+	var q struct {
+		Authors []struct {
+			Name string `graphql:"name"`
+			Slug string `graphql:"slug"`
+		} `graphql:"authors(where: {slug: {_eq: $slug}})"`
+	}
+
+	variables := map[string]interface{}{
+		"slug": slug,
+	}
+
+	err := c.graphqlClient.Query(ctx, &q, variables)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(q.Authors) == 0 {
+		slog.WarnContext(ctx, "No author found with given slug", slog.String("slug", slug))
+		return nil, nil
+	}
+
+	if len(q.Authors) > 1 {
+		slog.WarnContext(ctx, "Multiple authors found with given slug", slog.String("slug", slug))
+		return nil, nil
+	}
+
+	return &AuthorSearchResult{
+		Slug: q.Authors[0].Slug,
+		Name: q.Authors[0].Name,
+	}, nil
 }

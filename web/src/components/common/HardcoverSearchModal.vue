@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { api } from '@/services/api'
 import type { HardcoverAuthorSearchResult } from '@/types/api'
 
@@ -17,24 +17,6 @@ const results = ref<HardcoverAuthorSearchResult[]>([])
 const loading = ref(false)
 const error = ref('')
 const hasSearched = ref(false)
-
-let debounceTimeout: ReturnType<typeof setTimeout> | null = null
-
-function handleSearchInput() {
-    if (debounceTimeout) {
-        clearTimeout(debounceTimeout)
-    }
-
-    if (!searchQuery.value.trim()) {
-        results.value = []
-        hasSearched.value = false
-        return
-    }
-
-    debounceTimeout = setTimeout(async () => {
-        await performSearch()
-    }, 300)
-}
 
 async function performSearch() {
     if (!searchQuery.value.trim()) return
@@ -65,8 +47,6 @@ function closeModal() {
     hasSearched.value = false
     emit('close')
 }
-
-watch(() => searchQuery.value, handleSearchInput)
 </script>
 
 <template>
@@ -81,8 +61,15 @@ watch(() => searchQuery.value, handleSearchInput)
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <input v-model="searchQuery" type="text" class="form-control"
-                                placeholder="Search for author..." autofocus>
+                            <div class="input-group">
+                                <input v-model="searchQuery" type="text" class="form-control"
+                                    placeholder="Search for author..." autofocus
+                                    @keyup.enter="performSearch">
+                                <button class="btn btn-primary" type="button" @click="performSearch"
+                                    :disabled="loading || !searchQuery.trim()">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div v-if="loading" class="text-center py-3">
