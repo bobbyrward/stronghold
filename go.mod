@@ -10,6 +10,7 @@ require (
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/hasura/go-graphql-client v0.15.1
+	github.com/jackpal/bencode-go v1.0.2
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/spf13/cobra v1.10.1
