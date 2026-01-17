@@ -29,6 +29,18 @@ const uiStore = useUiStore()
                 <span class="nav-text">Notifiers</span>
             </router-link>
 
+            <div class="section-title">Subscriptions</div>
+
+            <router-link to="/authors" class="nav-link">
+                <i class="bi bi-person-lines-fill"></i>
+                <span class="nav-text">Authors</span>
+            </router-link>
+
+            <router-link to="/subscription-items" class="nav-link">
+                <i class="bi bi-download"></i>
+                <span class="nav-text">Download History</span>
+            </router-link>
+
             <div class="section-title">Torrents</div>
 
             <router-link to="/torrents/unimported" class="nav-link">

@@ -9,6 +9,8 @@ require (
 	github.com/carlmjohnson/requests v0.25.1
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/hasura/go-graphql-client v0.15.1
+	github.com/jackpal/bencode-go v1.0.2
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/spf13/cobra v1.10.1
@@ -25,10 +27,12 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
+	github.com/coder/websocket v1.8.14 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

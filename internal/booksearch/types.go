@@ -26,12 +26,13 @@ type SearchRequest struct {
 }
 
 type SearchRequestTor struct {
+	ID             *int                `json:"id,omitempty"`
 	BrowseLang     []int               `json:"browse_lang,omitempty"`
 	MainCategories []int               `json:"main_cat,omitempty"`
 	Categories     []int               `json:"cat,omitempty"`
 	SearchType     string              `json:"searchType,omitempty"`
 	SortType       string              `json:"sortType,omitempty"`
-	SearchIn       SearchRequestSrchIn `json:"srchIn,omitempty"`
+	SearchIn       SearchRequestSrchIn `json:"srchIn"`
 	Query          string              `json:"text,omitempty"`
 	Hash           string              `json:"hash,omitempty"`
 }
@@ -46,6 +47,8 @@ type SearchParameters struct {
 	Query      string
 	Hash       string
 	MaxResults int
+
+	ID *int
 
 	// Offset             int
 	// DateOffset         string

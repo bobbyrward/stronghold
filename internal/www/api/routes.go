@@ -3,10 +3,12 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+
+	"github.com/bobbyrward/stronghold/internal/hardcover"
 )
 
 // RegisterRoutes registers all API routes with the Echo server
-func RegisterRoutes(e *echo.Group, db *gorm.DB) {
+func RegisterRoutes(e *echo.Group, db *gorm.DB, hc hardcover.Client) {
 	// Filter Keys (read-only reference data)
 	e.GET("/filter-keys", ListFilterKeys(db))
 	e.GET("/filter-keys/:id", GetFilterKey(db))
@@ -26,6 +28,10 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB) {
 	// Torrent Categories (read-only reference data)
 	e.GET("/torrent-categories", ListTorrentCategories(db))
 	e.GET("/torrent-categories/:id", GetTorrentCategory(db))
+
+	// Subscription Scopes (read-only reference data)
+	e.GET("/subscription-scopes", ListSubscriptionScopes(db))
+	e.GET("/subscription-scopes/:id", GetSubscriptionScope(db))
 
 	// Notifiers
 	e.GET("/notifiers", ListNotifiers(db))
@@ -85,4 +91,30 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB) {
 
 	// Downloads
 	e.POST("/book-torrent-dl", DownloadBookTorrent(db, nil))
+
+	// Authors
+	e.GET("/authors", ListAuthors(db, hc))
+	e.POST("/authors", CreateAuthor(db, hc))
+	e.GET("/authors/:id", GetAuthor(db, hc))
+	e.PUT("/authors/:id", UpdateAuthor(db, hc))
+	e.DELETE("/authors/:id", DeleteAuthor(db))
+
+	// Author Aliases (nested under authors)
+	e.GET("/authors/:author_id/aliases", ListAuthorAliases(db))
+	e.POST("/authors/:author_id/aliases", CreateAuthorAlias(db))
+	e.GET("/authors/:author_id/aliases/:id", GetAuthorAlias(db))
+	e.PUT("/authors/:author_id/aliases/:id", UpdateAuthorAlias(db))
+	e.DELETE("/authors/:author_id/aliases/:id", DeleteAuthorAlias(db))
+
+	// Author Subscriptions (nested under authors, singleton per author)
+	e.GET("/authors/:author_id/subscription", GetAuthorSubscription(db))
+	e.POST("/authors/:author_id/subscription", CreateAuthorSubscription(db))
+	e.PUT("/authors/:author_id/subscription", UpdateAuthorSubscription(db))
+	e.DELETE("/authors/:author_id/subscription", DeleteAuthorSubscription(db))
+
+	// Author Subscription Items (nested under subscription)
+	e.GET("/authors/:author_id/subscription/items", ListAuthorSubscriptionItems(db))
+
+	// Hardcover
+	e.GET("/hardcover/authors/search", SearchHardcoverAuthors(hc))
 }

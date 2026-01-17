@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/hardcover"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -53,7 +54,15 @@ func SetupTestServerWithDB(db *gorm.DB) *echo.Echo {
 
 	// Register all API routes under /api group (same as production)
 	apiGroup := e.Group("/api")
-	RegisterRoutes(apiGroup, db)
+	hc := hardcover.NewMockClient()
+
+	// Add test authors to the mock Hardcover client
+	hc.AddAuthor("brandon-sanderson", "Brandon Sanderson")
+	hc.AddAuthor("brandon-mull", "Brandon Mull")
+	hc.AddAuthor("patrick-rothfuss", "Patrick Rothfuss")
+	hc.AddAuthor("joe-abercrombie", "Joe Abercrombie")
+
+	RegisterRoutes(apiGroup, db, hc)
 
 	return e
 }

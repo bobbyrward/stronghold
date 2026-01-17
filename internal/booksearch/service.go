@@ -100,6 +100,7 @@ func (s *BookSearchService) Search(ctx context.Context, db *gorm.DB, params *Sea
 		IncludeISBN:        true,
 		PerPage:            params.MaxResults,
 		Tor: SearchRequestTor{
+			ID:             params.ID,
 			BrowseLang:     []int{1},
 			MainCategories: []int{13, 14},
 			Categories:     []int{41, 47, 108, 63, 69, 0},

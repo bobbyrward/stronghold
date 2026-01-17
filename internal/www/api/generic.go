@@ -35,6 +35,11 @@ func genericListHandler[Model any, Request any, Response any](
 			return err
 		}
 
+		db, err = handler.ParseQuery(c, ctx, db)
+		if err != nil {
+			return err
+		}
+
 		rows, err := GetAll[Model](c, ctx, db)
 		if err != nil {
 			return err
