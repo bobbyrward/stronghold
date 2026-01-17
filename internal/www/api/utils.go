@@ -22,6 +22,17 @@ func ParseIDParam(c echo.Context, ctx context.Context) (uint, error) {
 	return uint(id), nil
 }
 
+// ParseAuthorIDParam extracts and validates the "author_id" path parameter
+func ParseAuthorIDParam(c echo.Context, ctx context.Context) (uint, error) {
+	idStr := c.Param("author_id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		slog.WarnContext(ctx, "Invalid author_id parameter", slog.String("author_id", idStr), slog.Any("error", err))
+		return 0, err
+	}
+	return uint(id), nil
+}
+
 // ParseQueryParamUint parses an optional query parameter as uint
 func ParseQueryParamUint(c echo.Context, ctx context.Context, param string) (uint, bool, error) {
 	str := c.QueryParam(param)
