@@ -26,7 +26,7 @@ func NewTestValidator() *TestValidator {
 }
 
 // Validate validates the given struct
-func (tv *TestValidator) Validate(i interface{}) error {
+func (tv *TestValidator) Validate(i any) error {
 	if err := tv.validator.Struct(i); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

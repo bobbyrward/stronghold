@@ -16,8 +16,8 @@ import (
 func createTestTorrent(t *testing.T, name string) []byte {
 	t.Helper()
 
-	torrent := map[string]interface{}{
-		"info": map[string]interface{}{
+	torrent := map[string]any{
+		"info": map[string]any{
 			"name":         name,
 			"piece length": 262144,
 			"pieces":       "12345678901234567890", // 20 bytes (one piece hash)
@@ -108,7 +108,7 @@ func TestExtractInfoHash(t *testing.T) {
 
 func TestExtractInfoHash_MissingInfo(t *testing.T) {
 	// Create torrent without info dict
-	torrent := map[string]interface{}{
+	torrent := map[string]any{
 		"announce": "http://tracker.example.com/announce",
 	}
 

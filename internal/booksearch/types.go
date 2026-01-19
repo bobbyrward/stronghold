@@ -108,7 +108,7 @@ func (sri *SearchResponseItem) UnmarshalJSON(data []byte) error {
 		AuthorInfo   string      `json:"author_info"`
 		NarratorInfo string      `json:"narrator_info"`
 		SeriesInfo   string      `json:"series_info"`
-		ISBN_inner   interface{} `json:"isbn"`
+		ISBN_inner   any `json:"isbn"`
 	}{
 		Alias: (*Alias)(sri),
 	}

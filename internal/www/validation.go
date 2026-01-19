@@ -17,7 +17,7 @@ func NewValidator() *Validator {
 	}
 }
 
-func (cv *Validator) Validate(i interface{}) error {
+func (cv *Validator) Validate(i any) error {
 	if err := cv.validator.Struct(i); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
