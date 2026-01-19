@@ -47,7 +47,7 @@ func UpsertBookSearchCredential(db *gorm.DB, apiKey, ipAddress, asn string) erro
 	}
 
 	// Update existing record
-	return db.Model(&credential).Updates(map[string]interface{}{
+	return db.Model(&credential).Updates(map[string]any{
 		"api_key":      apiKey,
 		"ip_address":   ipAddress,
 		"asn":          asn,

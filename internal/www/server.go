@@ -77,13 +77,6 @@ func Run() error {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
-	/*
-		echoServer.GET("/", func(c echo.Context) error {
-			slog.InfoContext(c.Request().Context(), "Health check endpoint called")
-			return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-		})
-	*/
-
 	echoServer.Validator = NewValidator()
 
 	// Create Hardcover client

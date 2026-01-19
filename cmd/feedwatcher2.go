@@ -31,16 +31,9 @@ func runFeedWatcher2(cmd *cobra.Command, args []string) error {
 
 	slog.InfoContext(ctx, "Starting feedwatcher2 command")
 
-	db, err := models.ConnectDB()
+	db, err := models.ConnectAndMigrate(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("error", err))
-		return fmt.Errorf("failed to connect to database: %w", err)
-	}
-
-	err = models.AutoMigrate(db)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("error", err))
-		return fmt.Errorf("failed to automigrate database: %w", err)
+		return err
 	}
 
 	qbitClient, err := qbit.CreateClient()

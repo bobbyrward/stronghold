@@ -37,16 +37,9 @@ func runDoctorMigrateCmd(cmd *cobra.Command, args []string) error {
 
 	slog.InfoContext(ctx, "Starting database migration")
 
-	db, err := models.ConnectDB()
+	_, err := models.ConnectAndMigrate(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
-	}
-
-	err = models.AutoMigrate(db)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to run database migrations", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to run migrations"))
+		return err
 	}
 
 	slog.InfoContext(ctx, "Database migration completed successfully")

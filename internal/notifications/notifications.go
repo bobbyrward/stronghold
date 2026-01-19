@@ -77,7 +77,7 @@ func findNotifier(name string) (bool, *config.NotificationsConfigNotifier) {
 	return false, nil
 }
 
-func SendNotification(ctx context.Context, notificationName string, message interface{}) error {
+func SendNotification(ctx context.Context, notificationName string, message any) error {
 	if notificationName == "" {
 		return nil
 	}

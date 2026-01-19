@@ -26,7 +26,7 @@ func genericListHandler[Model any, Request any, Response any](
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		slog.InfoContext(ctx, "Listing", slog.String("type", typeName))
 
@@ -68,7 +68,7 @@ func genericCreateHandler[Model any, Request any, Response any](
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		var req Request
 		if err := BindRequest(c, ctx, &req); err != nil {
@@ -118,7 +118,7 @@ func genericGetHandler[Model any, Request any, Response any](
 ) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		id, err := ParseIDParam(c, ctx)
 		if err != nil {
@@ -151,7 +151,7 @@ func genericUpdateHandler[Model any, Request any, Response any](
 ) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		id, err := ParseIDParam(c, ctx)
 		if err != nil {
@@ -208,7 +208,7 @@ func genericUpdateHandler[Model any, Request any, Response any](
 func genericDeleteHandler[Model any](db *gorm.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		id, err := ParseIDParam(c, ctx)
 		if err != nil {

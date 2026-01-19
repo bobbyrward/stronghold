@@ -9,9 +9,6 @@ import (
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
-// TorrentCategoryRequest is unused but required to satisfy the ModelHandler interface
-type TorrentCategoryRequest struct{}
-
 type TorrentCategoryResponse struct {
 	ID        uint   `json:"id"`
 	Name      string `json:"name"`
@@ -22,7 +19,7 @@ type TorrentCategoryResponse struct {
 
 type TorrentCategoryHandler struct{}
 
-func (handler TorrentCategoryHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.TorrentCategory) TorrentCategoryResponse {
+func (h TorrentCategoryHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.TorrentCategory) TorrentCategoryResponse {
 	return TorrentCategoryResponse{
 		ID:        row.ID,
 		Name:      row.Name,
@@ -32,34 +29,20 @@ func (handler TorrentCategoryHandler) ModelToResponse(c echo.Context, ctx contex
 	}
 }
 
-// RequestToModel is unused for read-only resources but required by interface
-func (handler TorrentCategoryHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req TorrentCategoryRequest) (models.TorrentCategory, error) {
-	return models.TorrentCategory{}, nil
-}
-
-// UpdateModel is unused for read-only resources but required by interface
-func (handler TorrentCategoryHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.TorrentCategory, req TorrentCategoryRequest) error {
-	return nil
-}
-
-func (handler TorrentCategoryHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
-	return db, nil
-}
-
-func (handler TorrentCategoryHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h TorrentCategoryHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db.Preload("Scope"), nil
 }
 
-func (handler TorrentCategoryHandler) IDFromModel(row models.TorrentCategory) uint {
+func (h TorrentCategoryHandler) IDFromModel(row models.TorrentCategory) uint {
 	return row.ID
 }
 
 // ListTorrentCategories returns all torrent categories
 func ListTorrentCategories(db *gorm.DB) echo.HandlerFunc {
-	return genericListHandler[models.TorrentCategory, TorrentCategoryRequest, TorrentCategoryResponse](db, TorrentCategoryHandler{})
+	return readOnlyListHandler[models.TorrentCategory, TorrentCategoryResponse](db, TorrentCategoryHandler{})
 }
 
 // GetTorrentCategory returns a single torrent category by ID
 func GetTorrentCategory(db *gorm.DB) echo.HandlerFunc {
-	return genericGetHandler[models.TorrentCategory, TorrentCategoryRequest, TorrentCategoryResponse](db, TorrentCategoryHandler{})
+	return readOnlyGetHandler[models.TorrentCategory, TorrentCategoryResponse](db, TorrentCategoryHandler{})
 }

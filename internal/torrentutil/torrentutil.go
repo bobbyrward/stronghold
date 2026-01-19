@@ -111,7 +111,7 @@ func ExtractInfoHash(torrentData []byte) (string, error) {
 		return "", fmt.Errorf("failed to parse torrent file: %w", err)
 	}
 
-	torrent, ok := decoded.(map[string]interface{})
+	torrent, ok := decoded.(map[string]any)
 	if !ok {
 		return "", fmt.Errorf("torrent file is not a dictionary")
 	}

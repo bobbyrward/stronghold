@@ -36,19 +36,19 @@ func (l *SlogGormLogger) LogMode(level logger.LogLevel) logger.Interface {
 	return &newlogger
 }
 
-func (l *SlogGormLogger) Info(ctx context.Context, msg string, data ...interface{}) {
+func (l *SlogGormLogger) Info(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Info {
 		slog.InfoContext(ctx, fmt.Sprintf(msg, data...))
 	}
 }
 
-func (l *SlogGormLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
+func (l *SlogGormLogger) Warn(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Warn {
 		slog.WarnContext(ctx, fmt.Sprintf(msg, data...))
 	}
 }
 
-func (l *SlogGormLogger) Error(ctx context.Context, msg string, data ...interface{}) {
+func (l *SlogGormLogger) Error(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Error {
 		slog.ErrorContext(ctx, fmt.Sprintf(msg, data...))
 	}
@@ -80,6 +80,24 @@ func (l *SlogGormLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 			slog.Duration("elapsed", elapsed),
 			slog.Int64("rows", rows))
 	}
+}
+
+// ConnectAndMigrate connects to the database and runs migrations.
+// This is a convenience function that combines ConnectDB and AutoMigrate.
+func ConnectAndMigrate(ctx context.Context) (*gorm.DB, error) {
+	db, err := ConnectDB()
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	err = AutoMigrate(db)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to automigrate database: %w", err)
+	}
+
+	return db, nil
 }
 
 func ConnectDB() (*gorm.DB, error) {
