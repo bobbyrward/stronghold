@@ -15,9 +15,8 @@ type (
 	FeedFilterSetEntryResponse = api.FeedFilterSetEntryResponse
 	FeedFilterSetEntryClient   = GenericClient[FeedFilterSetEntryRequest, FeedFilterSetEntryResponse]
 
-	FeedFilterSetTypeRequest  = api.FeedFilterSetTypeRequest
 	FeedFilterSetTypeResponse = api.FeedFilterSetTypeResponse
-	FeedFilterSetTypeClient   = GenericClient[FeedFilterSetTypeRequest, FeedFilterSetTypeResponse]
+	FeedFilterSetTypeClient   = ReadOnlyGenericClient[FeedFilterSetTypeResponse]
 
 	FeedFilterSetRequest  = api.FeedFilterSetRequest
 	FeedFilterSetResponse = api.FeedFilterSetResponse
@@ -27,25 +26,24 @@ type (
 	FeedFilterResponse = api.FeedFilterResponse
 	FeedFilterClient   = GenericClient[FeedFilterRequest, FeedFilterResponse]
 
-	FilterKeyRequest  = api.FilterKeyRequest
 	FilterKeyResponse = api.FilterKeyResponse
-	FilterKeyClient   = GenericClient[FilterKeyRequest, FilterKeyResponse]
+	FilterKeyClient   = ReadOnlyGenericClient[FilterKeyResponse]
 
-	FilterOperatorRequest  = api.FilterOperatorRequest
 	FilterOperatorResponse = api.FilterOperatorResponse
-	FilterOperatorClient   = GenericClient[FilterOperatorRequest, FilterOperatorResponse]
+	FilterOperatorClient   = ReadOnlyGenericClient[FilterOperatorResponse]
 
-	NotificationTypeRequest  = api.NotificationTypeRequest
 	NotificationTypeResponse = api.NotificationTypeResponse
-	NotificationTypeClient   = GenericClient[NotificationTypeRequest, NotificationTypeResponse]
+	NotificationTypeClient   = ReadOnlyGenericClient[NotificationTypeResponse]
 
 	NotifierRequest  = api.NotifierRequest
 	NotifierResponse = api.NotifierResponse
 	NotifierClient   = GenericClient[NotifierRequest, NotifierResponse]
 
-	TorrentCategoryRequest  = api.TorrentCategoryRequest
 	TorrentCategoryResponse = api.TorrentCategoryResponse
-	TorrentCategoryClient   = GenericClient[TorrentCategoryRequest, TorrentCategoryResponse]
+	TorrentCategoryClient   = ReadOnlyGenericClient[TorrentCategoryResponse]
+
+	SubscriptionScopeResponse = api.SubscriptionScopeResponse
+	SubscriptionScopeClient   = ReadOnlyGenericClient[SubscriptionScopeResponse]
 )
 
 type Client struct {
@@ -62,6 +60,7 @@ type Client struct {
 	NotificationTypes    *NotificationTypeClient
 	Notifiers            *NotifierClient
 	TorrentCategories    *TorrentCategoryClient
+	SubscriptionScopes   *SubscriptionScopeClient
 }
 
 func NewClient(baseUrl string) *Client {
@@ -78,5 +77,6 @@ func NewClient(baseUrl string) *Client {
 		NotificationTypes:    &NotificationTypeClient{BaseUrl: baseUrl, TypeName: "notification-types"},
 		Notifiers:            &NotifierClient{BaseUrl: baseUrl, TypeName: "notifiers"},
 		TorrentCategories:    &TorrentCategoryClient{BaseUrl: baseUrl, TypeName: "torrent-categories"},
+		SubscriptionScopes:   &SubscriptionScopeClient{BaseUrl: baseUrl, TypeName: "subscription-scopes"},
 	}
 }

@@ -437,7 +437,7 @@ func TestLookupByNameWithDifferentModels(t *testing.T) {
 	// Test with seeded data
 	tests := []struct {
 		name         string
-		model        interface{}
+		model        any
 		lookupName   string
 		resourceName string
 		wantError    bool

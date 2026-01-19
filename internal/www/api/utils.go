@@ -49,7 +49,7 @@ func ParseQueryParamUint(c echo.Context, ctx context.Context, param string) (uin
 }
 
 // BindRequest binds and logs request body errors
-func BindRequest(c echo.Context, ctx context.Context, req interface{}) error {
+func BindRequest(c echo.Context, ctx context.Context, req any) error {
 	if err := c.Bind(req); err != nil {
 		slog.WarnContext(ctx, "Invalid request body", slog.Any("error", err))
 		return err
@@ -58,7 +58,7 @@ func BindRequest(c echo.Context, ctx context.Context, req interface{}) error {
 }
 
 // ValidateRequest validated and logs request body errors
-func ValidateRequest(c echo.Context, ctx context.Context, req interface{}) error {
+func ValidateRequest(c echo.Context, ctx context.Context, req any) error {
 	if err := c.Validate(req); err != nil {
 		slog.WarnContext(ctx, "Invalid request body", slog.Any("error", err))
 		return err
@@ -91,7 +91,7 @@ func InternalError(c echo.Context, ctx context.Context, message string, err erro
 }
 
 // LookupByName finds a record by name field, returns user-friendly error
-func LookupByName(db *gorm.DB, ctx context.Context, dest interface{}, name, resourceName string) error {
+func LookupByName(db *gorm.DB, ctx context.Context, dest any, name, resourceName string) error {
 	result := db.Where("name = ?", name).First(dest)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -115,7 +115,7 @@ func GetAll[T any](c echo.Context, ctx context.Context, db *gorm.DB) ([]T, error
 }
 
 // GetByID fetches a record by ID with standard error handling
-func GetByID(db *gorm.DB, ctx context.Context, dest interface{}, id uint, resourceName string) error {
+func GetByID(db *gorm.DB, ctx context.Context, dest any, id uint, resourceName string) error {
 	result := db.First(dest, id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -128,7 +128,7 @@ func GetByID(db *gorm.DB, ctx context.Context, dest interface{}, id uint, resour
 }
 
 // DeleteByID deletes a record and handles not-found
-func DeleteByID(db *gorm.DB, ctx context.Context, model interface{}, id uint, resourceName string) error {
+func DeleteByID(db *gorm.DB, ctx context.Context, model any, id uint, resourceName string) error {
 	result := db.Unscoped().Delete(model, id)
 	if result.Error != nil {
 		slog.ErrorContext(ctx, "Failed to delete "+resourceName, slog.Uint64("id", uint64(id)), slog.Any("error", result.Error))
@@ -147,4 +147,18 @@ func EscapeLikePattern(pattern string) string {
 	pattern = strings.ReplaceAll(pattern, "%", "\\%")
 	pattern = strings.ReplaceAll(pattern, "_", "\\_")
 	return pattern
+}
+
+// ApplyUintFilter applies a uint query parameter filter if present.
+// Returns the modified db, and an error if the parameter value is invalid.
+// The error is already sent as a BadRequest response.
+func ApplyUintFilter(c echo.Context, ctx context.Context, db *gorm.DB, paramName, columnName string) (*gorm.DB, error) {
+	value, hasValue, err := ParseQueryParamUint(c, ctx, paramName)
+	if err != nil {
+		return db, BadRequest(c, ctx, "Invalid "+paramName+" parameter")
+	}
+	if hasValue {
+		db = db.Where(columnName+" = ?", value)
+	}
+	return db, nil
 }
