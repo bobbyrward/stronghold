@@ -181,6 +181,80 @@ func TestAuthorSubscription_InvalidScope(t *testing.T) {
 	})
 }
 
+func TestAuthorSubscription_InvalidLibrary(t *testing.T) {
+	e, cleanup := SetupTestServer(t)
+	defer cleanup()
+
+	author := createTestAuthorForSubscription(t, e, "Invalid Library Author")
+	ebookLib, audiobookLib := createTestLibraries(t, e, "invalidlib")
+
+	t.Run("Create with invalid ebook_library_name returns 400", func(t *testing.T) {
+		body := fmt.Sprintf(`{"scope_name": "personal", "ebook_library_name": "nonexistent-library", "audiobook_library_name": "%s"}`, audiobookLib.Name)
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/authors/%d/subscription", author.ID), bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Create with invalid audiobook_library_name returns 400", func(t *testing.T) {
+		body := fmt.Sprintf(`{"scope_name": "personal", "ebook_library_name": "%s", "audiobook_library_name": "nonexistent-library"}`, ebookLib.Name)
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/authors/%d/subscription", author.ID), bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Create with both invalid library names returns 400", func(t *testing.T) {
+		body := `{"scope_name": "personal", "ebook_library_name": "nonexistent-ebook", "audiobook_library_name": "nonexistent-audiobook"}`
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/authors/%d/subscription", author.ID), bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+}
+
+func TestAuthorSubscription_UpdateInvalidLibrary(t *testing.T) {
+	e, cleanup := SetupTestServer(t)
+	defer cleanup()
+
+	author := createTestAuthorForSubscription(t, e, "Update Invalid Library Author")
+	ebookLib, audiobookLib := createTestLibraries(t, e, "updateinvalidlib")
+
+	// Create subscription first
+	body := fmt.Sprintf(`{"scope_name": "personal", "ebook_library_name": "%s", "audiobook_library_name": "%s"}`, ebookLib.Name, audiobookLib.Name)
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/authors/%d/subscription", author.ID), bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	t.Run("Update with invalid ebook_library_name returns 400", func(t *testing.T) {
+		body := fmt.Sprintf(`{"scope_name": "personal", "ebook_library_name": "nonexistent-library", "audiobook_library_name": "%s"}`, audiobookLib.Name)
+		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/authors/%d/subscription", author.ID), bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Update with invalid audiobook_library_name returns 400", func(t *testing.T) {
+		body := fmt.Sprintf(`{"scope_name": "personal", "ebook_library_name": "%s", "audiobook_library_name": "nonexistent-library"}`, ebookLib.Name)
+		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/authors/%d/subscription", author.ID), bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+}
+
 func TestAuthorSubscription_InvalidAuthor(t *testing.T) {
 	e, cleanup := SetupTestServer(t)
 	defer cleanup()
