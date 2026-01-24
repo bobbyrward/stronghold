@@ -2,7 +2,9 @@ package booksearch
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"slices"
 	"strconv"
@@ -13,8 +15,8 @@ import (
 )
 
 const (
-	MainCategory_Ebooks     = 14
-	MainCategory_Audiobooks = 13
+	MainCategoryEbooks     = 14
+	MainCategoryAudiobooks = 13
 )
 
 type SearchRequest struct {
@@ -78,6 +80,7 @@ type SearchResponseItem struct {
 	CategoryDisplay string `json:"cat"`
 	Category        int    `json:"category"`
 	CategoryName    string `json:"catname"`
+	Description     string `json:"description"`
 	DlHash          string `json:"dl"`
 	FileTypes       string `json:"filetype"`
 	ID              int    `json:"id"`
@@ -105,10 +108,10 @@ func (sri *SearchResponseItem) UnmarshalJSON(data []byte) error {
 	aux := &struct {
 		*Alias
 
-		AuthorInfo   string      `json:"author_info"`
-		NarratorInfo string      `json:"narrator_info"`
-		SeriesInfo   string      `json:"series_info"`
-		ISBN_inner   any `json:"isbn"`
+		AuthorInfo   string `json:"author_info"`
+		NarratorInfo string `json:"narrator_info"`
+		SeriesInfo   string `json:"series_info"`
+		ISBNInner    any    `json:"isbn"`
 	}{
 		Alias: (*Alias)(sri),
 	}
@@ -117,15 +120,17 @@ func (sri *SearchResponseItem) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if aux.ISBN_inner != nil {
-		switch aux.ISBN_inner.(type) {
+	slog.Debug("Unmarshalling raw", "raw", aux)
+
+	if aux.ISBNInner != nil {
+		switch aux.ISBNInner.(type) {
 		case string:
-			sri.ISBN, _ = aux.ISBN_inner.(string)
+			sri.ISBN, _ = aux.ISBNInner.(string)
 		case float64:
-			v, _ := aux.ISBN_inner.(float64)
+			v, _ := aux.ISBNInner.(float64)
 			sri.ISBN = fmt.Sprintf("%v", int(v))
 		default:
-			panic(fmt.Sprintf("Unable to parse isbn: %v", aux.ISBN_inner))
+			return errors.New("unknown type for isbn field")
 		}
 	}
 
@@ -142,19 +147,32 @@ func (sri *SearchResponseItem) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.SeriesInfo != "" {
-		series_temp := make(map[string][]string)
+		seriesTemp := make(map[string][]any)
 
-		if err := json.Unmarshal([]byte(aux.SeriesInfo), &series_temp); err != nil {
+		if err := json.Unmarshal([]byte(aux.SeriesInfo), &seriesTemp); err != nil {
 			return nil
 		}
 
 		sri.Series = make(map[string]SeriesEntry)
 
-		for key, value := range series_temp {
-			index := 0
-			index, _ = strconv.Atoi(value[1])
+		for key, value := range seriesTemp {
+			if len(value) != 3 {
+				slog.Debug("Skipping series entry with unexpected length", "key", key, "value", value)
+				continue
+			}
 
-			sri.Series[key] = SeriesEntry{Name: value[0], Index: index}
+			value0, value0ok := value[0].(string)
+			value1, value1ok := value[1].(string)
+
+			if !value0ok || !value1ok {
+				slog.Debug("Skipping series entry with unexpected types", "key", key, "value", value)
+				continue
+			}
+
+			index := 0
+			index, _ = strconv.Atoi(value1)
+
+			sri.Series[key] = SeriesEntry{Name: value0, Index: index}
 		}
 	}
 
