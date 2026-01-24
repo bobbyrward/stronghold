@@ -32,6 +32,25 @@ export interface TorrentCategory {
     media_type: string
 }
 
+export interface BookType {
+    id: number
+    name: string
+}
+
+export interface Library {
+    id: number
+    name: string
+    path: string
+    book_type_id: number
+    book_type_name: string
+}
+
+export interface LibraryRequest {
+    name: string
+    path: string
+    book_type_name: string
+}
+
 // Hardcover search
 export interface HardcoverAuthorSearchResult {
     slug: string
@@ -59,6 +78,10 @@ export interface AuthorSubscription {
     scope_name: string
     notifier_id: number | null
     notifier_name: string | null
+    ebook_library_id: number
+    ebook_library_name: string
+    audiobook_library_id: number
+    audiobook_library_name: string
 }
 
 export interface AuthorSubscriptionItem {
@@ -178,6 +201,8 @@ export interface AuthorAliasRequest {
 export interface AuthorSubscriptionRequest {
     scope_name: string
     notifier_id?: number | null
+    ebook_library_name: string
+    audiobook_library_name: string
 }
 
 export interface Torrent {
@@ -237,11 +262,6 @@ export interface BookMetadata {
     literatureType?: string
     region: string
     formatType: string
-}
-
-export interface Library {
-    name: string
-    path: string
 }
 
 export interface TorrentImportInfo {

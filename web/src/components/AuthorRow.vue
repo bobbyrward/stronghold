@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { api } from '@/services/api'
 import { useToastStore } from '@/stores/toast'
 import HardcoverSearchModal from '@/components/common/HardcoverSearchModal.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-import type { Author, AuthorAlias, AuthorSubscription, AuthorSubscriptionItem, SubscriptionScope, Notifier, HardcoverAuthorSearchResult } from '@/types/api'
+import type { Author, AuthorAlias, AuthorSubscription, AuthorSubscriptionItem, SubscriptionScope, Notifier, Library, HardcoverAuthorSearchResult } from '@/types/api'
 
 const props = defineProps<{
   author: Author
   isEditing: boolean
   subscriptionScopes: SubscriptionScope[]
   notifiers: Notifier[]
+  libraries: Library[]
 }>()
 
 const emit = defineEmits<{
@@ -48,8 +49,21 @@ const deleteAliasConfirm = ref({ show: false, id: 0, name: '' })
 const subscription = ref<AuthorSubscription | null>(null)
 const subscriptionLoaded = ref(false)
 const subscriptionFormMode = ref<'none' | 'create' | 'edit'>('none')
-const subscriptionForm = ref({ scope_name: '', notifier_id: null as number | null })
+const subscriptionForm = ref({
+  scope_name: '',
+  notifier_id: null as number | null,
+  ebook_library_name: '',
+  audiobook_library_name: ''
+})
 const deleteSubscriptionConfirm = ref(false)
+
+// Computed libraries filtered by book type
+const ebookLibraries = computed(() =>
+  props.libraries.filter(l => l.book_type_name === 'ebook')
+)
+const audiobookLibraries = computed(() =>
+  props.libraries.filter(l => l.book_type_name === 'audiobook')
+)
 
 // Downloads state
 const downloads = ref<AuthorSubscriptionItem[]>([])
@@ -252,7 +266,9 @@ function startCreateSubscription() {
   subscriptionFormMode.value = 'create'
   subscriptionForm.value = {
     scope_name: props.subscriptionScopes[0]?.name || '',
-    notifier_id: null
+    notifier_id: null,
+    ebook_library_name: ebookLibraries.value[0]?.name || '',
+    audiobook_library_name: audiobookLibraries.value[0]?.name || ''
   }
 }
 
@@ -261,13 +277,15 @@ function startEditSubscription() {
   subscriptionFormMode.value = 'edit'
   subscriptionForm.value = {
     scope_name: subscription.value.scope_name,
-    notifier_id: subscription.value.notifier_id
+    notifier_id: subscription.value.notifier_id,
+    ebook_library_name: subscription.value.ebook_library_name,
+    audiobook_library_name: subscription.value.audiobook_library_name
   }
 }
 
 function cancelSubscriptionForm() {
   subscriptionFormMode.value = 'none'
-  subscriptionForm.value = { scope_name: '', notifier_id: null }
+  subscriptionForm.value = { scope_name: '', notifier_id: null, ebook_library_name: '', audiobook_library_name: '' }
 }
 
 async function saveSubscription() {
@@ -275,20 +293,28 @@ async function saveSubscription() {
     toast.error('Scope is required')
     return
   }
+  if (!subscriptionForm.value.ebook_library_name) {
+    toast.error('Ebook Library is required')
+    return
+  }
+  if (!subscriptionForm.value.audiobook_library_name) {
+    toast.error('Audiobook Library is required')
+    return
+  }
 
   try {
+    const requestData = {
+      scope_name: subscriptionForm.value.scope_name,
+      notifier_id: subscriptionForm.value.notifier_id,
+      ebook_library_name: subscriptionForm.value.ebook_library_name,
+      audiobook_library_name: subscriptionForm.value.audiobook_library_name
+    }
     if (subscriptionFormMode.value === 'create') {
-      subscription.value = await api.authors.subscription.create(props.author.id, {
-        scope_name: subscriptionForm.value.scope_name,
-        notifier_id: subscriptionForm.value.notifier_id
-      })
+      subscription.value = await api.authors.subscription.create(props.author.id, requestData)
       hasSubscription.value = true
       toast.success('Subscription created')
     } else {
-      subscription.value = await api.authors.subscription.update(props.author.id, {
-        scope_name: subscriptionForm.value.scope_name,
-        notifier_id: subscriptionForm.value.notifier_id
-      })
+      subscription.value = await api.authors.subscription.update(props.author.id, requestData)
       toast.success('Subscription updated')
     }
     subscriptionFormMode.value = 'none'
@@ -473,6 +499,22 @@ async function handleDeleteSubscription() {
                     </option>
                   </select>
                 </div>
+                <div class="col-md-6">
+                  <label class="form-label">Ebook Library</label>
+                  <select v-model="subscriptionForm.ebook_library_name" class="form-select form-select-sm" required>
+                    <option v-for="lib in ebookLibraries" :key="lib.id" :value="lib.name">
+                      {{ lib.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Audiobook Library</label>
+                  <select v-model="subscriptionForm.audiobook_library_name" class="form-select form-select-sm" required>
+                    <option v-for="lib in audiobookLibraries" :key="lib.id" :value="lib.name">
+                      {{ lib.name }}
+                    </option>
+                  </select>
+                </div>
               </div>
               <div>
                 <button class="btn btn-success btn-sm me-2" @click="saveSubscription">
@@ -491,6 +533,10 @@ async function handleDeleteSubscription() {
                 <dd class="col-sm-9">{{ subscription.scope_name }}</dd>
                 <dt class="col-sm-3">Notifier</dt>
                 <dd class="col-sm-9">{{ subscription.notifier_name || 'None' }}</dd>
+                <dt class="col-sm-3">Ebook Library</dt>
+                <dd class="col-sm-9">{{ subscription.ebook_library_name }}</dd>
+                <dt class="col-sm-3">Audiobook Library</dt>
+                <dd class="col-sm-9">{{ subscription.audiobook_library_name }}</dd>
               </dl>
               <button class="btn btn-primary btn-sm me-2" @click="startEditSubscription">
                 <i class="bi bi-pencil me-1"></i>Edit

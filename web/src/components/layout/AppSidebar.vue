@@ -14,6 +14,11 @@ const uiStore = useUiStore()
                 <span class="nav-text">Feeds</span>
             </router-link>
 
+            <router-link to="/libraries" class="nav-link">
+                <i class="bi bi-folder2-open"></i>
+                <span class="nav-text">Libraries</span>
+            </router-link>
+
             <router-link to="/feed-filters" class="nav-link">
                 <i class="bi bi-funnel"></i>
                 <span class="nav-text">Feed Filters</span>
@@ -79,6 +84,11 @@ const uiStore = useUiStore()
             <router-link to="/torrent-categories" class="nav-link">
                 <i class="bi bi-folder"></i>
                 <span class="nav-text">Torrent Categories</span>
+            </router-link>
+
+            <router-link to="/book-types" class="nav-link">
+                <i class="bi bi-book"></i>
+                <span class="nav-text">Book Types</span>
             </router-link>
         </nav>
     </aside>

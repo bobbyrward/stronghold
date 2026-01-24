@@ -51,6 +51,7 @@ func init() {
 	rootCmd.AddCommand(createDoctorCmd())
 	rootCmd.AddCommand(createFeedWatcher2Cmd())
 	rootCmd.AddCommand(createSubscribeCmd())
+	rootCmd.AddCommand(createAuthorSubscriptionImporterCmd())
 }
 
 func internalCobraInit() error {

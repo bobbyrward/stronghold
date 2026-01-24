@@ -5,6 +5,9 @@ import type {
     FeedFilterSetType,
     TorrentCategory,
     SubscriptionScope,
+    BookType,
+    Library,
+    LibraryRequest,
     Feed,
     FeedRequest,
     Notifier,
@@ -20,7 +23,6 @@ import type {
     Torrent,
     // Audiobook Wizard types
     BookMetadata,
-    Library,
     TorrentImportInfo,
     SearchASINRequest,
     PreviewDirectoryRequest,
@@ -95,6 +97,33 @@ export const api = {
     // Subscription Scopes (read-only reference data)
     subscriptionScopes: {
         list: () => request<SubscriptionScope[]>('/subscription-scopes')
+    },
+
+    // Book Types (read-only reference data)
+    bookTypes: {
+        list: () => request<BookType[]>('/book-types'),
+        get: (id: number) => request<BookType>(`/book-types/${id}`)
+    },
+
+    // Libraries
+    libraries: {
+        list: (bookTypeId?: number) => {
+            const params = bookTypeId ? `?book_type_id=${bookTypeId}` : ''
+            return request<Library[]>(`/libraries${params}`)
+        },
+        get: (id: number) => request<Library>(`/libraries/${id}`),
+        create: (data: LibraryRequest) =>
+            request<Library>('/libraries', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            }),
+        update: (id: number, data: LibraryRequest) =>
+            request<Library>(`/libraries/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            }),
+        delete: (id: number) =>
+            request<void>(`/libraries/${id}`, { method: 'DELETE' })
     },
 
     // Hardcover (external search)

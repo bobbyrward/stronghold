@@ -71,15 +71,7 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 			slogx.Error(err),
 		)
 
-		err = qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to add manual intervention tag",
-				slog.String("name", torrent.Name),
-				slog.String("hash", torrent.Hash),
-				slogx.Error(err),
-			)
-		}
-
+		bis.markForManualIntervention(ctx, torrent, importType.DiscordNotifier, "Failed to map torrent files: "+err.Error())
 		return
 	}
 
@@ -97,13 +89,9 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 	}
 
 	if len(books) == 0 {
-		slog.InfoContext(ctx, "Unable to find epubs in torrent", slog.String("name", torrent.Name), slog.Any("err", err))
+		slog.InfoContext(ctx, "Unable to find epubs in torrent", slog.String("name", torrent.Name))
 
-		err = qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to add manual intervention tag", slog.String("name", torrent.Name), slog.Any("err", err))
-		}
-
+		bis.markForManualIntervention(ctx, torrent, importType.DiscordNotifier, "No ebook files (.epub, .mobi, .azw3) found in torrent")
 		return
 	}
 
@@ -118,10 +106,7 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 		if err != nil {
 			slog.InfoContext(ctx, "Unable to copy file", slog.Any("mappedFile", mappedFile), slog.String("name", torrent.Name), slog.Any("err", err))
 
-			err = qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
-			if err != nil {
-				slog.ErrorContext(ctx, "Failed to add manual intervention tag", slog.String("name", torrent.Name), slog.Any("err", err))
-			}
+			bis.markForManualIntervention(ctx, torrent, importType.DiscordNotifier, "Failed to copy file: "+err.Error())
 			return
 		}
 	}
@@ -132,6 +117,61 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 	}
 
 	bis.sendDiscordNotification(ctx, torrent, library, books, importType)
+}
+
+func (bis *BookImporterSystem) markForManualIntervention(ctx context.Context, torrent qbittorrent.Torrent, notifierName string, reason string) {
+	err := qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to add manual intervention tag",
+			slog.String("name", torrent.Name),
+			slog.String("hash", torrent.Hash),
+			slogx.Error(err),
+		)
+		return
+	}
+
+	slog.InfoContext(ctx, "Marked torrent for manual intervention",
+		slog.String("name", torrent.Name),
+		slog.String("hash", torrent.Hash),
+		slog.String("reason", reason),
+	)
+
+	// Send notification if notifier is configured
+	if notifierName != "" {
+		bis.sendManualInterventionNotification(ctx, torrent, notifierName, reason)
+	}
+}
+
+func (bis *BookImporterSystem) sendManualInterventionNotification(ctx context.Context, torrent qbittorrent.Torrent, notifierName string, reason string) {
+	message := notifications.DiscordWebhookMessage{
+		Username: "Stronghold Book Importer",
+		Embeds: []notifications.DiscordEmbed{
+			{
+				Title:       "⚠️ Manual Intervention Required",
+				Description: fmt.Sprintf("Ebook **%s** requires manual intervention", torrent.Name),
+				Color:       0xFFA500, // Orange color
+				Fields: []notifications.DiscordEmbedField{
+					{
+						Name:   "Reason",
+						Value:  reason,
+						Inline: false,
+					},
+					{
+						Name:   "Torrent Hash",
+						Value:  torrent.Hash,
+						Inline: true,
+					},
+				},
+			},
+		},
+	}
+
+	err := notifications.SendNotification(ctx, notifierName, message)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to send manual intervention notification",
+			slog.String("torrent", torrent.Name),
+			slogx.Error(err))
+	}
 }
 
 func (bis *BookImporterSystem) sendDiscordNotification(ctx context.Context, torrent qbittorrent.Torrent, library *config.ImportLibrary, books []common.MappedTorrentFile, importType config.ImportType) {

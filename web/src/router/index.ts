@@ -21,6 +21,11 @@ const routes = [
     component: () => import('@/views/FeedsView.vue')
   },
   {
+    path: '/libraries',
+    name: 'libraries',
+    component: () => import('@/views/LibrariesView.vue')
+  },
+  {
     path: '/feed-filters',
     name: 'feed-filters',
     component: () => import('@/views/FeedFiltersView.vue')
@@ -59,6 +64,11 @@ const routes = [
     path: '/torrent-categories',
     name: 'torrent-categories',
     component: () => import('@/views/TorrentCategoriesView.vue')
+  },
+  {
+    path: '/book-types',
+    name: 'book-types',
+    component: () => import('@/views/BookTypesView.vue')
   },
   {
     path: '/authors',
