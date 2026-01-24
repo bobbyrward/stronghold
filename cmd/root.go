@@ -7,13 +7,14 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/bobbyrward/stronghold/cmd/booksearch"
 	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/logging"
 )
 
 var (
 	cfgFile  string
-	logLevel string
+	logLevel = "info"
 	rootCmd  = &cobra.Command{
 		Use:          "stronghold",
 		SilenceUsage: true,
@@ -45,7 +46,7 @@ func init() {
 	rootCmd.AddCommand(createFeedWatcherCmd())
 	rootCmd.AddCommand(createApiCmd())
 	rootCmd.AddCommand(createDiscordBotCmd())
-	rootCmd.AddCommand(createBookSearchCmd())
+	rootCmd.AddCommand(booksearch.CreateBookSearchCmd())
 	rootCmd.AddCommand(createRefreshTokenCmd())
 	rootCmd.AddCommand(createAudiobookImporterCmd())
 	rootCmd.AddCommand(createDoctorCmd())

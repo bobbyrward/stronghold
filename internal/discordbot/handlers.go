@@ -112,9 +112,9 @@ func displayTitle(result *models.SearchResponseItem) string {
 	category := ""
 
 	switch result.MainCategory {
-	case booksearch.MainCategory_Ebooks:
+	case booksearch.MainCategoryEbooks:
 		category = "ebook"
-	case booksearch.MainCategory_Audiobooks:
+	case booksearch.MainCategoryAudiobooks:
 		category = "audiobook"
 	default:
 		category = "unknown category"
@@ -375,13 +375,13 @@ func (b *Bot) handleAddSelectedBooks(s *discordgo.Session, i *discordgo.Interact
 
 		qbitCategory := ""
 		switch book.MainCategory {
-		case booksearch.MainCategory_Ebooks:
+		case booksearch.MainCategoryEbooks:
 			if i.ChannelID == ChannelID_BobbysBookRequests {
 				qbitCategory = "personal-books"
 			} else {
 				qbitCategory = "general-books"
 			}
-		case booksearch.MainCategory_Audiobooks:
+		case booksearch.MainCategoryAudiobooks:
 			if i.ChannelID == ChannelID_BobbysBookRequests {
 				qbitCategory = "audiobooks"
 			} else {
