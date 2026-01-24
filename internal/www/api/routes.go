@@ -33,6 +33,17 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB, hc hardcover.Client) {
 	e.GET("/subscription-scopes", ListSubscriptionScopes(db))
 	e.GET("/subscription-scopes/:id", GetSubscriptionScope(db))
 
+	// Book Types (read-only reference data)
+	e.GET("/book-types", ListBookTypes(db))
+	e.GET("/book-types/:id", GetBookType(db))
+
+	// Libraries
+	e.GET("/libraries", ListLibraries(db))
+	e.POST("/libraries", CreateLibrary(db))
+	e.GET("/libraries/:id", GetLibrary(db))
+	e.PUT("/libraries/:id", UpdateLibrary(db))
+	e.DELETE("/libraries/:id", DeleteLibrary(db))
+
 	// Notifiers
 	e.GET("/notifiers", ListNotifiers(db))
 	e.POST("/notifiers", CreateNotifier(db))

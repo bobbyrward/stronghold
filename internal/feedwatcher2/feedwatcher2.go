@@ -22,6 +22,9 @@ const (
 	MediaTypeAudiobook = "audiobook"
 )
 
+// AuthorSubscriptionCategory is the qBittorrent category used for all author subscription downloads.
+const AuthorSubscriptionCategory = "author-subscriptions"
+
 // extractIDFromGUID extracts the numeric ID from a GUID URL.
 // Example: "https://www.myanonamouse.net/t/1213652" returns "1213652".
 func extractIDFromGUID(guid string) string {
@@ -30,6 +33,15 @@ func extractIDFromGUID(guid string) string {
 		return guid
 	}
 	return guid[lastSlash+1:]
+}
+
+// determineBookTypeName returns the book type name based on the feed category.
+// Categories starting with "Audiobooks" are audiobooks, everything else is ebooks.
+func determineBookTypeName(category string) string {
+	if strings.HasPrefix(category, "Audiobooks") {
+		return MediaTypeAudiobook
+	}
+	return MediaTypeEbook
 }
 
 // FeedWatcher2 monitors RSS feeds and downloads torrents for subscribed authors.
@@ -149,16 +161,6 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		slog.String("scope", subscription.Scope.Name),
 		slog.Any("feed_authors", entry.Authors))
 
-	// Determine the torrent category based on scope and media type
-	category, err := fw.determineTorrentCategory(ctx, &subscription.Scope, entry.Category)
-	if err != nil {
-		return fmt.Errorf("failed to determine torrent category: %w", err)
-	}
-
-	slog.InfoContext(ctx, "Determined torrent category",
-		slog.String("category", category.Name),
-		slog.String("feed_category", entry.Category))
-
 	// Check for duplicate by booksearch ID before downloading
 	var existingItem models.AuthorSubscriptionItem
 	result := fw.db.Where("booksearch_id = ?", booksearchID).First(&existingItem)
@@ -172,6 +174,18 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("failed to check for existing item: %w", result.Error)
 	}
+
+	// Determine book type from category
+	bookTypeName := determineBookTypeName(entry.Category)
+	var bookType models.BookType
+	result = fw.db.Where("name = ?", bookTypeName).First(&bookType)
+	if result.Error != nil {
+		return fmt.Errorf("failed to find book type %q: %w", bookTypeName, result.Error)
+	}
+
+	slog.InfoContext(ctx, "Determined book type",
+		slog.String("category", entry.Category),
+		slog.String("book_type", bookTypeName))
 
 	// Download torrent and extract hash
 	hash, err := fw.torrentDownloader.DownloadAndHash(ctx, entry.Link)
@@ -189,7 +203,7 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		entry.Link,
 		map[string]string{
 			"autoTMM":  "true",
-			"category": category.Name,
+			"category": AuthorSubscriptionCategory,
 		},
 	)
 	if err != nil {
@@ -198,12 +212,13 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 
 	slog.InfoContext(ctx, "Added torrent to qBittorrent",
 		slog.String("title", entry.Title),
-		slog.String("category", category.Name),
+		slog.String("category", AuthorSubscriptionCategory),
 		slog.String("hash", hash))
 
 	// Create AuthorSubscriptionItem record
 	subscriptionItem := models.AuthorSubscriptionItem{
 		AuthorSubscriptionID: subscription.ID,
+		BookTypeID:           bookType.ID,
 		TorrentHash:          hash,
 		BooksearchID:         booksearchID,
 		Title:                entry.Title,
@@ -231,34 +246,9 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 	slog.InfoContext(ctx, "Successfully processed feed item",
 		slog.String("title", entry.Title),
 		slog.String("author", subscription.Author.Name),
-		slog.String("category", category.Name),
+		slog.String("category", AuthorSubscriptionCategory),
 		slog.String("hash", hash))
 
 	return nil
 }
 
-// determineTorrentCategory determines the appropriate TorrentCategory based on scope and media type.
-func (fw *FeedWatcher2) determineTorrentCategory(ctx context.Context, scope *models.SubscriptionScope, feedCategory string) (*models.TorrentCategory, error) {
-	// Determine media type from feed category
-	mediaType := MediaTypeEbook
-	if strings.HasPrefix(feedCategory, "Audiobooks") {
-		mediaType = MediaTypeAudiobook
-	}
-
-	slog.DebugContext(ctx, "Determining torrent category",
-		slog.String("scope", scope.Name),
-		slog.String("feed_category", feedCategory),
-		slog.String("media_type", mediaType))
-
-	// Query TorrentCategory
-	var category models.TorrentCategory
-	result := fw.db.Where("scope_id = ? AND media_type = ?", scope.ID, mediaType).First(&category)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("no torrent category found for scope=%s, media_type=%s", scope.Name, mediaType)
-		}
-		return nil, result.Error
-	}
-
-	return &category, nil
-}
