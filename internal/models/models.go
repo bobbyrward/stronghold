@@ -120,6 +120,21 @@ type SubscriptionScope struct {
 	Name string `gorm:"not null;uniqueIndex"` // "personal" or "family"
 }
 
+// BookType is a reference table for book types (ebook or audiobook)
+type BookType struct {
+	CommonFields
+	Name string `gorm:"not null;uniqueIndex"` // "ebook" or "audiobook"
+}
+
+// Library represents a storage location for books
+type Library struct {
+	CommonFields
+	Name       string   `gorm:"not null;uniqueIndex"`
+	Path       string   `gorm:"not null;uniqueIndex"`
+	BookTypeID uint     `gorm:"not null"`
+	BookType   BookType `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+}
+
 // TorrentCategory (updated - replaces existing model)
 type TorrentCategory struct {
 	CommonFields
@@ -147,12 +162,16 @@ type AuthorAlias struct {
 // AuthorSubscription represents a subscription to an Author
 type AuthorSubscription struct {
 	CommonFields
-	AuthorID   uint   `gorm:"not null;uniqueIndex"` // one subscription per author
-	Author     Author `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	ScopeID    uint   `gorm:"not null"`
-	Scope      SubscriptionScope
-	NotifierID *uint
-	Notifier   *Notifier
+	AuthorID           uint   `gorm:"not null;uniqueIndex"` // one subscription per author
+	Author             Author `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	ScopeID            uint   `gorm:"not null"`
+	Scope              SubscriptionScope
+	NotifierID         *uint
+	Notifier           *Notifier
+	EbookLibraryID     uint    `gorm:"not null"`
+	EbookLibrary       Library `gorm:"foreignKey:EbookLibraryID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	AudiobookLibraryID uint    `gorm:"not null"`
+	AudiobookLibrary   Library `gorm:"foreignKey:AudiobookLibraryID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
 // AuthorSubscriptionItem represents a downloaded item from an AuthorSubscription
@@ -160,6 +179,8 @@ type AuthorSubscriptionItem struct {
 	CommonFields
 	AuthorSubscriptionID uint               `gorm:"not null"`
 	AuthorSubscription   AuthorSubscription `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	BookTypeID           uint               `gorm:"not null"`
+	BookType             BookType           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 	TorrentHash          string             `gorm:"not null"`
 	BooksearchID         string             `gorm:"not null;uniqueIndex"` // torrent ID extracted from feed GUID URL
 	Title                string             `gorm:"not null"`

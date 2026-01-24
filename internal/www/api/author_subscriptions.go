@@ -14,30 +14,40 @@ import (
 
 // AuthorSubscriptionRequest is the request body for creating/updating author subscriptions
 type AuthorSubscriptionRequest struct {
-	ScopeName  string `json:"scope_name" validate:"required"`
-	NotifierID *uint  `json:"notifier_id"`
+	ScopeName            string `json:"scope_name" validate:"required"`
+	NotifierID           *uint  `json:"notifier_id"`
+	EbookLibraryName     string `json:"ebook_library_name" validate:"required"`
+	AudiobookLibraryName string `json:"audiobook_library_name" validate:"required"`
 }
 
 // AuthorSubscriptionResponse is the response body for author subscriptions
 type AuthorSubscriptionResponse struct {
-	ID           uint    `json:"id"`
-	AuthorID     uint    `json:"author_id"`
-	AuthorName   string  `json:"author_name"`
-	ScopeID      uint    `json:"scope_id"`
-	ScopeName    string  `json:"scope_name"`
-	NotifierID   *uint   `json:"notifier_id"`
-	NotifierName *string `json:"notifier_name"`
+	ID                   uint    `json:"id"`
+	AuthorID             uint    `json:"author_id"`
+	AuthorName           string  `json:"author_name"`
+	ScopeID              uint    `json:"scope_id"`
+	ScopeName            string  `json:"scope_name"`
+	NotifierID           *uint   `json:"notifier_id"`
+	NotifierName         *string `json:"notifier_name"`
+	EbookLibraryID       uint    `json:"ebook_library_id"`
+	EbookLibraryName     string  `json:"ebook_library_name"`
+	AudiobookLibraryID   uint    `json:"audiobook_library_id"`
+	AudiobookLibraryName string  `json:"audiobook_library_name"`
 }
 
 // subscriptionToResponse converts an AuthorSubscription model to a response
 func subscriptionToResponse(sub models.AuthorSubscription) AuthorSubscriptionResponse {
 	resp := AuthorSubscriptionResponse{
-		ID:         sub.ID,
-		AuthorID:   sub.AuthorID,
-		AuthorName: sub.Author.Name,
-		ScopeID:    sub.ScopeID,
-		ScopeName:  sub.Scope.Name,
-		NotifierID: sub.NotifierID,
+		ID:                   sub.ID,
+		AuthorID:             sub.AuthorID,
+		AuthorName:           sub.Author.Name,
+		ScopeID:              sub.ScopeID,
+		ScopeName:            sub.Scope.Name,
+		NotifierID:           sub.NotifierID,
+		EbookLibraryID:       sub.EbookLibraryID,
+		EbookLibraryName:     sub.EbookLibrary.Name,
+		AudiobookLibraryID:   sub.AudiobookLibraryID,
+		AudiobookLibraryName: sub.AudiobookLibrary.Name,
 	}
 	if sub.Notifier != nil {
 		resp.NotifierName = &sub.Notifier.Name
@@ -58,7 +68,7 @@ func GetAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 		slog.InfoContext(ctx, "Getting author subscription", slog.Uint64("author_id", uint64(authorID)))
 
 		var sub models.AuthorSubscription
-		err = db.Preload("Author").Preload("Scope").Preload("Notifier").
+		err = db.Preload("Author").Preload("Scope").Preload("Notifier").Preload("EbookLibrary").Preload("AudiobookLibrary").
 			Where("author_id = ?", authorID).First(&sub).Error
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -114,10 +124,24 @@ func CreateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 			return BadRequest(c, ctx, "Invalid scope_name: "+req.ScopeName)
 		}
 
+		// Lookup ebook library by name
+		var ebookLibrary models.Library
+		if err := LookupByName(db, ctx, &ebookLibrary, req.EbookLibraryName, "Ebook library"); err != nil {
+			return BadRequest(c, ctx, "Invalid ebook_library_name: "+req.EbookLibraryName)
+		}
+
+		// Lookup audiobook library by name
+		var audiobookLibrary models.Library
+		if err := LookupByName(db, ctx, &audiobookLibrary, req.AudiobookLibraryName, "Audiobook library"); err != nil {
+			return BadRequest(c, ctx, "Invalid audiobook_library_name: "+req.AudiobookLibraryName)
+		}
+
 		sub := models.AuthorSubscription{
-			AuthorID:   authorID,
-			ScopeID:    scope.ID,
-			NotifierID: req.NotifierID,
+			AuthorID:           authorID,
+			ScopeID:            scope.ID,
+			NotifierID:         req.NotifierID,
+			EbookLibraryID:     ebookLibrary.ID,
+			AudiobookLibraryID: audiobookLibrary.ID,
 		}
 
 		if err := db.Create(&sub).Error; err != nil {
@@ -125,7 +149,7 @@ func CreateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		// Reload with relations for response
-		if err := db.Preload("Author").Preload("Scope").Preload("Notifier").First(&sub, sub.ID).Error; err != nil {
+		if err := db.Preload("Author").Preload("Scope").Preload("Notifier").Preload("EbookLibrary").Preload("AudiobookLibrary").First(&sub, sub.ID).Error; err != nil {
 			return InternalError(c, ctx, "Failed to reload subscription with relations", err)
 		}
 
@@ -168,15 +192,29 @@ func UpdateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 			return BadRequest(c, ctx, "Invalid scope_name: "+req.ScopeName)
 		}
 
+		// Lookup ebook library by name
+		var ebookLibrary models.Library
+		if err := LookupByName(db, ctx, &ebookLibrary, req.EbookLibraryName, "Ebook library"); err != nil {
+			return BadRequest(c, ctx, "Invalid ebook_library_name: "+req.EbookLibraryName)
+		}
+
+		// Lookup audiobook library by name
+		var audiobookLibrary models.Library
+		if err := LookupByName(db, ctx, &audiobookLibrary, req.AudiobookLibraryName, "Audiobook library"); err != nil {
+			return BadRequest(c, ctx, "Invalid audiobook_library_name: "+req.AudiobookLibraryName)
+		}
+
 		sub.ScopeID = scope.ID
 		sub.NotifierID = req.NotifierID
+		sub.EbookLibraryID = ebookLibrary.ID
+		sub.AudiobookLibraryID = audiobookLibrary.ID
 
 		if err := db.Save(&sub).Error; err != nil {
 			return InternalError(c, ctx, "Failed to update subscription", err)
 		}
 
 		// Reload with relations for response
-		if err := db.Preload("Author").Preload("Scope").Preload("Notifier").First(&sub, sub.ID).Error; err != nil {
+		if err := db.Preload("Author").Preload("Scope").Preload("Notifier").Preload("EbookLibrary").Preload("AudiobookLibrary").First(&sub, sub.ID).Error; err != nil {
 			return InternalError(c, ctx, "Failed to reload subscription with relations", err)
 		}
 

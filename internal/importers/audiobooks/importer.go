@@ -88,6 +88,11 @@ func (abis *AudiobookImporterSystem) ProcessImportType(ctx context.Context, impo
 }
 
 func (abis *AudiobookImporterSystem) MarkForManualIntervention(ctx context.Context, importTorrent qbittorrent.Torrent) {
+	abis.MarkForManualInterventionWithNotification(ctx, importTorrent, "", "")
+}
+
+// MarkForManualInterventionWithNotification marks a torrent for manual intervention and sends a notification.
+func (abis *AudiobookImporterSystem) MarkForManualInterventionWithNotification(ctx context.Context, importTorrent qbittorrent.Torrent, notifierName string, reason string) {
 	err := qbit.TagTorrent(ctx, abis.qbitClient, importTorrent, config.Config.Importers.ManualInterventionTag)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to add manual intervention tag",
@@ -95,11 +100,50 @@ func (abis *AudiobookImporterSystem) MarkForManualIntervention(ctx context.Conte
 			slog.String("hash", importTorrent.Hash),
 			slogx.Error(err),
 		)
-	} else {
-		slog.InfoContext(ctx, "marked torrent for manual intervention",
-			slog.String("name", importTorrent.Name),
-			slog.String("hash", importTorrent.Hash),
-		)
+		return
+	}
+
+	slog.InfoContext(ctx, "marked torrent for manual intervention",
+		slog.String("name", importTorrent.Name),
+		slog.String("hash", importTorrent.Hash),
+		slog.String("reason", reason),
+	)
+
+	// Send notification if notifier is configured
+	if notifierName != "" {
+		abis.sendManualInterventionNotification(ctx, importTorrent, notifierName, reason)
+	}
+}
+
+func (abis *AudiobookImporterSystem) sendManualInterventionNotification(ctx context.Context, importTorrent qbittorrent.Torrent, notifierName string, reason string) {
+	message := notifications.DiscordWebhookMessage{
+		Username: "Stronghold Audiobook Importer",
+		Embeds: []notifications.DiscordEmbed{
+			{
+				Title:       "⚠️ Manual Intervention Required",
+				Description: fmt.Sprintf("Audiobook **%s** requires manual intervention", importTorrent.Name),
+				Color:       0xFFA500, // Orange color
+				Fields: []notifications.DiscordEmbedField{
+					{
+						Name:   "Reason",
+						Value:  reason,
+						Inline: false,
+					},
+					{
+						Name:   "Torrent Hash",
+						Value:  importTorrent.Hash,
+						Inline: true,
+					},
+				},
+			},
+		},
+	}
+
+	err := notifications.SendNotification(ctx, notifierName, message)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to send manual intervention notification",
+			slog.String("torrent", importTorrent.Name),
+			slogx.Error(err))
 	}
 }
 
@@ -338,6 +382,12 @@ func (abis *AudiobookImporterSystem) ExecuteImport(ctx context.Context, importTo
 }
 
 func (abis *AudiobookImporterSystem) importTorrent(ctx context.Context, importTorrent qbittorrent.Torrent, importType config.ImportType, library *config.ImportLibrary) {
+	abis.ImportTorrentWithLibrary(ctx, importTorrent, importType, library)
+}
+
+// ImportTorrentWithLibrary imports a single audiobook torrent using the specified library.
+// This is the public entry point for external callers like the AuthorSubscriptionImporter.
+func (abis *AudiobookImporterSystem) ImportTorrentWithLibrary(ctx context.Context, importTorrent qbittorrent.Torrent, importType config.ImportType, library *config.ImportLibrary) {
 	bookMetadata, err := abis.ExtractTorrentMetadata(ctx, importTorrent)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to extract metadata for torrent",
@@ -346,7 +396,7 @@ func (abis *AudiobookImporterSystem) importTorrent(ctx context.Context, importTo
 			slogx.Error(err),
 		)
 
-		abis.MarkForManualIntervention(ctx, importTorrent)
+		abis.MarkForManualInterventionWithNotification(ctx, importTorrent, importType.DiscordNotifier, "Failed to extract metadata: "+err.Error())
 
 		return
 	}
@@ -361,7 +411,7 @@ func (abis *AudiobookImporterSystem) importTorrent(ctx context.Context, importTo
 			slogx.Error(err),
 		)
 
-		abis.MarkForManualIntervention(ctx, importTorrent)
+		abis.MarkForManualInterventionWithNotification(ctx, importTorrent, importType.DiscordNotifier, "Failed to execute import: "+err.Error())
 
 		return
 	}

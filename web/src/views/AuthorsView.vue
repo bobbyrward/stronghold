@@ -6,12 +6,13 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import HardcoverSearchModal from '@/components/common/HardcoverSearchModal.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import AuthorRow from '@/components/AuthorRow.vue'
-import type { Author, SubscriptionScope, Notifier, HardcoverAuthorSearchResult } from '@/types/api'
+import type { Author, SubscriptionScope, Notifier, Library, HardcoverAuthorSearchResult } from '@/types/api'
 
 const toast = useToastStore()
 const authors = ref<Author[]>([])
 const subscriptionScopes = ref<SubscriptionScope[]>([])
 const notifiers = ref<Notifier[]>([])
+const libraries = ref<Library[]>([])
 const loading = ref(true)
 
 // Search state
@@ -31,14 +32,16 @@ const deleteConfirm = ref({ show: false, id: 0, name: '' })
 
 onMounted(async () => {
   try {
-    const [authorsData, scopesData, notifiersData] = await Promise.all([
+    const [authorsData, scopesData, notifiersData, librariesData] = await Promise.all([
       api.authors.list(),
       api.subscriptionScopes.list(),
-      api.notifiers.list()
+      api.notifiers.list(),
+      api.libraries.list()
     ])
     authors.value = authorsData
     subscriptionScopes.value = scopesData
     notifiers.value = notifiersData
+    libraries.value = librariesData
   } catch (e) {
     toast.error('Failed to load data')
   } finally {
@@ -233,8 +236,9 @@ async function handleDelete() {
 
           <!-- Author rows -->
           <AuthorRow v-for="author in authors" :key="author.id" :author="author" :is-editing="editingId === author.id"
-            :subscription-scopes="subscriptionScopes" :notifiers="notifiers" @edit="startEdit(author.id)"
-            @save="(data) => saveEdit(author.id, data)" @cancel="cancelEdit" @delete="confirmDelete(author)" />
+            :subscription-scopes="subscriptionScopes" :notifiers="notifiers" :libraries="libraries"
+            @edit="startEdit(author.id)" @save="(data) => saveEdit(author.id, data)" @cancel="cancelEdit"
+            @delete="confirmDelete(author)" />
         </tbody>
       </table>
     </div>

@@ -48,6 +48,24 @@ func populateSubscriptionScopes(db *gorm.DB) error {
 	)
 }
 
+func populateBookTypes(db *gorm.DB) error {
+	return populateTable(
+		db,
+		[]string{
+			"ebook",
+			"audiobook",
+		},
+		func(name string) error {
+			var record BookType
+			return db.Where("name = ?", name).First(&record).Error
+		},
+		func(name string) error {
+			record := BookType{Name: name}
+			return db.Create(&record).Error
+		},
+	)
+}
+
 func populateTorrentCategories(db *gorm.DB) error {
 	// Must run after populateSubscriptionScopes
 	type categoryDef struct {
@@ -65,6 +83,7 @@ func populateTorrentCategories(db *gorm.DB) error {
 		{"kids-books", "kids", "ebook"},
 		{"general-audiobooks", "general", "audiobook"},
 		{"general-books", "general", "ebook"},
+		{"author-subscriptions", "personal", "audiobook"}, // Used by feedwatcher2 for all author subscriptions
 	}
 
 	// Build scope lookup map

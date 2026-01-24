@@ -144,6 +144,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&BookSearchCredential{},
 		// Feedwatcher2 models
 		&SubscriptionScope{},
+		&BookType{},
+		&Library{},
 		&TorrentCategory{},
 		&Author{},
 		&AuthorAlias{},
@@ -164,6 +166,11 @@ func PopulateData(db *gorm.DB) error {
 	err := populateSubscriptionScopes(db)
 	if err != nil {
 		return errors.Join(err, fmt.Errorf("failed to populate subscription scopes"))
+	}
+
+	err = populateBookTypes(db)
+	if err != nil {
+		return errors.Join(err, fmt.Errorf("failed to populate book types"))
 	}
 
 	err = populateTorrentCategories(db)

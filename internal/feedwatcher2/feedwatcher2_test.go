@@ -193,7 +193,7 @@ func TestWatchFeed_MatchByAuthorName(t *testing.T) {
 
 	// Should have added one torrent
 	require.Len(t, mockQbit.AddTorrentFromUrlCtxCalls, 1)
-	assert.Equal(t, "personal-audiobooks", mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
+	assert.Equal(t, AuthorSubscriptionCategory, mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
 
 	// Should have created subscription item with extracted ID
 	var items []models.AuthorSubscriptionItem
@@ -254,7 +254,7 @@ func TestWatchFeed_MatchByAlias(t *testing.T) {
 
 	// Should match via alias
 	require.Len(t, mockQbit.AddTorrentFromUrlCtxCalls, 1)
-	assert.Equal(t, "books", mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
+	assert.Equal(t, AuthorSubscriptionCategory, mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
 }
 
 func TestWatchFeed_Deduplication(t *testing.T) {
@@ -353,7 +353,7 @@ func TestWatchFeed_CorrectCategory_PersonalAudiobook(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, mockQbit.AddTorrentFromUrlCtxCalls, 1)
-	assert.Equal(t, "personal-audiobooks", mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
+	assert.Equal(t, AuthorSubscriptionCategory, mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
 }
 
 func TestWatchFeed_CorrectCategory_FamilyEbook(t *testing.T) {
@@ -394,7 +394,7 @@ func TestWatchFeed_CorrectCategory_FamilyEbook(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, mockQbit.AddTorrentFromUrlCtxCalls, 1)
-	assert.Equal(t, "books", mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
+	assert.Equal(t, AuthorSubscriptionCategory, mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
 }
 
 // E2E Test
@@ -486,7 +486,7 @@ func TestFeedWatcher2_E2E(t *testing.T) {
 
 	// Verify torrent added to qBittorrent with correct category
 	require.Len(t, mockQbit.AddTorrentFromUrlCtxCalls, 1)
-	assert.Equal(t, "personal-audiobooks", mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
+	assert.Equal(t, AuthorSubscriptionCategory, mockQbit.AddTorrentFromUrlCtxCalls[0].Options["category"])
 	assert.Contains(t, mockQbit.AddTorrentFromUrlCtxCalls[0].URL, torrentServer.URL)
 
 	// Verify AuthorSubscriptionItem created with extracted ID
