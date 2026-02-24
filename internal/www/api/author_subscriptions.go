@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -154,6 +156,12 @@ func CreateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		slog.InfoContext(ctx, "Created author subscription", slog.Uint64("id", uint64(sub.ID)), slog.Uint64("author_id", uint64(authorID)))
+
+		eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntitySubscription+"."+eventlog.EventCreated, eventlog.SourceAPI,
+			eventlog.EntitySubscription, fmt.Sprintf("%d", sub.ID),
+			fmt.Sprintf("Subscription created for author: %s", sub.Author.Name),
+			map[string]any{"id": sub.ID, "author_id": authorID, "author_name": sub.Author.Name, "scope": sub.Scope.Name})
+
 		return c.JSON(http.StatusCreated, subscriptionToResponse(sub))
 	}
 }
@@ -219,6 +227,12 @@ func UpdateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		slog.InfoContext(ctx, "Updated author subscription", slog.Uint64("id", uint64(sub.ID)), slog.Uint64("author_id", uint64(authorID)))
+
+		eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntitySubscription+"."+eventlog.EventUpdated, eventlog.SourceAPI,
+			eventlog.EntitySubscription, fmt.Sprintf("%d", sub.ID),
+			fmt.Sprintf("Subscription updated for author #%d", authorID),
+			map[string]any{"id": sub.ID, "author_id": authorID})
+
 		return c.JSON(http.StatusOK, subscriptionToResponse(sub))
 	}
 }
@@ -248,6 +262,12 @@ func DeleteAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 		}
 
 		slog.InfoContext(ctx, "Deleted author subscription", slog.Uint64("id", uint64(sub.ID)), slog.Uint64("author_id", uint64(authorID)))
+
+		eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntitySubscription+"."+eventlog.EventDeleted, eventlog.SourceAPI,
+			eventlog.EntitySubscription, fmt.Sprintf("%d", sub.ID),
+			fmt.Sprintf("Subscription deleted for author #%d", authorID),
+			map[string]any{"id": sub.ID, "author_id": authorID})
+
 		return c.NoContent(http.StatusNoContent)
 	}
 }

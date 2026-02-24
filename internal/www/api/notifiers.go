@@ -2,10 +2,12 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -64,6 +66,13 @@ func (handler NotifierHandler) IDFromModel(row models.Notifier) uint {
 	return row.ID
 }
 
+func (handler NotifierHandler) LogEvent(db *gorm.DB, eventType string, row models.Notifier) {
+	eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntityNotifier+"."+eventType, eventlog.SourceAPI,
+		eventlog.EntityNotifier, fmt.Sprintf("%d", row.ID),
+		fmt.Sprintf("Notifier %s: %s", eventType, row.Name),
+		map[string]any{"id": row.ID, "name": row.Name})
+}
+
 // ListNotifiers returns all notifiers
 func ListNotifiers(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.Notifier, NotifierRequest, NotifierResponse](db, NotifierHandler{})
@@ -86,5 +95,5 @@ func UpdateNotifier(db *gorm.DB) echo.HandlerFunc {
 
 // DeleteNotifier deletes a notifier
 func DeleteNotifier(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.Notifier](db)
+	return genericDeleteHandlerWithEventLog[models.Notifier, NotifierRequest, NotifierResponse](db, NotifierHandler{})
 }

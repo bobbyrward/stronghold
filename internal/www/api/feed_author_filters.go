@@ -2,10 +2,12 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -80,6 +82,13 @@ func (handler FeedAuthorFilterHandler) IDFromModel(row models.FeedAuthorFilter) 
 	return row.ID
 }
 
+func (handler FeedAuthorFilterHandler) LogEvent(db *gorm.DB, eventType string, row models.FeedAuthorFilter) {
+	eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntityFeedAuthorFilter+"."+eventType, eventlog.SourceAPI,
+		eventlog.EntityFeedAuthorFilter, fmt.Sprintf("%d", row.ID),
+		fmt.Sprintf("Feed author filter %s: %s (feed %d)", eventType, row.Author, row.FeedID),
+		map[string]any{"id": row.ID, "author": row.Author, "feed_id": row.FeedID})
+}
+
 // ListFeedAuthorFilters returns all feed author filters
 func ListFeedAuthorFilters(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.FeedAuthorFilter, FeedAuthorFilterRequest, FeedAuthorFilterResponse](db, FeedAuthorFilterHandler{})
@@ -102,5 +111,5 @@ func UpdateFeedAuthorFilter(db *gorm.DB) echo.HandlerFunc {
 
 // DeleteFeedAuthorFilter deletes a feed author filter
 func DeleteFeedAuthorFilter(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.FeedAuthorFilter](db)
+	return genericDeleteHandlerWithEventLog[models.FeedAuthorFilter, FeedAuthorFilterRequest, FeedAuthorFilterResponse](db, FeedAuthorFilterHandler{})
 }

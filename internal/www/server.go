@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/hardcover"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/www/api"
@@ -38,6 +39,9 @@ func Run() error {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
 		return fmt.Errorf("failed to automigrate database: %w", err)
 	}
+
+	// Clean up old event logs
+	eventlog.Cleanup(ctx, db, 90)
 
 	echoServer := echo.New()
 	echoServer.HideBanner = true

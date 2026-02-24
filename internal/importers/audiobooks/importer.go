@@ -12,14 +12,17 @@ import (
 	"strings"
 
 	"github.com/autobrr/go-qbittorrent"
+	"github.com/cappuccinotm/slogx"
+	"gorm.io/gorm"
+
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/audible"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/metadata"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/torrent"
 	"github.com/bobbyrward/stronghold/internal/importers/common"
 	"github.com/bobbyrward/stronghold/internal/notifications"
 	"github.com/bobbyrward/stronghold/internal/qbit"
-	"github.com/cappuccinotm/slogx"
 )
 
 const (
@@ -31,6 +34,7 @@ type AudiobookImporterSystem struct {
 	qbitClient       qbit.QbitClient
 	metadataProvider metadata.MetadataProvider
 	audible          *audible.AudibleApiClient
+	db               *gorm.DB
 }
 
 func NewAudiobookImporterSystem(
@@ -38,12 +42,14 @@ func NewAudiobookImporterSystem(
 	cfg config.ImportersConfig,
 	metadataProvider metadata.MetadataProvider,
 	audibleApiClient *audible.AudibleApiClient,
+	db *gorm.DB,
 ) (*AudiobookImporterSystem, error) {
 	importer := &AudiobookImporterSystem{
 		cfg:              cfg,
 		qbitClient:       qbitClient,
 		metadataProvider: metadataProvider,
 		audible:          audibleApiClient,
+		db:               db,
 	}
 
 	return importer, nil
@@ -108,6 +114,11 @@ func (abis *AudiobookImporterSystem) MarkForManualInterventionWithNotification(c
 		slog.String("hash", importTorrent.Hash),
 		slog.String("reason", reason),
 	)
+
+	eventlog.Log(abis.db, eventlog.CategoryImport, eventlog.EventImportManualIntervention, eventlog.SourceAudiobookImporter,
+		eventlog.EntityTorrent, importTorrent.Hash,
+		fmt.Sprintf("Manual intervention: %s: %s", importTorrent.Name, reason),
+		map[string]string{"name": importTorrent.Name, "hash": importTorrent.Hash, "reason": reason})
 
 	// Send notification if notifier is configured
 	if notifierName != "" {
@@ -417,6 +428,12 @@ func (abis *AudiobookImporterSystem) ImportTorrentWithLibrary(ctx context.Contex
 	}
 
 	abis.MarkAsImported(ctx, importTorrent)
+
+	eventlog.Log(abis.db, eventlog.CategoryImport, eventlog.EventImportCompleted, eventlog.SourceAudiobookImporter,
+		eventlog.EntityTorrent, importTorrent.Hash,
+		fmt.Sprintf("Imported audiobook: %s", bookMetadata.Title),
+		map[string]any{"name": importTorrent.Name, "hash": importTorrent.Hash, "title": bookMetadata.Title, "asin": bookMetadata.Asin})
+
 	abis.SendDiscordNotification(ctx, bookMetadata, importType)
 }
 

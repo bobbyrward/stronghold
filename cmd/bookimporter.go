@@ -8,7 +8,9 @@ import (
 	"github.com/cappuccinotm/slogx"
 	"github.com/spf13/cobra"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/importers/ebooks"
+	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 )
 
@@ -26,13 +28,21 @@ func runBookImport(cmd *cobra.Command, args []string) error {
 
 	slog.InfoContext(ctx, "Starting book import command")
 
+	db, err := models.ConnectAndMigrate(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to connect to database", slogx.Error(err))
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	eventlog.Cleanup(ctx, db, 90)
+
 	qbitClient, err := qbit.CreateClient()
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create qBittorrent client", slogx.Error(err))
 		return fmt.Errorf("failed to create qBittorrent client: %w", err)
 	}
 
-	bookImporterSystem := ebooks.NewBookImporterSystem(qbitClient)
+	bookImporterSystem := ebooks.NewBookImporterSystem(qbitClient, db)
 
 	err = bookImporterSystem.Run(ctx)
 	if err != nil {

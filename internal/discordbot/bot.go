@@ -13,6 +13,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/booksearch"
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 )
@@ -60,6 +61,9 @@ func NewBot(cfg *config.DiscordBotConfig) (*Bot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to automigrate database: %w", err)
 	}
+
+	// Clean up old event logs
+	eventlog.Cleanup(context.Background(), db, 90)
 
 	bot := &Bot{
 		session:    session,

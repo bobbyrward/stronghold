@@ -1,9 +1,11 @@
 package api
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -60,6 +62,11 @@ func DownloadBookTorrent(db *gorm.DB, qbitClient *qbit.QbitClient) echo.HandlerF
 			slog.String("category", req.Category),
 			slog.String("torrent_id", req.TorrentID),
 		)
+
+		eventlog.Log(db, eventlog.CategoryDownload, eventlog.EventTorrentAdded, eventlog.SourceAPI,
+			eventlog.EntityTorrent, req.TorrentID,
+			fmt.Sprintf("Downloaded via API: torrent %s (%s)", req.TorrentID, req.Category),
+			map[string]string{"category": req.Category, "torrent_id": req.TorrentID})
 
 		return c.JSON(http.StatusOK, map[string]string{})
 	}

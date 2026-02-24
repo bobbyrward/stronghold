@@ -6,6 +6,20 @@ import (
 	"gorm.io/gorm"
 )
 
+// EventLog is an append-only log of meaningful state changes across the system.
+// No UpdatedAt or soft-deletes — rows are only inserted and eventually cleaned up by retention policy.
+type EventLog struct {
+	ID         uint      `gorm:"primaryKey;autoIncrement"`
+	CreatedAt  time.Time `gorm:"not null;index"`
+	Category   string    `gorm:"not null;index"`   // download, import, notification, subscription, search, feed, mutation
+	EventType  string    `gorm:"not null;index"`   // e.g. torrent.added, import.completed
+	Source     string    `gorm:"not null"`          // feedwatcher2, discord-bot, api, ebook-importer, etc.
+	EntityType string    `gorm:"index"`             // torrent, author, feed, notifier, etc.
+	EntityID   string    `gorm:"index"`             // hash, numeric ID as string, etc.
+	Summary    string    `gorm:"not null"`          // human-readable one-liner
+	Details    string    `gorm:"type:jsonb"`        // structured JSON blob
+}
+
 type CommonFields struct {
 	ID        uint `gorm:"primaryKey"`
 	CreatedAt time.Time

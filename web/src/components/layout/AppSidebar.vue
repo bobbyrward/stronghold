@@ -9,6 +9,11 @@ const uiStore = useUiStore()
         <nav class="sidebar-nav">
             <div class="section-title">Main</div>
 
+            <router-link to="/activity" class="nav-link">
+                <i class="bi bi-clock-history"></i>
+                <span class="nav-text">Activity</span>
+            </router-link>
+
             <router-link to="/feeds" class="nav-link">
                 <i class="bi bi-rss"></i>
                 <span class="nav-text">Feeds</span>

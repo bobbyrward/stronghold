@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/hardcover"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
@@ -122,6 +124,13 @@ func (handler AuthorHandler) IDFromModel(row models.Author) uint {
 	return row.ID
 }
 
+func (handler AuthorHandler) LogEvent(db *gorm.DB, eventType string, row models.Author) {
+	eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntityAuthor+"."+eventType, eventlog.SourceAPI,
+		eventlog.EntityAuthor, fmt.Sprintf("%d", row.ID),
+		fmt.Sprintf("Author %s: %s", eventType, row.Name),
+		map[string]any{"id": row.ID, "name": row.Name})
+}
+
 // ListAuthors returns all authors
 func ListAuthors(db *gorm.DB, hc hardcover.Client) echo.HandlerFunc {
 	return genericListHandler[models.Author, AuthorRequest, AuthorResponse](db, AuthorHandler{hardcoverClient: hc})
@@ -144,5 +153,5 @@ func UpdateAuthor(db *gorm.DB, hc hardcover.Client) echo.HandlerFunc {
 
 // DeleteAuthor deletes an author
 func DeleteAuthor(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.Author](db)
+	return genericDeleteHandlerWithEventLog[models.Author, AuthorRequest, AuthorResponse](db, AuthorHandler{})
 }
