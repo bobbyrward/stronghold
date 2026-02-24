@@ -13,7 +13,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=frontend-builder /app/web/dist ./web/dist
-RUN CGO_ENABLED=0 GOOS=linux go build -o /out/stronghold .
+ARG VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIME=unknown
+RUN CGO_ENABLED=0 GOOS=linux go build \
+      -ldflags "-X github.com/bobbyrward/stronghold/internal/version.Version=${VERSION} -X github.com/bobbyrward/stronghold/internal/version.GitCommit=${GIT_COMMIT} -X github.com/bobbyrward/stronghold/internal/version.BuildTime=${BUILD_TIME}" \
+      -o /out/stronghold .
 
 # Stage 3: Production image
 FROM alpine:3.21

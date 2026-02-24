@@ -27,7 +27,7 @@ const (
 const AuthorSubscriptionCategory = "author-subscriptions"
 
 // extractIDFromGUID extracts the numeric ID from a GUID URL.
-// Example: "https://www.myanonamouse.net/t/1213652" returns "1213652".
+// Example: "https://www.example.net/t/1213652" returns "1213652".
 func extractIDFromGUID(guid string) string {
 	lastSlash := strings.LastIndex(guid, "/")
 	if lastSlash == -1 || lastSlash == len(guid)-1 {
@@ -288,4 +288,3 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 
 	return nil
 }
-

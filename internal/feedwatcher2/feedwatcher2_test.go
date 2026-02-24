@@ -122,7 +122,7 @@ func TestWatchFeed_NoSubscriptions(t *testing.T) {
 	// Create RSS server
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "https://www.myanonamouse.net/t/1000", Title: "Test Book", Link: "http://torrent.example.com/1", Author: "Unknown Author", Category: "Audiobooks"},
+			{GUID: "https://www.example.net/t/1000", Title: "Test Book", Link: "http://torrent.example.com/1", Author: "Unknown Author", Category: "Audiobooks"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -172,7 +172,7 @@ func TestWatchFeed_MatchByAuthorName(t *testing.T) {
 	// Create RSS server
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "https://www.myanonamouse.net/t/1001", Title: "Mistborn", Link: torrentServer.URL + "/mistborn.torrent", Author: "Brandon Sanderson", Category: "Audiobooks - Fantasy"},
+			{GUID: "https://www.example.net/t/1001", Title: "Mistborn", Link: torrentServer.URL + "/mistborn.torrent", Author: "Brandon Sanderson", Category: "Audiobooks - Fantasy"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -234,7 +234,7 @@ func TestWatchFeed_MatchByAlias(t *testing.T) {
 	// Create RSS server - note author has dots
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "https://www.myanonamouse.net/t/1002", Title: "Some Ebook", Link: torrentServer.URL + "/ebook.torrent", Author: "J.F. Brink", Category: "Ebooks - Fiction"},
+			{GUID: "https://www.example.net/t/1002", Title: "Some Ebook", Link: torrentServer.URL + "/ebook.torrent", Author: "J.F. Brink", Category: "Ebooks - Fiction"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -288,7 +288,7 @@ func TestWatchFeed_Deduplication(t *testing.T) {
 	// Create RSS server - no torrent server needed since dedup happens before download
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "https://www.myanonamouse.net/t/1003", Title: "Same Item", Link: "http://torrent.example.com/test.torrent", Author: "Test Author", Category: "Audiobooks"},
+			{GUID: "https://www.example.net/t/1003", Title: "Same Item", Link: "http://torrent.example.com/test.torrent", Author: "Test Author", Category: "Audiobooks"},
 		})
 		w.Header().Set("Content-Type", "application/rss+xml")
 		_, _ = w.Write([]byte(feed))
@@ -337,7 +337,7 @@ func TestWatchFeed_CorrectCategory_PersonalAudiobook(t *testing.T) {
 
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "https://www.myanonamouse.net/t/1004", Title: "Audiobook", Link: torrentServer.URL, Author: "Audio Author", Category: "Audiobooks - Fantasy"},
+			{GUID: "https://www.example.net/t/1004", Title: "Audiobook", Link: torrentServer.URL, Author: "Audio Author", Category: "Audiobooks - Fantasy"},
 		})
 		_, _ = w.Write([]byte(feed))
 	}))
@@ -378,7 +378,7 @@ func TestWatchFeed_CorrectCategory_FamilyEbook(t *testing.T) {
 
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
-			{GUID: "https://www.myanonamouse.net/t/1005", Title: "Ebook", Link: torrentServer.URL, Author: "Ebook Author", Category: "Ebooks - Romance"},
+			{GUID: "https://www.example.net/t/1005", Title: "Ebook", Link: torrentServer.URL, Author: "Ebook Author", Category: "Ebooks - Romance"},
 		})
 		_, _ = w.Write([]byte(feed))
 	}))
@@ -459,7 +459,7 @@ func TestFeedWatcher2_E2E(t *testing.T) {
 	rssServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		feed := createMockRSSFeed([]mockFeedItem{
 			{
-				GUID:     "https://www.myanonamouse.net/t/1006",
+				GUID:     "https://www.example.net/t/1006",
 				Title:    "E2E Test Book",
 				Link:     torrentServer.URL + "/book.torrent",
 				Author:   "J.F. Brink", // Uses dotted alias

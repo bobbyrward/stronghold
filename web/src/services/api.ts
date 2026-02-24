@@ -366,5 +366,10 @@ export const api = {
             return request<PaginatedEventLogResponse>(`/event-logs?${query}`)
         },
         get: (id: number) => request<EventLog>(`/event-logs/${id}`)
+    },
+
+    // Version info
+    version: {
+        get: () => request<{ version: string; git_commit: string; build_time: string }>('/version')
     }
 }
