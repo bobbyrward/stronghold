@@ -60,6 +60,7 @@ function formatRelativeTime(iso: string): string {
     const then = new Date(iso).getTime()
     const diff = now - then
 
+    if (diff < 0) return 'just now'
     const seconds = Math.floor(diff / 1000)
     if (seconds < 60) return `${seconds}s ago`
     const minutes = Math.floor(seconds / 60)

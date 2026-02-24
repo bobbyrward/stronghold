@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -100,7 +102,7 @@ func ListEventLogs(db *gorm.DB) echo.HandlerFunc {
 			query = query.Where("entity_id = ?", entityID)
 		}
 		if q != "" {
-			query = query.Where("summary ILIKE ?", "%"+EscapeLikePattern(q)+"%")
+			query = query.Where("LOWER(summary) LIKE ?", "%"+strings.ToLower(EscapeLikePattern(q))+"%")
 		}
 		if hasFrom {
 			query = query.Where("created_at >= ?", fromTime)
@@ -124,34 +126,32 @@ func ListEventLogs(db *gorm.DB) echo.HandlerFunc {
 			return InternalError(c, ctx, "Failed to list event logs", err)
 		}
 
-		// Build facets (filtered by date range only, not by other filters)
-		facetQuery := db.Model(&models.EventLog{})
-		if hasFrom {
-			facetQuery = facetQuery.Where("created_at >= ?", fromTime)
-		}
-		if hasTo {
-			facetQuery = facetQuery.Where("created_at <= ?", toTime)
+		// Build facets concurrently (filtered by date range only, not by other filters)
+		newFacetQuery := func() *gorm.DB {
+			q := db.Model(&models.EventLog{})
+			if hasFrom {
+				q = q.Where("created_at >= ?", fromTime)
+			}
+			if hasTo {
+				q = q.Where("created_at <= ?", toTime)
+			}
+			return q
 		}
 
-		facets := EventLogFacets{}
-		facetQuery.Distinct("category").Pluck("category", &facets.Categories)
-		facetQuery.Distinct("source").Pluck("source", &facets.Sources)
-		facetQuery.Distinct("event_type").Pluck("event_type", &facets.EventTypes)
-		facetQuery.Distinct("entity_type").Pluck("entity_type", &facets.EntityTypes)
+		facets := EventLogFacets{
+			Categories:  []string{},
+			Sources:     []string{},
+			EventTypes:  []string{},
+			EntityTypes: []string{},
+		}
 
-		// Ensure non-nil slices for JSON
-		if facets.Categories == nil {
-			facets.Categories = []string{}
-		}
-		if facets.Sources == nil {
-			facets.Sources = []string{}
-		}
-		if facets.EventTypes == nil {
-			facets.EventTypes = []string{}
-		}
-		if facets.EntityTypes == nil {
-			facets.EntityTypes = []string{}
-		}
+		var wg sync.WaitGroup
+		wg.Add(4)
+		go func() { defer wg.Done(); newFacetQuery().Distinct("category").Pluck("category", &facets.Categories) }()
+		go func() { defer wg.Done(); newFacetQuery().Distinct("source").Pluck("source", &facets.Sources) }()
+		go func() { defer wg.Done(); newFacetQuery().Distinct("event_type").Pluck("event_type", &facets.EventTypes) }()
+		go func() { defer wg.Done(); newFacetQuery().Distinct("entity_type").Pluck("entity_type", &facets.EntityTypes) }()
+		wg.Wait()
 
 		// Build response
 		items := make([]EventLogResponse, len(logs))

@@ -218,6 +218,14 @@ func ConnectTestDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
+	// SQLite in-memory databases are per-connection. Limit to a single connection
+	// so all queries (including concurrent ones) see the same data.
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	sqlDB.SetMaxOpenConns(1)
+
 	slog.InfoContext(ctx, "Successfully connected to test database")
 
 	// Run auto migration
