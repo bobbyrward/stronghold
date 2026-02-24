@@ -128,4 +128,8 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB, hc hardcover.Client) {
 
 	// Hardcover
 	e.GET("/hardcover/authors/search", SearchHardcoverAuthors(hc))
+
+	// Event Logs (read-only, paginated)
+	e.GET("/event-logs", ListEventLogs(db))
+	e.GET("/event-logs/:id", GetEventLog(db))
 }

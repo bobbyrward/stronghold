@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/feedwatcher2"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/qbit"
@@ -35,6 +36,9 @@ func runFeedWatcher2(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Clean up old event logs
+	eventlog.Cleanup(ctx, db, 90)
 
 	qbitClient, err := qbit.CreateClient()
 	if err != nil {

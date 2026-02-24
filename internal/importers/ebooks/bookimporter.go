@@ -11,7 +11,10 @@ import (
 	"github.com/autobrr/go-qbittorrent"
 	"github.com/cappuccinotm/slogx"
 
+	"gorm.io/gorm"
+
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/importers/common"
 	"github.com/bobbyrward/stronghold/internal/notifications"
 	"github.com/bobbyrward/stronghold/internal/qbit"
@@ -19,11 +22,13 @@ import (
 
 type BookImporterSystem struct {
 	qbitClient qbit.QbitClient
+	db         *gorm.DB
 }
 
-func NewBookImporterSystem(qbitClient qbit.QbitClient) *BookImporterSystem {
+func NewBookImporterSystem(qbitClient qbit.QbitClient, db *gorm.DB) *BookImporterSystem {
 	return &BookImporterSystem{
 		qbitClient: qbitClient,
+		db:         db,
 	}
 }
 
@@ -115,6 +120,15 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 		slog.ErrorContext(ctx, "Failed to add imported tag", slog.String("name", torrent.Name), slog.Any("err", err))
 	}
 
+	bookNames := make([]string, len(books))
+	for i, b := range books {
+		bookNames[i] = b.BaseName
+	}
+	eventlog.Log(bis.db, eventlog.CategoryImport, eventlog.EventImportCompleted, eventlog.SourceEbookImporter,
+		eventlog.EntityTorrent, torrent.Hash,
+		fmt.Sprintf("Imported ebook: %s (%d files)", torrent.Name, len(books)),
+		map[string]any{"name": torrent.Name, "hash": torrent.Hash, "books": bookNames, "library": library.Path, "category": importType.Category})
+
 	bis.sendDiscordNotification(ctx, torrent, library, books, importType)
 }
 
@@ -134,6 +148,11 @@ func (bis *BookImporterSystem) markForManualIntervention(ctx context.Context, to
 		slog.String("hash", torrent.Hash),
 		slog.String("reason", reason),
 	)
+
+	eventlog.Log(bis.db, eventlog.CategoryImport, eventlog.EventImportManualIntervention, eventlog.SourceEbookImporter,
+		eventlog.EntityTorrent, torrent.Hash,
+		fmt.Sprintf("Manual intervention: %s: %s", torrent.Name, reason),
+		map[string]string{"name": torrent.Name, "hash": torrent.Hash, "reason": reason})
 
 	// Send notification if notifier is configured
 	if notifierName != "" {

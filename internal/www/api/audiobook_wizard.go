@@ -90,6 +90,7 @@ func GetTorrentInfo(db *gorm.DB) echo.HandlerFunc {
 			config.Config.Importers,
 			metadataProvider,
 			audibleClient,
+			db,
 		)
 		if err != nil {
 			return InternalError(c, ctx, "failed to create audiobook importer", err)
@@ -313,6 +314,7 @@ func ExecuteImport(db *gorm.DB) echo.HandlerFunc {
 			config.Config.Importers,
 			metadataProvider,
 			audibleClient,
+			db,
 		)
 		if err != nil {
 			return InternalError(c, ctx, "failed to create audiobook importer", err)

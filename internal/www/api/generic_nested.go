@@ -8,6 +8,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 )
 
 // NestedModelHandler handles child resources under a parent resource.
@@ -143,6 +145,10 @@ func nestedCreateHandler[Parent any, Model any, Request any, Response any](
 			slog.Uint64("parent_id", uint64(parentID)),
 			slog.String("type", typeName))
 
+		if logger, ok := any(handler).(EventLogger[Model]); ok {
+			logger.LogEvent(db, eventlog.EventCreated, row)
+		}
+
 		return c.JSON(http.StatusCreated, handler.ModelToResponse(c, ctx, db, row))
 	}
 }
@@ -248,6 +254,10 @@ func nestedUpdateHandler[Parent any, Model any, Request any, Response any](
 			slog.Uint64("id", uint64(id)),
 			slog.String("type", typeName))
 
+		if logger, ok := any(handler).(EventLogger[Model]); ok {
+			logger.LogEvent(db, eventlog.EventUpdated, row)
+		}
+
 		return c.JSON(http.StatusOK, handler.ModelToResponse(c, ctx, db, row))
 	}
 }
@@ -295,6 +305,10 @@ func nestedDeleteHandler[Parent any, Model any, Request any, Response any](
 		slog.InfoContext(ctx, "Successfully deleted nested resource",
 			slog.Uint64("id", uint64(id)),
 			slog.String("type", typeName))
+
+		if logger, ok := any(handler).(EventLogger[Model]); ok {
+			logger.LogEvent(db, eventlog.EventDeleted, row)
+		}
 
 		return c.NoContent(http.StatusNoContent)
 	}

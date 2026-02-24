@@ -18,6 +18,7 @@ func TestSendNotificationViaNotifier_NilNotifier(t *testing.T) {
 	err := SendNotificationViaNotifier(
 		context.Background(),
 		nil,
+		nil,
 		notifications.DiscordWebhookMessage{},
 	)
 	assert.NoError(t, err)
@@ -43,7 +44,7 @@ func TestSendNotificationViaNotifier_Success(t *testing.T) {
 		Content:  "Hello",
 	}
 
-	err := SendNotificationViaNotifier(context.Background(), notifier, message)
+	err := SendNotificationViaNotifier(context.Background(), nil, notifier, message)
 	assert.NoError(t, err)
 	assert.Equal(t, "Test", receivedMessage.Username)
 	assert.Equal(t, "Hello", receivedMessage.Content)
@@ -62,6 +63,7 @@ func TestSendNotificationViaNotifier_ServerError(t *testing.T) {
 
 	err := SendNotificationViaNotifier(
 		context.Background(),
+		nil,
 		notifier,
 		notifications.DiscordWebhookMessage{},
 	)

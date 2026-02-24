@@ -2,10 +2,12 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -67,6 +69,13 @@ func (h AuthorAliasHandler) IDFromModel(row models.AuthorAlias) uint {
 
 func (h AuthorAliasHandler) ParentForeignKey() string {
 	return "author_id"
+}
+
+func (h AuthorAliasHandler) LogEvent(db *gorm.DB, eventType string, row models.AuthorAlias) {
+	eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntityAuthorAlias+"."+eventType, eventlog.SourceAPI,
+		eventlog.EntityAuthorAlias, fmt.Sprintf("%d", row.ID),
+		fmt.Sprintf("Author alias %s: %s (author #%d)", eventType, row.Name, row.AuthorID),
+		map[string]any{"id": row.ID, "name": row.Name, "author_id": row.AuthorID})
 }
 
 // ListAuthorAliases returns all aliases for a specific author

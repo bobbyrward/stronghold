@@ -300,3 +300,31 @@ export interface ExecuteImportResponse {
     destination_path: string
     message?: string
 }
+
+// Event Log types
+export interface EventLog {
+    id: number
+    created_at: string
+    category: string
+    event_type: string
+    source: string
+    entity_type: string
+    entity_id: string
+    summary: string
+    details: string
+}
+
+export interface EventLogFacets {
+    categories: string[]
+    sources: string[]
+    event_types: string[]
+    entity_types: string[]
+}
+
+export interface PaginatedEventLogResponse {
+    items: EventLog[]
+    total: number
+    page: number
+    per_page: number
+    facets: EventLogFacets
+}

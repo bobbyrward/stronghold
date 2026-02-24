@@ -151,6 +151,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&AuthorAlias{},
 		&AuthorSubscription{},
 		&AuthorSubscriptionItem{},
+		&EventLog{},
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
@@ -216,6 +217,14 @@ func ConnectTestDB() (*gorm.DB, error) {
 		slog.ErrorContext(ctx, "Failed to connect to test database", slog.Any("err", err))
 		return nil, err
 	}
+
+	// SQLite in-memory databases are per-connection. Limit to a single connection
+	// so all queries (including concurrent ones) see the same data.
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	sqlDB.SetMaxOpenConns(1)
 
 	slog.InfoContext(ctx, "Successfully connected to test database")
 

@@ -2,19 +2,22 @@ package feedwatcher2
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/carlmjohnson/requests"
+	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/notifications"
 )
 
 // SendNotificationViaNotifier sends a Discord notification using the database Notifier's URL.
 // Returns nil if notifier is nil (no notification configured).
-func SendNotificationViaNotifier(ctx context.Context, notifier *models.Notifier, message notifications.DiscordWebhookMessage) error {
+func SendNotificationViaNotifier(ctx context.Context, db *gorm.DB, notifier *models.Notifier, message notifications.DiscordWebhookMessage) error {
 	if notifier == nil {
 		slog.DebugContext(ctx, "No notifier configured, skipping notification")
 		return nil
@@ -32,11 +35,19 @@ func SendNotificationViaNotifier(ctx context.Context, notifier *models.Notifier,
 		slog.ErrorContext(ctx, "Failed to send notification",
 			slog.String("notifier_name", notifier.Name),
 			slog.Any("error", err))
+		eventlog.Log(db, eventlog.CategoryNotification, eventlog.EventNotificationFailed, eventlog.SourceFeedwatcher2,
+			eventlog.EntityNotifier, fmt.Sprintf("%d", notifier.ID),
+			fmt.Sprintf("Notification failed: %s: %s", notifier.Name, err.Error()),
+			map[string]string{"notifier_name": notifier.Name, "error": err.Error()})
 		return err
 	}
 
 	slog.InfoContext(ctx, "Notification sent successfully",
 		slog.String("notifier_name", notifier.Name))
+	eventlog.Log(db, eventlog.CategoryNotification, eventlog.EventNotificationSent, eventlog.SourceFeedwatcher2,
+		eventlog.EntityNotifier, fmt.Sprintf("%d", notifier.ID),
+		fmt.Sprintf("Notification sent: %s", notifier.Name),
+		map[string]string{"notifier_name": notifier.Name})
 	return nil
 }
 

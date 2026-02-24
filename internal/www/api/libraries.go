@@ -2,10 +2,12 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -77,6 +79,13 @@ func (h LibraryHandler) IDFromModel(row models.Library) uint {
 	return row.ID
 }
 
+func (h LibraryHandler) LogEvent(db *gorm.DB, eventType string, row models.Library) {
+	eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntityLibrary+"."+eventType, eventlog.SourceAPI,
+		eventlog.EntityLibrary, fmt.Sprintf("%d", row.ID),
+		fmt.Sprintf("Library %s: %s", eventType, row.Name),
+		map[string]any{"id": row.ID, "name": row.Name})
+}
+
 // ListLibraries returns all libraries
 func ListLibraries(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.Library, LibraryRequest, LibraryResponse](db, LibraryHandler{})
@@ -99,5 +108,5 @@ func UpdateLibrary(db *gorm.DB) echo.HandlerFunc {
 
 // DeleteLibrary deletes a library
 func DeleteLibrary(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.Library](db)
+	return genericDeleteHandlerWithEventLog[models.Library, LibraryRequest, LibraryResponse](db, LibraryHandler{})
 }

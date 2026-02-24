@@ -16,6 +16,11 @@ const routes = [
     component: () => import('@/views/ManualTorrentsView.vue')
   },
   {
+    path: '/activity',
+    name: 'activity',
+    component: () => import('@/views/ActivityView.vue')
+  },
+  {
     path: '/feeds',
     name: 'feeds',
     component: () => import('@/views/FeedsView.vue')
