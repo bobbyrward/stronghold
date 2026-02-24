@@ -2,7 +2,6 @@ package www
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -30,14 +29,14 @@ func Run() error {
 	db, err := models.ConnectDB()
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Run auto migration
 	err = models.AutoMigrate(db)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to automigrate database"))
+		return fmt.Errorf("failed to automigrate database: %w", err)
 	}
 
 	echoServer := echo.New()

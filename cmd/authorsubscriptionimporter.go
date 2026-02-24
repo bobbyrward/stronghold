@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/cappuccinotm/slogx"
@@ -37,17 +37,15 @@ func runAuthorSubscriptionImporter(cmd *cobra.Command, args []string) error {
 	// Connect to database
 	db, err := models.ConnectAndMigrate(ctx)
 	if err != nil {
-		msg := "failed to connect to database"
-		slog.ErrorContext(ctx, msg, slogx.Error(err))
-		return errors.Join(errors.New(msg), err)
+		slog.ErrorContext(ctx, "failed to connect to database", slogx.Error(err))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Create qBittorrent client
 	qbitClient, err := qbit.CreateClient()
 	if err != nil {
-		msg := "failed to create qBittorrent client"
-		slog.ErrorContext(ctx, msg, slogx.Error(err))
-		return errors.Join(errors.New(msg), err)
+		slog.ErrorContext(ctx, "failed to create qBittorrent client", slogx.Error(err))
+		return fmt.Errorf("failed to create qBittorrent client: %w", err)
 	}
 
 	// Create audiobook importer system (for audiobook imports)
@@ -59,9 +57,8 @@ func runAuthorSubscriptionImporter(cmd *cobra.Command, args []string) error {
 		audibleApiClient,
 	)
 	if err != nil {
-		msg := "failed to create audiobook importer system"
-		slog.ErrorContext(ctx, msg, slogx.Error(err))
-		return errors.Join(errors.New(msg), err)
+		slog.ErrorContext(ctx, "failed to create audiobook importer system", slogx.Error(err))
+		return fmt.Errorf("failed to create audiobook importer system: %w", err)
 	}
 
 	// Create ebook importer system (for ebook imports)
@@ -77,9 +74,8 @@ func runAuthorSubscriptionImporter(cmd *cobra.Command, args []string) error {
 
 	err = importer.Run(ctx)
 	if err != nil {
-		msg := "failed to run author subscription importer"
-		slog.ErrorContext(ctx, msg, slogx.Error(err))
-		return errors.Join(errors.New(msg), err)
+		slog.ErrorContext(ctx, "failed to run author subscription importer", slogx.Error(err))
+		return fmt.Errorf("failed to run author subscription importer: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Author subscription import completed successfully")

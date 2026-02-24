@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -29,14 +28,14 @@ func runRefreshToken(cmd *cobra.Command, args []string) error {
 	// Connect to database
 	db, err := models.ConnectDB()
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	searchService := booksearch.NewBookSearchService()
 
 	err = searchService.RefreshToken(ctx, db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to refresh token"))
+		return fmt.Errorf("failed to refresh token: %w", err)
 	}
 
 	fmt.Println("Token refresh completed successfully")

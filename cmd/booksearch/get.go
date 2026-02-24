@@ -2,7 +2,6 @@ package booksearch
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -42,13 +41,13 @@ func runGetByIDCommand(cmd *cobra.Command, idString string) error {
 
 	id, err := strconv.Atoi(idString)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("invalid ID: %s", idString))
+		return fmt.Errorf("invalid ID %s: %w", idString, err)
 	}
 
 	// Connect to database
 	db, err := models.ConnectDB()
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	searchService := booksearch.NewBookSearchService()
@@ -56,12 +55,12 @@ func runGetByIDCommand(cmd *cobra.Command, idString string) error {
 
 	results, err := searchService.Search(ctx, db, &params)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to search for books"))
+		return fmt.Errorf("failed to search for books: %w", err)
 	}
 
 	err = displaySingleResult(&params, results)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to display results"))
+		return fmt.Errorf("failed to display results: %w", err)
 	}
 
 	return nil
@@ -73,7 +72,7 @@ func runGetByHashCommand(cmd *cobra.Command, hash string) error {
 	// Connect to database
 	db, err := models.ConnectDB()
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	searchService := booksearch.NewBookSearchService()
@@ -81,12 +80,12 @@ func runGetByHashCommand(cmd *cobra.Command, hash string) error {
 
 	results, err := searchService.Search(ctx, db, &params)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to search for books"))
+		return fmt.Errorf("failed to search for books: %w", err)
 	}
 
 	err = displaySingleResult(&params, results)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to display results"))
+		return fmt.Errorf("failed to display results: %w", err)
 	}
 
 	return nil

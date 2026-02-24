@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -183,7 +182,7 @@ func LoadConfig(configFilePath string) error {
 		slog.ErrorContext(ctx, "Failed to open config file",
 			slog.String("path", configFilePath),
 			slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to open config file"))
+		return fmt.Errorf("failed to open config file: %w", err)
 	}
 
 	defer func() { _ = file.Close() }()
@@ -195,7 +194,7 @@ func LoadConfig(configFilePath string) error {
 		slog.ErrorContext(ctx, "Failed to decode config file",
 			slog.String("path", configFilePath),
 			slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to decode config file"))
+		return fmt.Errorf("failed to decode config file: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Successfully loaded configuration",

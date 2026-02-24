@@ -188,7 +188,7 @@ func NewFeedWatcher() *FeedWatcher {
 func (fw *FeedWatcher) Run(ctx context.Context, db *gorm.DB) error {
 	client, err := qbit.CreateClient()
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to create qBittorrent client"))
+		return fmt.Errorf("failed to create qBittorrent client: %w", err)
 	}
 
 	config.Config.FeedWatcher.Preprocess()
@@ -214,7 +214,7 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 
 	feed, err := parser.ParseURL(feedConfig.URL)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to parse feed"))
+		return fmt.Errorf("failed to parse feed: %w", err)
 	}
 
 	for _, item := range feed.Items {

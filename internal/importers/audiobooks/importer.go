@@ -62,7 +62,7 @@ func (abis *AudiobookImporterSystem) Run(ctx context.Context) error {
 
 		err := abis.ProcessImportType(ctx, importType, library)
 		if err != nil {
-			return errors.Join(err, fmt.Errorf("failed to process import type: %s", importType.Category))
+			return fmt.Errorf("failed to process import type %s: %w", importType.Category, err)
 		}
 	}
 
@@ -76,7 +76,7 @@ func (abis *AudiobookImporterSystem) ProcessImportType(ctx context.Context, impo
 		importType.Category,
 	)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to get unimported torrents for category: %s", importType.Category))
+		return fmt.Errorf("failed to get unimported torrents for category %s: %w", importType.Category, err)
 	}
 
 	for _, torrent := range torrents {

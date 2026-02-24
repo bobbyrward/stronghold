@@ -115,7 +115,7 @@ func ConnectDB() (*gorm.DB, error) {
 		slog.ErrorContext(ctx, "Failed to connect to database",
 			slog.String("url", config.Config.Postgres.URL),
 			slog.Any("err", err))
-		return nil, errors.Join(err, fmt.Errorf("failed to connect to db"))
+		return nil, fmt.Errorf("failed to connect to db: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Successfully connected to database")
@@ -154,7 +154,7 @@ func AutoMigrate(db *gorm.DB) error {
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to auto migrate db"))
+		return fmt.Errorf("failed to auto migrate db: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Successfully completed database auto-migration")
@@ -165,37 +165,37 @@ func AutoMigrate(db *gorm.DB) error {
 func PopulateData(db *gorm.DB) error {
 	err := populateSubscriptionScopes(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate subscription scopes"))
+		return fmt.Errorf("failed to populate subscription scopes: %w", err)
 	}
 
 	err = populateBookTypes(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate book types"))
+		return fmt.Errorf("failed to populate book types: %w", err)
 	}
 
 	err = populateTorrentCategories(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate torrent categories"))
+		return fmt.Errorf("failed to populate torrent categories: %w", err)
 	}
 
 	err = populateNotificationType(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate notification types"))
+		return fmt.Errorf("failed to populate notification types: %w", err)
 	}
 
 	err = populateFilterKeys(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate filter keys"))
+		return fmt.Errorf("failed to populate filter keys: %w", err)
 	}
 
 	err = populateFilterOperators(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate filter operators"))
+		return fmt.Errorf("failed to populate filter operators: %w", err)
 	}
 
 	err = populateFilterSetTypes(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate filter set types"))
+		return fmt.Errorf("failed to populate filter set types: %w", err)
 	}
 
 	return nil

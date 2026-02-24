@@ -145,7 +145,7 @@ func (s *BookSearchService) Search(ctx context.Context, db *gorm.DB, params *Sea
 		Fetch(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to search", slog.Any("err", err))
-		return nil, errors.Join(err, fmt.Errorf("unable to search"))
+		return nil, fmt.Errorf("unable to search: %w", err)
 	}
 
 	slog.InfoContext(ctx, "made request", slog.Any("response", response))
@@ -198,7 +198,7 @@ func (s *BookSearchService) RefreshToken(ctx context.Context, db *gorm.DB) error
 		Fetch(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to refresh token", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("unable to search"))
+		return fmt.Errorf("unable to refresh token: %w", err)
 	}
 
 	responseCookies := client.Jar.Cookies(&url.URL{
@@ -215,7 +215,7 @@ func (s *BookSearchService) RefreshToken(ctx context.Context, db *gorm.DB) error
 	err = models.UpsertBookSearchCredential(db, tokenCookie.Value, response.IPAddress, fmt.Sprintf("%d", response.ASN))
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to upsert book search credential", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to upsert book search credential"))
+		return fmt.Errorf("failed to upsert book search credential: %w", err)
 	}
 
 	return nil
