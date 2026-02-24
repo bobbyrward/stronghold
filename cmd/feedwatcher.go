@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -36,7 +35,7 @@ func runFeedWatcher(cmd *cobra.Command, args []string) error {
 	err = feedWatcher.Run(ctx, db)
 	if err != nil {
 		slog.ErrorContext(ctx, "Feed watcher failed", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to run feed watcher"))
+		return fmt.Errorf("failed to run feed watcher: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Feed watcher completed successfully")

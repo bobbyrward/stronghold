@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -78,14 +77,14 @@ func runDoctorInitBookSearchCmd(cmd *cobra.Command, args []string, apiKey string
 	db, err := models.ConnectDB()
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Initialize with empty IP and ASN - these will be populated on first token refresh
 	err = models.UpsertBookSearchCredential(db, apiKey, "", "")
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to initialize book search credentials", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to initialize book search credentials"))
+		return fmt.Errorf("failed to initialize book search credentials: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Book search credentials initialized successfully")
