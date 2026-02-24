@@ -2,7 +2,6 @@ package booksearch
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bobbyrward/stronghold/internal/booksearch"
@@ -39,7 +38,7 @@ func runSearchCommand(cmd *cobra.Command, query, format string, limit int) error
 	// Connect to database
 	db, err := models.ConnectDB()
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	searchService := booksearch.NewBookSearchService()
@@ -48,12 +47,12 @@ func runSearchCommand(cmd *cobra.Command, query, format string, limit int) error
 
 	results, err := searchService.Search(ctx, db, &params)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to search for books"))
+		return fmt.Errorf("failed to search for books: %w", err)
 	}
 
 	err = displaySearchResults(&params, results, format)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to display results"))
+		return fmt.Errorf("failed to display results: %w", err)
 	}
 
 	return nil

@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"log/slog"
 
-	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/carlmjohnson/requests"
+
+	"github.com/bobbyrward/stronghold/internal/config"
 )
 
 /*
@@ -28,10 +29,13 @@ import (
     "public_flags": 131328
   }
 }
-
-
-
 */
+
+type Notifier interface {
+	SendItemAddedNotification(context.Context)
+	SendItemImportedNotification(context.Context)
+	SendManualInterventionRequiredNotification(context.Context)
+}
 
 type DiscordWebhookMessage struct {
 	Username string         `json:"username,omitempty"`

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -28,7 +27,7 @@ func runDiscordBotCmd(cmd *cobra.Command, args []string) error {
 	err := discordbot.Run()
 	if err != nil {
 		slog.ErrorContext(ctx, "Discord bot failed", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to run discord bot"))
+		return fmt.Errorf("failed to run discord bot: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Discord bot shut down gracefully")

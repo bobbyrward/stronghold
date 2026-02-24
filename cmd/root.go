@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -60,7 +59,7 @@ func internalCobraInit() error {
 
 	err := config.LoadConfig(cfgFile)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to load config"))
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	return nil

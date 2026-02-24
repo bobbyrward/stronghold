@@ -2,7 +2,7 @@ package common
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 	"path/filepath"
 	"strings"
@@ -47,10 +47,8 @@ func MapTorrentFilesToLocalPaths(ctx context.Context, qbit qbit.QbitClient, torr
 
 	torrentFiles, err := qbit.GetFilesInformationCtx(ctx, torrent.Hash)
 	if err != nil {
-		msg := "failed to get torrent files"
-		slog.InfoContext(ctx, msg, slog.String("name", torrent.Name), slog.Any("err", err))
-
-		return nil, errors.Join(errors.New(msg), err)
+		slog.InfoContext(ctx, "failed to get torrent files", slog.String("name", torrent.Name), slog.Any("err", err))
+		return nil, fmt.Errorf("failed to get torrent files: %w", err)
 	}
 
 	files := make([]MappedTorrentFile, 0, len(*torrentFiles))

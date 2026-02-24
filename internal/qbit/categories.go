@@ -2,7 +2,6 @@ package qbit
 
 import (
 	"context"
-	"errors"
 	"fmt"
 )
 
@@ -11,7 +10,7 @@ func GetTorrentsByCategory(ctx context.Context, qbit QbitClient, category string
 		Category: category,
 	})
 	if err != nil {
-		return nil, errors.Join(err, fmt.Errorf("failed to get torrents"))
+		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
 
 	return torrents, nil
@@ -22,7 +21,7 @@ func GetUnimportedTorrentsByCategory(ctx context.Context, qbit QbitClient, categ
 		Category: category,
 	})
 	if err != nil {
-		return nil, errors.Join(err, fmt.Errorf("failed to get torrents"))
+		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
 
 	return FilterUnimportedTorrents(torrents), nil

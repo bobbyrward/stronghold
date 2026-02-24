@@ -2,7 +2,6 @@ package ebooks
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -41,7 +40,7 @@ func (bis *BookImporterSystem) Run(ctx context.Context) error {
 
 		err := bis.ProcessImportType(ctx, importType, library)
 		if err != nil {
-			return errors.Join(err, fmt.Errorf("failed to process import type: %s", importType.Category))
+			return fmt.Errorf("failed to process import type %s: %w", importType.Category, err)
 		}
 	}
 
@@ -51,7 +50,7 @@ func (bis *BookImporterSystem) Run(ctx context.Context) error {
 func (bis *BookImporterSystem) ProcessImportType(ctx context.Context, importType config.ImportType, library *config.ImportLibrary) error {
 	torrents, err := qbit.GetUnimportedTorrentsByCategory(ctx, bis.qbitClient, importType.Category)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to get unimported torrents for category: %s", importType.Category))
+		return fmt.Errorf("failed to get unimported torrents for category %s: %w", importType.Category, err)
 	}
 
 	for _, torrent := range torrents {
