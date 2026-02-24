@@ -41,6 +41,17 @@ func (params *SearchParameters) Validate() error {
 		return fmt.Errorf("one of Query or Hash or ID is required")
 	}
 
+	typeCount := 0
+	for _, option := range searchOptions {
+		if option {
+			typeCount++
+		}
+	}
+
+	if typeCount > 1 {
+		return fmt.Errorf("only one of Query or Hash or ID can be set")
+	}
+
 	return nil
 }
 

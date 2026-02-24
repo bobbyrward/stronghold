@@ -10,6 +10,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/booksearch"
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bwmarrin/discordgo"
 	"github.com/cappuccinotm/slogx"
@@ -52,6 +53,11 @@ func (b *Bot) handleRequestBookCommand(s *discordgo.Session, i *discordgo.Intera
 	ctx := context.Background()
 	slog.InfoContext(ctx, "Processing book request", slog.String("query", query), slog.String("userId", i.Member.User.ID))
 
+	eventlog.Log(b.db, eventlog.CategorySearch, eventlog.EventSearchRequested, eventlog.SourceDiscordBot,
+		eventlog.EntitySearch, "",
+		fmt.Sprintf("Book search requested: %s", query),
+		map[string]string{"query": query, "user_id": i.Member.User.ID, "channel_id": i.ChannelID})
+
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 	})
@@ -87,6 +93,11 @@ func (b *Bot) handleRequestBookCommand(s *discordgo.Session, i *discordgo.Intera
 		b.editResponseWithError(s, i, "Failed to cache search results")
 		return
 	}
+
+	eventlog.Log(b.db, eventlog.CategorySearch, eventlog.EventSearchCompleted, eventlog.SourceDiscordBot,
+		eventlog.EntitySearch, "",
+		fmt.Sprintf("Search completed: %s (%d results)", query, len(dbResults)),
+		map[string]any{"query": query, "result_count": len(dbResults)})
 
 	b.sendBookSelectionMessage(s, i, dbResults, params)
 }
@@ -414,6 +425,17 @@ func (b *Bot) handleAddSelectedBooks(s *discordgo.Session, i *discordgo.Interact
 				slog.String("torrentURL", torrentURL),
 				slog.String("channelid", i.ChannelID),
 			)
+			eventlog.Log(b.db, eventlog.CategoryDownload, eventlog.EventTorrentAdded, eventlog.SourceDiscordBot,
+				eventlog.EntityTorrent, book.DlHash,
+				fmt.Sprintf("Downloaded via Discord: %s", book.Title),
+				map[string]any{
+					"title":      book.Title,
+					"authors":    book.Authors,
+					"category":   qbitCategory,
+					"dl_hash":    book.DlHash,
+					"torrent_id": book.TorrentID,
+					"channel_id": i.ChannelID,
+				})
 		}
 	}
 

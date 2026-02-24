@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/feedwatcher2"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks"
 	"github.com/bobbyrward/stronghold/internal/importers/ebooks"
@@ -140,6 +141,11 @@ func (asi *AuthorSubscriptionImporter) importTorrent(ctx context.Context, torren
 		DiscordNotifier: notifierName,
 	}
 
+	eventlog.Log(asi.db, eventlog.CategoryImport, eventlog.EventImportStarted, eventlog.SourceAuthorSubscriptionImporter,
+		eventlog.EntityTorrent, torrent.Hash,
+		fmt.Sprintf("Import started: %s (%s)", item.Title, item.BookType.Name),
+		map[string]string{"title": item.Title, "hash": torrent.Hash, "book_type": item.BookType.Name, "library": library.Name})
+
 	// Route to appropriate importer based on book type
 	switch item.BookType.Name {
 	case "audiobook":
@@ -166,6 +172,11 @@ func (asi *AuthorSubscriptionImporter) markForManualIntervention(ctx context.Con
 		slog.String("name", torrent.Name),
 		slog.String("hash", torrent.Hash),
 		slog.String("reason", reason))
+
+	eventlog.Log(asi.db, eventlog.CategoryImport, eventlog.EventImportManualIntervention, eventlog.SourceAuthorSubscriptionImporter,
+		eventlog.EntityTorrent, torrent.Hash,
+		fmt.Sprintf("Manual intervention: %s: %s", torrent.Name, reason),
+		map[string]string{"name": torrent.Name, "hash": torrent.Hash, "reason": reason})
 
 	// Send Discord notification if notifier is configured
 	asi.sendManualInterventionNotification(ctx, torrent, notifierName, reason)

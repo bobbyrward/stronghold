@@ -11,6 +11,7 @@ import (
 	"github.com/mmcdole/gofeed"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 	"github.com/bobbyrward/stronghold/internal/torrentutil"
@@ -111,12 +112,21 @@ func (fw *FeedWatcher2) watchFeed(ctx context.Context, feed *models.Feed) error 
 	parser := gofeed.NewParser()
 	parsedFeed, err := parser.ParseURL(feed.URL)
 	if err != nil {
+		eventlog.Log(fw.db, eventlog.CategoryFeed, eventlog.EventFeedError, eventlog.SourceFeedwatcher2,
+			eventlog.EntityFeed, fmt.Sprintf("%d", feed.ID),
+			fmt.Sprintf("Feed error: %s: %s", feed.Name, err.Error()),
+			map[string]string{"feed_name": feed.Name, "error": err.Error()})
 		return fmt.Errorf("failed to parse feed %s: %w", feed.Name, err)
 	}
 
 	slog.InfoContext(ctx, "Parsed feed",
 		slog.String("name", feed.Name),
 		slog.Int("items", len(parsedFeed.Items)))
+
+	eventlog.Log(fw.db, eventlog.CategoryFeed, eventlog.EventFeedPolled, eventlog.SourceFeedwatcher2,
+		eventlog.EntityFeed, fmt.Sprintf("%d", feed.ID),
+		fmt.Sprintf("Polled feed: %s (%d items)", feed.Name, len(parsedFeed.Items)),
+		map[string]any{"feed_name": feed.Name, "item_count": len(parsedFeed.Items)})
 
 	for _, item := range parsedFeed.Items {
 		err := fw.processItem(ctx, feed, item)
@@ -161,6 +171,17 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		slog.String("scope", subscription.Scope.Name),
 		slog.Any("feed_authors", entry.Authors))
 
+	eventlog.Log(fw.db, eventlog.CategorySubscription, eventlog.EventSubscriptionMatched, eventlog.SourceFeedwatcher2,
+		eventlog.EntitySubscription, fmt.Sprintf("%d", subscription.ID),
+		fmt.Sprintf("Matched: %s for %s (%s)", entry.Title, subscription.Author.Name, subscription.Scope.Name),
+		map[string]any{
+			"title":        entry.Title,
+			"author":       subscription.Author.Name,
+			"scope":        subscription.Scope.Name,
+			"feed_authors": entry.Authors,
+			"feed_name":    feed.Name,
+		})
+
 	// Check for duplicate by booksearch ID before downloading
 	var existingItem models.AuthorSubscriptionItem
 	result := fw.db.Where("booksearch_id = ?", booksearchID).First(&existingItem)
@@ -169,6 +190,10 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		slog.InfoContext(ctx, "Item already downloaded, skipping",
 			slog.String("booksearch_id", booksearchID),
 			slog.String("title", entry.Title))
+		eventlog.Log(fw.db, eventlog.CategoryDownload, eventlog.EventTorrentDuplicateSkipped, eventlog.SourceFeedwatcher2,
+			eventlog.EntityTorrent, booksearchID,
+			fmt.Sprintf("Duplicate skipped: %s", entry.Title),
+			map[string]string{"title": entry.Title, "booksearch_id": booksearchID, "author": subscription.Author.Name})
 		return nil
 	}
 	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -215,6 +240,18 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		slog.String("category", AuthorSubscriptionCategory),
 		slog.String("hash", hash))
 
+	eventlog.Log(fw.db, eventlog.CategoryDownload, eventlog.EventTorrentAdded, eventlog.SourceFeedwatcher2,
+		eventlog.EntityTorrent, hash,
+		fmt.Sprintf("Downloaded: %s by %s", entry.Title, subscription.Author.Name),
+		map[string]string{
+			"title":         entry.Title,
+			"author":        subscription.Author.Name,
+			"category":      entry.Category,
+			"hash":          hash,
+			"booksearch_id": booksearchID,
+			"scope":         subscription.Scope.Name,
+		})
+
 	// Create AuthorSubscriptionItem record
 	subscriptionItem := models.AuthorSubscriptionItem{
 		AuthorSubscriptionID: subscription.ID,
@@ -235,7 +272,7 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 
 	// Send notification
 	payload := CreateFeedwatcher2NotificationPayload(&entry, &subscription.Author, subscription)
-	err = SendNotificationViaNotifier(ctx, subscription.Notifier, payload)
+	err = SendNotificationViaNotifier(ctx, fw.db, subscription.Notifier, payload)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to send notification",
 			slog.String("title", entry.Title),

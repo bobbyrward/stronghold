@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/audible"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/metadata"
@@ -41,6 +42,8 @@ func runAuthorSubscriptionImporter(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
+	eventlog.Cleanup(ctx, db, 90)
+
 	// Create qBittorrent client
 	qbitClient, err := qbit.CreateClient()
 	if err != nil {
@@ -55,6 +58,7 @@ func runAuthorSubscriptionImporter(cmd *cobra.Command, args []string) error {
 		config.Config.Importers,
 		metadata.NewFFProbeMetadataProvider(),
 		audibleApiClient,
+		db,
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create audiobook importer system", slogx.Error(err))
@@ -62,7 +66,7 @@ func runAuthorSubscriptionImporter(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create ebook importer system (for ebook imports)
-	ebookSystem := ebooks.NewBookImporterSystem(qbitClient)
+	ebookSystem := ebooks.NewBookImporterSystem(qbitClient, db)
 
 	// Create and run the author subscription importer
 	importer := authorsubscriptions.NewAuthorSubscriptionImporter(

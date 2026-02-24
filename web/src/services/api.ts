@@ -37,7 +37,9 @@ import type {
     AuthorSubscription,
     AuthorSubscriptionRequest,
     AuthorSubscriptionItem,
-    HardcoverAuthorSearchResult
+    HardcoverAuthorSearchResult,
+    PaginatedEventLogResponse,
+    EventLog
 } from '@/types/api'
 
 const BASE_URL = '/api'
@@ -355,5 +357,14 @@ export const api = {
                 method: 'POST',
                 body: JSON.stringify(data)
             })
+    },
+
+    // Event Logs (read-only, paginated)
+    eventLogs: {
+        list: (params: Record<string, string>) => {
+            const query = new URLSearchParams(params).toString()
+            return request<PaginatedEventLogResponse>(`/event-logs?${query}`)
+        },
+        get: (id: number) => request<EventLog>(`/event-logs/${id}`)
     }
 }

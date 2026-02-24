@@ -151,6 +151,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&AuthorAlias{},
 		&AuthorSubscription{},
 		&AuthorSubscriptionItem{},
+		&EventLog{},
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
