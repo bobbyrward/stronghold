@@ -10,6 +10,8 @@
 }
 
 .app-sidebar {
+  display: flex;
+  flex-direction: column;
   width: 250px;
   background-color: $gray-900;
   transition: width 0.3s ease;
@@ -23,6 +25,10 @@
     }
 
     .section-title {
+      display: none;
+    }
+
+    .sidebar-version {
       display: none;
     }
   }
@@ -47,6 +53,15 @@
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
+}
+
+.sidebar-version {
+  margin-top: auto;
+  padding: 0.75rem;
+  font-size: 0.7rem;
+  color: $gray-600;
+  text-align: center;
+  border-top: 1px solid $gray-800;
 }
 
 .sidebar-nav {

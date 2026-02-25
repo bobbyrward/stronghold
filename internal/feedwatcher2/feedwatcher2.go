@@ -288,4 +288,3 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 
 	return nil
 }
-

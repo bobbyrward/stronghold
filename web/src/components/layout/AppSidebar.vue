@@ -1,7 +1,19 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useUiStore } from '@/stores/ui'
+import { api } from '@/services/api'
 
 const uiStore = useUiStore()
+const gitCommit = ref('')
+
+onMounted(async () => {
+    try {
+        const info = await api.version.get()
+        gitCommit.value = info.git_commit
+    } catch {
+        gitCommit.value = ''
+    }
+})
 </script>
 
 <template>
@@ -96,5 +108,9 @@ const uiStore = useUiStore()
                 <span class="nav-text">Book Types</span>
             </router-link>
         </nav>
+
+        <div v-if="gitCommit" class="sidebar-version">
+            <span class="nav-text">{{ gitCommit }}</span>
+        </div>
     </aside>
 </template>

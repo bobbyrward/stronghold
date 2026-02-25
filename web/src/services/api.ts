@@ -39,7 +39,8 @@ import type {
     AuthorSubscriptionItem,
     HardcoverAuthorSearchResult,
     PaginatedEventLogResponse,
-    EventLog
+    EventLog,
+    VersionInfo
 } from '@/types/api'
 
 const BASE_URL = '/api'
@@ -366,5 +367,10 @@ export const api = {
             return request<PaginatedEventLogResponse>(`/event-logs?${query}`)
         },
         get: (id: number) => request<EventLog>(`/event-logs/${id}`)
+    },
+
+    // Version info
+    version: {
+        get: () => request<VersionInfo>('/version')
     }
 }
