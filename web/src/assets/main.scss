@@ -10,6 +10,8 @@
 }
 
 .app-sidebar {
+  display: flex;
+  flex-direction: column;
   width: 250px;
   background-color: $gray-900;
   transition: width 0.3s ease;
@@ -23,6 +25,10 @@
     }
 
     .section-title {
+      display: none;
+    }
+
+    .sidebar-version {
       display: none;
     }
   }
@@ -47,11 +53,6 @@
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
-}
-
-.app-sidebar {
-  display: flex;
-  flex-direction: column;
 }
 
 .sidebar-version {

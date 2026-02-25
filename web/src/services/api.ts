@@ -39,7 +39,8 @@ import type {
     AuthorSubscriptionItem,
     HardcoverAuthorSearchResult,
     PaginatedEventLogResponse,
-    EventLog
+    EventLog,
+    VersionInfo
 } from '@/types/api'
 
 const BASE_URL = '/api'
@@ -370,6 +371,6 @@ export const api = {
 
     // Version info
     version: {
-        get: () => request<{ version: string; git_commit: string; build_time: string }>('/version')
+        get: () => request<VersionInfo>('/version')
     }
 }

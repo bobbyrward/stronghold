@@ -328,3 +328,9 @@ export interface PaginatedEventLogResponse {
     per_page: number
     facets: EventLogFacets
 }
+
+export interface VersionInfo {
+    version: string
+    git_commit: string
+    build_time: string
+}
