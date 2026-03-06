@@ -18,7 +18,7 @@
   // ===== CONFIGURATION =====
   const CONFIG = {
     apiBaseUrl: 'https://stronghold.home.ohnozombi.es/api',
-    buttonSelector: '#download .torDetInnerBottom',
+    buttonSelector: '#tddl',
     timeout: 10000,
     debug: false
   };
