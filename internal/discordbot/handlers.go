@@ -402,7 +402,7 @@ func (b *Bot) handleAddSelectedBooks(s *discordgo.Session, i *discordgo.Interact
 			qbitCategory = "unknown"
 		}
 
-		err = b.qbitClient.AddTorrentFromUrlCtx(
+		_, err := b.qbitClient.AddTorrentFromUrlCtx(
 			ctx,
 			torrentURL,
 			map[string]string{

@@ -35,7 +35,7 @@ type MockQbitClient struct {
 	}
 
 	// AddTorrentFromUrlCtx mocking
-	AddTorrentFromUrlCtxFunc   func(ctx context.Context, url string, options map[string]string) error
+	AddTorrentFromUrlCtxFunc   func(ctx context.Context, url string, options map[string]string) (*qbittorrent.TorrentAddResponse, error)
 	AddTorrentFromUrlCtxCalls  []AddTorrentFromUrlCall
 	AddTorrentFromUrlCtxReturn error
 
@@ -121,17 +121,26 @@ func (m *MockQbitClient) GetFilesInformationCtx(ctx context.Context, hash string
 	return m.GetFilesInformationCtxReturn.Files, m.GetFilesInformationCtxReturn.Err
 }
 
-func (m *MockQbitClient) AddTorrentFromUrlCtx(ctx context.Context, url string, options map[string]string) error {
+func (m *MockQbitClient) AddTorrentFromUrlCtx(ctx context.Context, url string, options map[string]string) (*qbittorrent.TorrentAddResponse, error) {
 	m.AddTorrentFromUrlCtxCalls = append(m.AddTorrentFromUrlCtxCalls, AddTorrentFromUrlCall{
 		URL:     url,
 		Options: options,
 	})
 
+	response := &qbittorrent.TorrentAddResponse{}
+
+	if m.AddTorrentFromUrlCtxReturn == nil {
+		response.SuccessCount = 1
+		response.FailureCount = 0
+	} else {
+		response.SuccessCount = 0
+		response.FailureCount = 1
+	}
 	if m.AddTorrentFromUrlCtxFunc != nil {
 		return m.AddTorrentFromUrlCtxFunc(ctx, url, options)
 	}
 
-	return m.AddTorrentFromUrlCtxReturn
+	return response, m.AddTorrentFromUrlCtxReturn
 }
 
 func (m *MockQbitClient) SetCategoryCtx(ctx context.Context, hashes []string, category string) error {
