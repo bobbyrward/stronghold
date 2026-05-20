@@ -46,7 +46,7 @@ func DownloadBookTorrent(db *gorm.DB, qbitClient *qbit.QbitClient) echo.HandlerF
 			slog.Any("torrent_id", req.TorrentID),
 		)
 
-		err := (*qbitClient).AddTorrentFromUrlCtx(
+		_, err := (*qbitClient).AddTorrentFromUrlCtx(
 			ctx,
 			req.TorrentURL,
 			map[string]string{

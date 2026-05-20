@@ -14,7 +14,7 @@ type QbitClient interface {
 	AddTagsCtx(ctx context.Context, hashes []string, tags string) error
 	RemoveTagsCtx(ctx context.Context, hashes []string, tags string) error
 	GetFilesInformationCtx(ctx context.Context, hash string) (*TorrentFiles, error)
-	AddTorrentFromUrlCtx(ctx context.Context, url string, options map[string]string) error
+	AddTorrentFromUrlCtx(ctx context.Context, url string, options map[string]string) (*qbittorrent.TorrentAddResponse, error)
 	SetCategoryCtx(ctx context.Context, hashes []string, category string) error
 	SetTags(ctx context.Context, hashes []string, tags string) error
 }

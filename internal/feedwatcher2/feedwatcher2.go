@@ -223,7 +223,7 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 		slog.String("title", entry.Title))
 
 	// Add torrent to qBittorrent
-	err = fw.qbitClient.AddTorrentFromUrlCtx(
+	addResponse, err := fw.qbitClient.AddTorrentFromUrlCtx(
 		ctx,
 		entry.Link,
 		map[string]string{
@@ -233,6 +233,9 @@ func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item
 	)
 	if err != nil {
 		return fmt.Errorf("failed to add torrent to qBittorrent: %w", err)
+	}
+	if addResponse.FailureCount != 0 {
+		return fmt.Errorf("failed to add torrent to qBittorrent")
 	}
 
 	slog.InfoContext(ctx, "Added torrent to qBittorrent",
