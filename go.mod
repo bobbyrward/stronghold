@@ -8,7 +8,7 @@ require (
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/cappuccinotm/slogx v1.4.2
 	github.com/carlmjohnson/requests v0.25.1
-	github.com/charmbracelet/glamour v0.10.0
+	github.com/charmbracelet/glamour/v2 v2.0.1
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/hasura/go-graphql-client v0.15.1
