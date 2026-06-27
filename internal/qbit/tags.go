@@ -2,7 +2,6 @@ package qbit
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -60,7 +59,7 @@ func TagTorrent(ctx context.Context, client QbitClient, torrent Torrent, tag str
 func GetUnimportedTorrents(ctx context.Context, qbit QbitClient) ([]Torrent, error) {
 	torrents, err := qbit.GetTorrentsCtx(ctx, TorrentFilterOptions{Tag: ""})
 	if err != nil {
-		return nil, errors.Join(err, fmt.Errorf("failed to get torrents"))
+		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
 
 	return FilterUnimportedTorrents(torrents), nil
@@ -69,7 +68,7 @@ func GetUnimportedTorrents(ctx context.Context, qbit QbitClient) ([]Torrent, err
 func GetManualInterventionTorrents(ctx context.Context, qbit QbitClient, manualInterventionTag string) ([]Torrent, error) {
 	torrents, err := qbit.GetTorrentsCtx(ctx, TorrentFilterOptions{Tag: ""})
 	if err != nil {
-		return nil, errors.Join(err, fmt.Errorf("failed to get torrents"))
+		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
 
 	return FilterTorrentsByTag(torrents, manualInterventionTag).Filtered, nil

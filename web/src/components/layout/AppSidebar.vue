@@ -1,7 +1,19 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useUiStore } from '@/stores/ui'
+import { api } from '@/services/api'
 
 const uiStore = useUiStore()
+const gitCommit = ref('')
+
+onMounted(async () => {
+    try {
+        const info = await api.version.get()
+        gitCommit.value = info.git_commit
+    } catch {
+        gitCommit.value = ''
+    }
+})
 </script>
 
 <template>
@@ -9,24 +21,36 @@ const uiStore = useUiStore()
         <nav class="sidebar-nav">
             <div class="section-title">Main</div>
 
+            <router-link to="/activity" class="nav-link">
+                <i class="bi bi-clock-history"></i>
+                <span class="nav-text">Activity</span>
+            </router-link>
+
             <router-link to="/feeds" class="nav-link">
                 <i class="bi bi-rss"></i>
                 <span class="nav-text">Feeds</span>
             </router-link>
 
-            <router-link to="/feed-filters" class="nav-link">
-                <i class="bi bi-funnel"></i>
-                <span class="nav-text">Feed Filters</span>
-            </router-link>
-
-            <router-link to="/feed-author-filters" class="nav-link">
-                <i class="bi bi-person-badge"></i>
-                <span class="nav-text">Author Filters</span>
+            <router-link to="/libraries" class="nav-link">
+                <i class="bi bi-folder2-open"></i>
+                <span class="nav-text">Libraries</span>
             </router-link>
 
             <router-link to="/notifiers" class="nav-link">
                 <i class="bi bi-bell"></i>
                 <span class="nav-text">Notifiers</span>
+            </router-link>
+
+            <div class="section-title">Subscriptions</div>
+
+            <router-link to="/authors" class="nav-link">
+                <i class="bi bi-person-lines-fill"></i>
+                <span class="nav-text">Authors</span>
+            </router-link>
+
+            <router-link to="/subscription-items" class="nav-link">
+                <i class="bi bi-download"></i>
+                <span class="nav-text">Download History</span>
             </router-link>
 
             <div class="section-title">Torrents</div>
@@ -44,30 +68,24 @@ const uiStore = useUiStore()
 
             <div class="section-title">Reference Data</div>
 
-            <router-link to="/filter-keys" class="nav-link">
-                <i class="bi bi-key"></i>
-                <span class="nav-text">Filter Keys</span>
-            </router-link>
-
-            <router-link to="/filter-operators" class="nav-link">
-                <i class="bi bi-sliders"></i>
-                <span class="nav-text">Filter Operators</span>
-            </router-link>
-
             <router-link to="/notification-types" class="nav-link">
                 <i class="bi bi-envelope"></i>
                 <span class="nav-text">Notification Types</span>
-            </router-link>
-
-            <router-link to="/feed-filter-set-types" class="nav-link">
-                <i class="bi bi-collection"></i>
-                <span class="nav-text">Filter Set Types</span>
             </router-link>
 
             <router-link to="/torrent-categories" class="nav-link">
                 <i class="bi bi-folder"></i>
                 <span class="nav-text">Torrent Categories</span>
             </router-link>
+
+            <router-link to="/book-types" class="nav-link">
+                <i class="bi bi-book"></i>
+                <span class="nav-text">Book Types</span>
+            </router-link>
         </nav>
+
+        <div v-if="gitCommit" class="sidebar-version">
+            <span class="nav-text">{{ gitCommit }}</span>
+        </div>
     </aside>
 </template>

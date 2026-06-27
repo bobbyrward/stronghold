@@ -2,7 +2,6 @@ package discordbot
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/booksearch"
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/qbit"
 )
@@ -44,23 +44,26 @@ func Run() error {
 func NewBot(cfg *config.DiscordBotConfig) (*Bot, error) {
 	session, err := discordgo.New("Bot " + cfg.Token)
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("failed to create discord session"), err)
+		return nil, fmt.Errorf("failed to create discord session: %w", err)
 	}
 
 	qbitClient, err := qbit.CreateClient()
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("failed to create qbittorrent client"), err)
+		return nil, fmt.Errorf("failed to create qbittorrent client: %w", err)
 	}
 
 	db, err := models.ConnectDB()
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("failed to connect to database"), err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	err = models.AutoMigrate(db)
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("failed to automigrate database"), err)
+		return nil, fmt.Errorf("failed to automigrate database: %w", err)
 	}
+
+	// Clean up old event logs
+	eventlog.Cleanup(context.Background(), db, 90)
 
 	bot := &Bot{
 		session:    session,

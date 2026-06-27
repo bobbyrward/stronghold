@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -27,7 +26,7 @@ func runApiCmd(cmd *cobra.Command, args []string) error {
 	err := www.Run()
 	if err != nil {
 		slog.ErrorContext(ctx, "API server failed", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to run api"))
+		return fmt.Errorf("failed to run api: %w", err)
 	}
 
 	slog.InfoContext(ctx, "API server shut down gracefully")

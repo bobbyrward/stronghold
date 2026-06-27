@@ -8,7 +8,22 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 )
+
+// EventLogger is an optional interface that ModelHandlers can implement
+// to log mutation events (create, update, delete) to the event log.
+type EventLogger[Model any] interface {
+	LogEvent(db *gorm.DB, eventType string, model Model)
+}
+
+// logEventIfSupported checks if the handler implements EventLogger and calls it.
+func logEventIfSupported[Model any, Request any, Response any](handler ModelHandler[Model, Request, Response], db *gorm.DB, eventType string, model Model) {
+	if logger, ok := any(handler).(EventLogger[Model]); ok {
+		logger.LogEvent(db, eventType, model)
+	}
+}
 
 type ModelHandler[Model any, Request any, Response any] interface {
 	ModelToResponse(echo.Context, context.Context, *gorm.DB, Model) Response
@@ -26,11 +41,16 @@ func genericListHandler[Model any, Request any, Response any](
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		slog.InfoContext(ctx, "Listing", slog.String("type", typeName))
 
 		db, err := handler.PreloadRelations(c, ctx, db)
+		if err != nil {
+			return err
+		}
+
+		db, err = handler.ParseQuery(c, ctx, db)
 		if err != nil {
 			return err
 		}
@@ -63,7 +83,7 @@ func genericCreateHandler[Model any, Request any, Response any](
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		var req Request
 		if err := BindRequest(c, ctx, &req); err != nil {
@@ -103,6 +123,9 @@ func genericCreateHandler[Model any, Request any, Response any](
 		}
 
 		slog.InfoContext(ctx, "Successfully retrieved row", slog.Uint64("id", uint64(id)), slog.String("type", typeName), slog.Any("row", row))
+
+		logEventIfSupported(handler, db, eventlog.EventCreated, row)
+
 		return c.JSON(http.StatusCreated, handler.ModelToResponse(c, ctx, db, row))
 	}
 }
@@ -113,7 +136,7 @@ func genericGetHandler[Model any, Request any, Response any](
 ) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		id, err := ParseIDParam(c, ctx)
 		if err != nil {
@@ -146,7 +169,7 @@ func genericUpdateHandler[Model any, Request any, Response any](
 ) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		id, err := ParseIDParam(c, ctx)
 		if err != nil {
@@ -195,15 +218,29 @@ func genericUpdateHandler[Model any, Request any, Response any](
 		}
 
 		slog.InfoContext(ctx, "Successfully updated row", slog.Uint64("id", uint64(id)), slog.String("type", typeName))
+
+		logEventIfSupported(handler, db, eventlog.EventUpdated, row)
+
 		return c.JSON(http.StatusOK, handler.ModelToResponse(c, ctx, db, row))
 	}
 }
 
-// DeleteFeedFilter deletes a feed filter
-func genericDeleteHandler[Model any](db *gorm.DB) echo.HandlerFunc {
+// genericDeleteHandlerWithEventLog deletes a resource by ID and logs a mutation event
+// via the handler's LogEvent method, which has access to the model's name and other fields.
+func genericDeleteHandlerWithEventLog[Model any, Request any, Response any](
+	db *gorm.DB,
+	handler ModelHandler[Model, Request, Response],
+) echo.HandlerFunc {
+	return genericDeleteHandlerImpl[Model, Request, Response](db, handler)
+}
+
+func genericDeleteHandlerImpl[Model any, Request any, Response any](
+	db *gorm.DB,
+	handler ModelHandler[Model, Request, Response],
+) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		typeName := reflect.TypeOf((*Model)(nil)).Elem().Name()
+		typeName := reflect.TypeFor[Model]().Name()
 
 		id, err := ParseIDParam(c, ctx)
 		if err != nil {
@@ -212,11 +249,26 @@ func genericDeleteHandler[Model any](db *gorm.DB) echo.HandlerFunc {
 
 		slog.InfoContext(ctx, "Deleting row", slog.Uint64("id", uint64(id)))
 
+		// Fetch the row before deleting so LogEvent has access to model fields (name, etc.)
+		var row Model
+		if handler != nil {
+			if err := GetByID(db, ctx, &row, id, typeName); err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return NotFound(c, ctx, typeName, id)
+				}
+				return InternalError(c, ctx, "Failed to query", err)
+			}
+		}
+
 		if err := DeleteByID(db, ctx, new(Model), id, typeName); err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return NotFound(c, ctx, typeName, id)
 			}
 			return InternalError(c, ctx, "Failed to delete", err)
+		}
+
+		if handler != nil {
+			logEventIfSupported(handler, db, eventlog.EventDeleted, row)
 		}
 
 		return c.NoContent(http.StatusNoContent)

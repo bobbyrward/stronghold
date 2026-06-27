@@ -12,13 +12,17 @@ import (
 	"strings"
 
 	"github.com/autobrr/go-qbittorrent"
+	"github.com/cappuccinotm/slogx"
+	"gorm.io/gorm"
+
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/audible"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/metadata"
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/torrent"
 	"github.com/bobbyrward/stronghold/internal/importers/common"
+	"github.com/bobbyrward/stronghold/internal/notifications"
 	"github.com/bobbyrward/stronghold/internal/qbit"
-	"github.com/cappuccinotm/slogx"
 )
 
 const (
@@ -30,6 +34,7 @@ type AudiobookImporterSystem struct {
 	qbitClient       qbit.QbitClient
 	metadataProvider metadata.MetadataProvider
 	audible          *audible.AudibleApiClient
+	db               *gorm.DB
 }
 
 func NewAudiobookImporterSystem(
@@ -37,12 +42,14 @@ func NewAudiobookImporterSystem(
 	cfg config.ImportersConfig,
 	metadataProvider metadata.MetadataProvider,
 	audibleApiClient *audible.AudibleApiClient,
+	db *gorm.DB,
 ) (*AudiobookImporterSystem, error) {
 	importer := &AudiobookImporterSystem{
 		cfg:              cfg,
 		qbitClient:       qbitClient,
 		metadataProvider: metadataProvider,
 		audible:          audibleApiClient,
+		db:               db,
 	}
 
 	return importer, nil
@@ -61,7 +68,7 @@ func (abis *AudiobookImporterSystem) Run(ctx context.Context) error {
 
 		err := abis.ProcessImportType(ctx, importType, library)
 		if err != nil {
-			return errors.Join(err, fmt.Errorf("failed to process import type: %s", importType.Category))
+			return fmt.Errorf("failed to process import type %s: %w", importType.Category, err)
 		}
 	}
 
@@ -75,7 +82,7 @@ func (abis *AudiobookImporterSystem) ProcessImportType(ctx context.Context, impo
 		importType.Category,
 	)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to get unimported torrents for category: %s", importType.Category))
+		return fmt.Errorf("failed to get unimported torrents for category %s: %w", importType.Category, err)
 	}
 
 	for _, torrent := range torrents {
@@ -87,6 +94,11 @@ func (abis *AudiobookImporterSystem) ProcessImportType(ctx context.Context, impo
 }
 
 func (abis *AudiobookImporterSystem) MarkForManualIntervention(ctx context.Context, importTorrent qbittorrent.Torrent) {
+	abis.MarkForManualInterventionWithNotification(ctx, importTorrent, "", "")
+}
+
+// MarkForManualInterventionWithNotification marks a torrent for manual intervention and sends a notification.
+func (abis *AudiobookImporterSystem) MarkForManualInterventionWithNotification(ctx context.Context, importTorrent qbittorrent.Torrent, notifierName string, reason string) {
 	err := qbit.TagTorrent(ctx, abis.qbitClient, importTorrent, config.Config.Importers.ManualInterventionTag)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to add manual intervention tag",
@@ -94,11 +106,55 @@ func (abis *AudiobookImporterSystem) MarkForManualIntervention(ctx context.Conte
 			slog.String("hash", importTorrent.Hash),
 			slogx.Error(err),
 		)
-	} else {
-		slog.InfoContext(ctx, "marked torrent for manual intervention",
-			slog.String("name", importTorrent.Name),
-			slog.String("hash", importTorrent.Hash),
-		)
+		return
+	}
+
+	slog.InfoContext(ctx, "marked torrent for manual intervention",
+		slog.String("name", importTorrent.Name),
+		slog.String("hash", importTorrent.Hash),
+		slog.String("reason", reason),
+	)
+
+	eventlog.Log(abis.db, eventlog.CategoryImport, eventlog.EventImportManualIntervention, eventlog.SourceAudiobookImporter,
+		eventlog.EntityTorrent, importTorrent.Hash,
+		fmt.Sprintf("Manual intervention: %s: %s", importTorrent.Name, reason),
+		map[string]string{"name": importTorrent.Name, "hash": importTorrent.Hash, "reason": reason})
+
+	// Send notification if notifier is configured
+	if notifierName != "" {
+		abis.sendManualInterventionNotification(ctx, importTorrent, notifierName, reason)
+	}
+}
+
+func (abis *AudiobookImporterSystem) sendManualInterventionNotification(ctx context.Context, importTorrent qbittorrent.Torrent, notifierName string, reason string) {
+	message := notifications.DiscordWebhookMessage{
+		Username: "Stronghold Audiobook Importer",
+		Embeds: []notifications.DiscordEmbed{
+			{
+				Title:       "⚠️ Manual Intervention Required",
+				Description: fmt.Sprintf("Audiobook **%s** requires manual intervention", importTorrent.Name),
+				Color:       0xFFA500, // Orange color
+				Fields: []notifications.DiscordEmbedField{
+					{
+						Name:   "Reason",
+						Value:  reason,
+						Inline: false,
+					},
+					{
+						Name:   "Torrent Hash",
+						Value:  importTorrent.Hash,
+						Inline: true,
+					},
+				},
+			},
+		},
+	}
+
+	err := notifications.SendNotification(ctx, notifierName, message)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to send manual intervention notification",
+			slog.String("torrent", importTorrent.Name),
+			slogx.Error(err))
 	}
 }
 
@@ -115,6 +171,75 @@ func (abis *AudiobookImporterSystem) MarkAsImported(ctx context.Context, importT
 			slog.String("name", importTorrent.Name),
 			slog.String("hash", importTorrent.Hash),
 		)
+	}
+}
+
+func (abis *AudiobookImporterSystem) SendDiscordNotification(ctx context.Context, bookMetadata metadata.BookMetadata, importType config.ImportType) {
+	if importType.DiscordNotifier == "" {
+		return
+	}
+
+	// Build description with title and series info
+	description := fmt.Sprintf("**%s**", bookMetadata.Title)
+	if bookMetadata.PrimarySeries != nil {
+		description += fmt.Sprintf(" - %s", bookMetadata.PrimarySeries.Name)
+		if bookMetadata.PrimarySeries.Position != nil {
+			description += fmt.Sprintf(" - Book %s", *bookMetadata.PrimarySeries.Position)
+		}
+	}
+
+	// Build author list
+	authorNames := make([]string, len(bookMetadata.Authors))
+	for i, author := range bookMetadata.Authors {
+		authorNames[i] = author.Name
+	}
+	authorsStr := strings.Join(authorNames, ", ")
+
+	// Build fields
+	fields := []notifications.DiscordEmbedField{
+		{
+			Name:   "Author(s)",
+			Value:  authorsStr,
+			Inline: false,
+		},
+	}
+
+	// Add series field if applicable
+	if bookMetadata.PrimarySeries != nil {
+		seriesStr := bookMetadata.PrimarySeries.Name
+		if bookMetadata.PrimarySeries.Position != nil {
+			seriesStr += fmt.Sprintf(" - Book %s", *bookMetadata.PrimarySeries.Position)
+		}
+		fields = append(fields, notifications.DiscordEmbedField{
+			Name:   "Series",
+			Value:  seriesStr,
+			Inline: true,
+		})
+	}
+
+	// Add Audible link
+	audibleURL := fmt.Sprintf("https://www.audible.com/pd/%s", bookMetadata.Asin)
+	fields = append(fields, notifications.DiscordEmbedField{
+		Name:   "Audible",
+		Value:  fmt.Sprintf("[View on Audible](%s)", audibleURL),
+		Inline: true,
+	})
+
+	message := notifications.DiscordWebhookMessage{
+		Username: "Stronghold Audiobook Importer",
+		Embeds: []notifications.DiscordEmbed{
+			{
+				Title:       "🎧 New Audiobook Imported",
+				Description: description,
+				Color:       0x00ff00,
+				Fields:      fields,
+			},
+		},
+	}
+
+	err := notifications.SendNotification(ctx, importType.DiscordNotifier, message)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to send Discord notification", slog.String("title", bookMetadata.Title), slog.Any("err", err))
 	}
 }
 
@@ -268,6 +393,12 @@ func (abis *AudiobookImporterSystem) ExecuteImport(ctx context.Context, importTo
 }
 
 func (abis *AudiobookImporterSystem) importTorrent(ctx context.Context, importTorrent qbittorrent.Torrent, importType config.ImportType, library *config.ImportLibrary) {
+	abis.ImportTorrentWithLibrary(ctx, importTorrent, importType, library)
+}
+
+// ImportTorrentWithLibrary imports a single audiobook torrent using the specified library.
+// This is the public entry point for external callers like the AuthorSubscriptionImporter.
+func (abis *AudiobookImporterSystem) ImportTorrentWithLibrary(ctx context.Context, importTorrent qbittorrent.Torrent, importType config.ImportType, library *config.ImportLibrary) {
 	bookMetadata, err := abis.ExtractTorrentMetadata(ctx, importTorrent)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to extract metadata for torrent",
@@ -276,7 +407,7 @@ func (abis *AudiobookImporterSystem) importTorrent(ctx context.Context, importTo
 			slogx.Error(err),
 		)
 
-		abis.MarkForManualIntervention(ctx, importTorrent)
+		abis.MarkForManualInterventionWithNotification(ctx, importTorrent, importType.DiscordNotifier, "Failed to extract metadata: "+err.Error())
 
 		return
 	}
@@ -291,12 +422,19 @@ func (abis *AudiobookImporterSystem) importTorrent(ctx context.Context, importTo
 			slogx.Error(err),
 		)
 
-		abis.MarkForManualIntervention(ctx, importTorrent)
+		abis.MarkForManualInterventionWithNotification(ctx, importTorrent, importType.DiscordNotifier, "Failed to execute import: "+err.Error())
 
 		return
 	}
 
 	abis.MarkAsImported(ctx, importTorrent)
+
+	eventlog.Log(abis.db, eventlog.CategoryImport, eventlog.EventImportCompleted, eventlog.SourceAudiobookImporter,
+		eventlog.EntityTorrent, importTorrent.Hash,
+		fmt.Sprintf("Imported audiobook: %s", bookMetadata.Title),
+		map[string]any{"name": importTorrent.Name, "hash": importTorrent.Hash, "title": bookMetadata.Title, "asin": bookMetadata.Asin})
+
+	abis.SendDiscordNotification(ctx, bookMetadata, importType)
 }
 
 func (abis *AudiobookImporterSystem) lookupMetadataByAsin(ctx context.Context, asin string) (metadata.BookMetadata, error) {

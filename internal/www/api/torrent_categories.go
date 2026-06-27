@@ -9,68 +9,40 @@ import (
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
-type TorrentCategoryRequest struct {
-	Name string `json:"name" validate:"required"`
-}
-
 type TorrentCategoryResponse struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	ID        uint   `json:"id"`
+	Name      string `json:"name"`
+	ScopeID   uint   `json:"scope_id"`
+	ScopeName string `json:"scope_name"`
+	MediaType string `json:"media_type"`
 }
 
 type TorrentCategoryHandler struct{}
 
-func (handler TorrentCategoryHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.TorrentCategory) TorrentCategoryResponse {
+func (h TorrentCategoryHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.TorrentCategory) TorrentCategoryResponse {
 	return TorrentCategoryResponse{
-		ID:   row.ID,
-		Name: row.Name,
+		ID:        row.ID,
+		Name:      row.Name,
+		ScopeID:   row.ScopeID,
+		ScopeName: row.Scope.Name,
+		MediaType: row.MediaType,
 	}
 }
 
-func (handler TorrentCategoryHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req TorrentCategoryRequest) (models.TorrentCategory, error) {
-	return models.TorrentCategory{
-		Name: req.Name,
-	}, nil
+func (h TorrentCategoryHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+	return db.Preload("Scope"), nil
 }
 
-func (handler TorrentCategoryHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.TorrentCategory, req TorrentCategoryRequest) error {
-	row.Name = req.Name
-	return nil
-}
-
-func (handler TorrentCategoryHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
-	return db, nil
-}
-
-func (handler TorrentCategoryHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
-	return db, nil
-}
-
-func (handler TorrentCategoryHandler) IDFromModel(row models.TorrentCategory) uint {
+func (h TorrentCategoryHandler) IDFromModel(row models.TorrentCategory) uint {
 	return row.ID
 }
 
 // ListTorrentCategories returns all torrent categories
 func ListTorrentCategories(db *gorm.DB) echo.HandlerFunc {
-	return genericListHandler[models.TorrentCategory, TorrentCategoryRequest, TorrentCategoryResponse](db, TorrentCategoryHandler{})
-}
-
-// CreateTorrentCategory creates a new torrent category
-func CreateTorrentCategory(db *gorm.DB) echo.HandlerFunc {
-	return genericCreateHandler[models.TorrentCategory, TorrentCategoryRequest, TorrentCategoryResponse](db, TorrentCategoryHandler{})
+	return readOnlyListHandler[models.TorrentCategory, TorrentCategoryResponse](db, TorrentCategoryHandler{})
 }
 
 // GetTorrentCategory returns a single torrent category by ID
 func GetTorrentCategory(db *gorm.DB) echo.HandlerFunc {
-	return genericGetHandler[models.TorrentCategory, TorrentCategoryRequest, TorrentCategoryResponse](db, TorrentCategoryHandler{})
-}
-
-// UpdateTorrentCategory updates an existing torrent category
-func UpdateTorrentCategory(db *gorm.DB) echo.HandlerFunc {
-	return genericUpdateHandler[models.TorrentCategory, TorrentCategoryRequest, TorrentCategoryResponse](db, TorrentCategoryHandler{})
-}
-
-// DeleteTorrentCategory deletes a torrent category
-func DeleteTorrentCategory(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.TorrentCategory](db)
+	return readOnlyGetHandler[models.TorrentCategory, TorrentCategoryResponse](db, TorrentCategoryHandler{})
 }

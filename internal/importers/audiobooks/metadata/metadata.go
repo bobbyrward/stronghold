@@ -129,7 +129,7 @@ func (md *BookMetadata) Summarize() string {
 		}
 	}
 
-	buffer.WriteString(fmt.Sprintf(" (ASIN: %s)", md.Asin))
+	fmt.Fprintf(&buffer, " (ASIN: %s)", md.Asin)
 
 	return buffer.String()
 }

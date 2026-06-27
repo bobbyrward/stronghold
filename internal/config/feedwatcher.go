@@ -188,7 +188,7 @@ func (op *FilterOperator) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-func (op *FilterOperator) MarshalYAML() (interface{}, error) {
+func (op *FilterOperator) MarshalYAML() (any, error) {
 	strValue, ok := operatorToString[*op]
 	if !ok {
 		return nil, fmt.Errorf("invalid operator: %d", *op)
@@ -215,7 +215,7 @@ func (key *FilterKey) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-func (key *FilterKey) MarshalYAML() (interface{}, error) {
+func (key *FilterKey) MarshalYAML() (any, error) {
 	strValue, ok := matchKeyToString[*key]
 	if !ok {
 		return nil, fmt.Errorf("invalid key: %d", *key)

@@ -1,10 +1,5 @@
 // Reference data types
-export interface FilterKey {
-    id: number
-    name: string
-}
-
-export interface FilterOperator {
+export interface SubscriptionScope {
     id: number
     name: string
 }
@@ -14,14 +9,75 @@ export interface NotificationType {
     name: string
 }
 
-export interface FeedFilterSetType {
+export interface TorrentCategory {
+    id: number
+    name: string
+    scope_id: number
+    scope_name: string
+    media_type: string
+}
+
+export interface BookType {
     id: number
     name: string
 }
 
-export interface TorrentCategory {
+export interface Library {
     id: number
     name: string
+    path: string
+    book_type_id: number
+    book_type_name: string
+}
+
+export interface LibraryRequest {
+    name: string
+    path: string
+    book_type_name: string
+}
+
+// Hardcover search
+export interface HardcoverAuthorSearchResult {
+    id: string
+    slug: string
+    name: string
+}
+
+// Feedwatcher2 types
+export interface Author {
+    id: number
+    name: string
+    hardcover_ref: string | null
+}
+
+export interface AuthorAlias {
+    id: number
+    author_id: number
+    name: string
+}
+
+export interface AuthorSubscription {
+    id: number
+    author_id: number
+    author_name: string
+    scope_id: number
+    scope_name: string
+    notifier_id: number | null
+    notifier_name: string | null
+    ebook_library_id: number
+    ebook_library_name: string
+    audiobook_library_id: number
+    audiobook_library_name: string
+}
+
+export interface AuthorSubscriptionItem {
+    id: number
+    author_subscription_id: number
+    torrent_hash: string
+    booksearch_id: string
+    torrent_url: string
+    title: string
+    downloaded_at: string
 }
 
 // Main resource types
@@ -39,65 +95,9 @@ export interface Notifier {
     url: string
 }
 
-export interface FeedFilter {
-    id: number
-    name: string
-    feed_id: number
-    feed_name: string
-    category_id: number
-    category_name: string
-    notifier_id: number
-    notifier_name: string
-}
-
-export interface FeedAuthorFilter {
-    id: number
-    author: string
-    feed_id: number
-    feed_name: string
-    category_id: number
-    category_name: string
-    notifier_id: number
-    notifier_name: string
-}
-
-export interface FeedFilterSet {
-    id: number
-    feed_filter_id: number
-    type_id: number
-    type_name: string
-}
-
-export interface FeedFilterSetEntry {
-    id: number
-    feed_filter_set_id: number
-    key_id: number
-    key_name: string
-    operator_id: number
-    operator_name: string
-    value: string
-}
-
 // Request types (for create/update operations)
-export interface FilterKeyRequest {
-    name: string
-}
-
-export interface FilterOperatorRequest {
-    name: string
-}
-
-export interface NotificationTypeRequest {
-    name: string
-}
-
-export interface FeedFilterSetTypeRequest {
-    name: string
-}
-
-export interface TorrentCategoryRequest {
-    name: string
-}
+// Reference data types are read-only - no request types needed
+// (NotificationType, TorrentCategory)
 
 export interface FeedRequest {
     name: string
@@ -110,30 +110,20 @@ export interface NotifierRequest {
     url?: string
 }
 
-export interface FeedFilterRequest {
+export interface AuthorRequest {
     name: string
-    feed_id: number
-    category_id: number
-    notifier_id: number
+    hardcover_ref?: string | null
 }
 
-export interface FeedAuthorFilterRequest {
-    author: string
-    feed_id: number
-    category_id: number
-    notifier_id: number
+export interface AuthorAliasRequest {
+    name: string
 }
 
-export interface FeedFilterSetRequest {
-    feed_filter_id: number
-    type_id: number
-}
-
-export interface FeedFilterSetEntryRequest {
-    feed_filter_set_id: number
-    key_id: number
-    operator_id: number
-    value: string
+export interface AuthorSubscriptionRequest {
+    scope_name: string
+    notifier_id?: number | null
+    ebook_library_name: string
+    audiobook_library_name: string
 }
 
 export interface Torrent {
@@ -195,11 +185,6 @@ export interface BookMetadata {
     formatType: string
 }
 
-export interface Library {
-    name: string
-    path: string
-}
-
 export interface TorrentImportInfo {
     hash: string
     name: string
@@ -235,4 +220,38 @@ export interface ExecuteImportResponse {
     success: boolean
     destination_path: string
     message?: string
+}
+
+// Event Log types
+export interface EventLog {
+    id: number
+    created_at: string
+    category: string
+    event_type: string
+    source: string
+    entity_type: string
+    entity_id: string
+    summary: string
+    details: string
+}
+
+export interface EventLogFacets {
+    categories: string[]
+    sources: string[]
+    event_types: string[]
+    entity_types: string[]
+}
+
+export interface PaginatedEventLogResponse {
+    items: EventLog[]
+    total: number
+    page: number
+    per_page: number
+    facets: EventLogFacets
+}
+
+export interface VersionInfo {
+    version: string
+    git_commit: string
+    build_time: string
 }

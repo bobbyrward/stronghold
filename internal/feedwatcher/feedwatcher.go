@@ -188,7 +188,7 @@ func NewFeedWatcher() *FeedWatcher {
 func (fw *FeedWatcher) Run(ctx context.Context, db *gorm.DB) error {
 	client, err := qbit.CreateClient()
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to create qBittorrent client"))
+		return fmt.Errorf("failed to create qBittorrent client: %w", err)
 	}
 
 	config.Config.FeedWatcher.Preprocess()
@@ -214,7 +214,7 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 
 	feed, err := parser.ParseURL(feedConfig.URL)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to parse feed"))
+		return fmt.Errorf("failed to parse feed: %w", err)
 	}
 
 	for _, item := range feed.Items {
@@ -279,7 +279,7 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 				slog.String("Description", entry.Description),
 			)
 
-			err = qbitClient.AddTorrentFromUrlCtx(
+			addResponse, err := qbitClient.AddTorrentFromUrlCtx(
 				ctx,
 				entry.Link,
 				map[string]string{
@@ -292,6 +292,19 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 					slog.String("link", entry.Link),
 					slog.Any("err", err),
 					slog.String("guid", entry.Guid),
+					slog.Group("feedFilter",
+						slog.String("feedName", feedConfig.Name),
+						slog.String("filterName", filter.Name),
+					),
+				)
+			}
+			if addResponse.FailureCount != 0 {
+				slog.ErrorContext(ctx, "Failed to add torrent to qBittorrent",
+					slog.String("link", entry.Link),
+					slog.String("guid", entry.Guid),
+					slog.Int64("failureCount", addResponse.FailureCount),
+					slog.Int64("pendingCount", addResponse.PendingCount),
+					slog.Int64("successCount", addResponse.SuccessCount),
 					slog.Group("feedFilter",
 						slog.String("feedName", feedConfig.Name),
 						slog.String("filterName", filter.Name),
@@ -318,7 +331,7 @@ func (fw *FeedWatcher) watchFeed(ctx context.Context, feedConfig *config.FeedWat
 				slog.ErrorContext(ctx, "Failed to create feed item in database", slog.String("guid", entry.Guid), slog.String("feedName", feedConfig.Name), slog.Any("err", result.Error))
 			}
 
-			err := notifications.SendNotification(ctx, filter.Notification, CreateFeedwatcherNotificationPayload(&entry, filter))
+			err = notifications.SendNotification(ctx, filter.Notification, CreateFeedwatcherNotificationPayload(&entry, filter))
 			if err != nil {
 				slog.ErrorContext(ctx, "Failed to send notification", slog.String("feedName", feedConfig.Name), slog.String("filterName", filter.Name), slog.Any("err", err))
 			}

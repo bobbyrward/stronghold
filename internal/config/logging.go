@@ -73,7 +73,7 @@ func (level *LoggingLevel) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-func (level *LoggingLevel) MarshalYAML() (interface{}, error) {
+func (level *LoggingLevel) MarshalYAML() (any, error) {
 	strValue := LoggingLevelToString(*level)
 
 	return strValue, nil

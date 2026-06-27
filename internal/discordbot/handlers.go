@@ -10,6 +10,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/booksearch"
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bwmarrin/discordgo"
 	"github.com/cappuccinotm/slogx"
@@ -52,6 +53,11 @@ func (b *Bot) handleRequestBookCommand(s *discordgo.Session, i *discordgo.Intera
 	ctx := context.Background()
 	slog.InfoContext(ctx, "Processing book request", slog.String("query", query), slog.String("userId", i.Member.User.ID))
 
+	eventlog.Log(b.db, eventlog.CategorySearch, eventlog.EventSearchRequested, eventlog.SourceDiscordBot,
+		eventlog.EntitySearch, "",
+		fmt.Sprintf("Book search requested: %s", query),
+		map[string]string{"query": query, "user_id": i.Member.User.ID, "channel_id": i.ChannelID})
+
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 	})
@@ -65,7 +71,7 @@ func (b *Bot) handleRequestBookCommand(s *discordgo.Session, i *discordgo.Intera
 		MaxResults: 5,
 	}
 
-	searchResponse, err := b.bookSearch.Search(context.Background(), params)
+	searchResponse, err := b.bookSearch.Search(context.Background(), b.db, params)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to search books", slog.Any("error", err), slog.String("query", query))
 		b.editResponseWithError(s, i, "Failed to search for books")
@@ -87,6 +93,11 @@ func (b *Bot) handleRequestBookCommand(s *discordgo.Session, i *discordgo.Intera
 		b.editResponseWithError(s, i, "Failed to cache search results")
 		return
 	}
+
+	eventlog.Log(b.db, eventlog.CategorySearch, eventlog.EventSearchCompleted, eventlog.SourceDiscordBot,
+		eventlog.EntitySearch, "",
+		fmt.Sprintf("Search completed: %s (%d results)", query, len(dbResults)),
+		map[string]any{"query": query, "result_count": len(dbResults)})
 
 	b.sendBookSelectionMessage(s, i, dbResults, params)
 }
@@ -112,9 +123,9 @@ func displayTitle(result *models.SearchResponseItem) string {
 	category := ""
 
 	switch result.MainCategory {
-	case booksearch.MainCategory_Ebooks:
+	case booksearch.MainCategoryEbooks:
 		category = "ebook"
-	case booksearch.MainCategory_Audiobooks:
+	case booksearch.MainCategoryAudiobooks:
 		category = "audiobook"
 	default:
 		category = "unknown category"
@@ -375,23 +386,23 @@ func (b *Bot) handleAddSelectedBooks(s *discordgo.Session, i *discordgo.Interact
 
 		qbitCategory := ""
 		switch book.MainCategory {
-		case booksearch.MainCategory_Ebooks:
+		case booksearch.MainCategoryEbooks:
 			if i.ChannelID == ChannelID_BobbysBookRequests {
 				qbitCategory = "personal-books"
 			} else {
-				qbitCategory = "books"
+				qbitCategory = "general-books"
 			}
-		case booksearch.MainCategory_Audiobooks:
+		case booksearch.MainCategoryAudiobooks:
 			if i.ChannelID == ChannelID_BobbysBookRequests {
-				qbitCategory = "personal-audiobooks"
-			} else {
 				qbitCategory = "audiobooks"
+			} else {
+				qbitCategory = "general-audiobooks"
 			}
 		default:
 			qbitCategory = "unknown"
 		}
 
-		err = b.qbitClient.AddTorrentFromUrlCtx(
+		_, err := b.qbitClient.AddTorrentFromUrlCtx(
 			ctx,
 			torrentURL,
 			map[string]string{
@@ -414,6 +425,17 @@ func (b *Bot) handleAddSelectedBooks(s *discordgo.Session, i *discordgo.Interact
 				slog.String("torrentURL", torrentURL),
 				slog.String("channelid", i.ChannelID),
 			)
+			eventlog.Log(b.db, eventlog.CategoryDownload, eventlog.EventTorrentAdded, eventlog.SourceDiscordBot,
+				eventlog.EntityTorrent, book.DlHash,
+				fmt.Sprintf("Downloaded via Discord: %s", book.Title),
+				map[string]any{
+					"title":      book.Title,
+					"authors":    book.Authors,
+					"category":   qbitCategory,
+					"dl_hash":    book.DlHash,
+					"torrent_id": book.TorrentID,
+					"channel_id": i.ChannelID,
+				})
 		}
 	}
 

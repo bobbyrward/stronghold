@@ -1,0 +1,293 @@
+package feedwatcher2
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"strings"
+	"time"
+
+	"github.com/mmcdole/gofeed"
+	"gorm.io/gorm"
+
+	"github.com/bobbyrward/stronghold/internal/eventlog"
+	"github.com/bobbyrward/stronghold/internal/models"
+	"github.com/bobbyrward/stronghold/internal/qbit"
+	"github.com/bobbyrward/stronghold/internal/torrentutil"
+)
+
+// Media type constants for torrent categorization.
+const (
+	MediaTypeEbook     = "ebook"
+	MediaTypeAudiobook = "audiobook"
+)
+
+// AuthorSubscriptionCategory is the qBittorrent category used for all author subscription downloads.
+const AuthorSubscriptionCategory = "author-subscriptions"
+
+// extractIDFromGUID extracts the numeric ID from a GUID URL.
+// Example: "https://www.example.net/t/1213652" returns "1213652".
+func extractIDFromGUID(guid string) string {
+	lastSlash := strings.LastIndex(guid, "/")
+	if lastSlash == -1 || lastSlash == len(guid)-1 {
+		return guid
+	}
+	return guid[lastSlash+1:]
+}
+
+// determineBookTypeName returns the book type name based on the feed category.
+// Categories starting with "Audiobooks" are audiobooks, everything else is ebooks.
+func determineBookTypeName(category string) string {
+	if strings.HasPrefix(category, "Audiobooks") {
+		return MediaTypeAudiobook
+	}
+	return MediaTypeEbook
+}
+
+// FeedWatcher2 monitors RSS feeds and downloads torrents for subscribed authors.
+type FeedWatcher2 struct {
+	db                *gorm.DB
+	qbitClient        qbit.QbitClient
+	torrentDownloader *torrentutil.TorrentDownloader
+	authorMatcher     *AuthorMatcher
+}
+
+// NewFeedWatcher2 creates a new FeedWatcher2 instance.
+func NewFeedWatcher2(db *gorm.DB, qbitClient qbit.QbitClient, httpProxy, httpsProxy string) *FeedWatcher2 {
+	return &FeedWatcher2{
+		db:                db,
+		qbitClient:        qbitClient,
+		torrentDownloader: torrentutil.NewTorrentDownloader(httpProxy, httpsProxy),
+		authorMatcher:     NewAuthorMatcher(db),
+	}
+}
+
+// Run executes the feed watcher, processing all feeds from the database.
+func (fw *FeedWatcher2) Run(ctx context.Context) error {
+	slog.InfoContext(ctx, "Starting feedwatcher2")
+
+	// Load subscriptions into the matcher
+	err := fw.authorMatcher.LoadSubscriptions(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load subscriptions: %w", err)
+	}
+
+	// Query all feeds from database
+	var feeds []models.Feed
+	result := fw.db.Find(&feeds)
+	if result.Error != nil {
+		slog.ErrorContext(ctx, "Failed to query feeds", slog.Any("error", result.Error))
+		return fmt.Errorf("failed to query feeds: %w", result.Error)
+	}
+
+	slog.InfoContext(ctx, "Found feeds to process", slog.Int("count", len(feeds)))
+
+	// Process each feed
+	var errs []error
+	for _, feed := range feeds {
+		err := fw.watchFeed(ctx, &feed)
+		if err != nil {
+			slog.WarnContext(ctx, "Error processing feed",
+				slog.String("feed_name", feed.Name),
+				slog.Any("error", err))
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	slog.InfoContext(ctx, "Feedwatcher2 completed successfully")
+	return nil
+}
+
+// watchFeed processes a single RSS feed.
+func (fw *FeedWatcher2) watchFeed(ctx context.Context, feed *models.Feed) error {
+	slog.InfoContext(ctx, "Processing feed",
+		slog.String("name", feed.Name),
+		slog.String("url", feed.URL))
+
+	parser := gofeed.NewParser()
+	parsedFeed, err := parser.ParseURL(feed.URL)
+	if err != nil {
+		eventlog.Log(fw.db, eventlog.CategoryFeed, eventlog.EventFeedError, eventlog.SourceFeedwatcher2,
+			eventlog.EntityFeed, fmt.Sprintf("%d", feed.ID),
+			fmt.Sprintf("Feed error: %s: %s", feed.Name, err.Error()),
+			map[string]string{"feed_name": feed.Name, "error": err.Error()})
+		return fmt.Errorf("failed to parse feed %s: %w", feed.Name, err)
+	}
+
+	slog.InfoContext(ctx, "Parsed feed",
+		slog.String("name", feed.Name),
+		slog.Int("items", len(parsedFeed.Items)))
+
+	eventlog.Log(fw.db, eventlog.CategoryFeed, eventlog.EventFeedPolled, eventlog.SourceFeedwatcher2,
+		eventlog.EntityFeed, fmt.Sprintf("%d", feed.ID),
+		fmt.Sprintf("Polled feed: %s (%d items)", feed.Name, len(parsedFeed.Items)),
+		map[string]any{"feed_name": feed.Name, "item_count": len(parsedFeed.Items)})
+
+	for _, item := range parsedFeed.Items {
+		err := fw.processItem(ctx, feed, item)
+		if err != nil {
+			slog.WarnContext(ctx, "Error processing feed item",
+				slog.String("feed_name", feed.Name),
+				slog.String("item_title", item.Title),
+				slog.Any("error", err))
+			// Continue processing other items
+		}
+	}
+
+	return nil
+}
+
+// processItem processes a single feed item.
+func (fw *FeedWatcher2) processItem(ctx context.Context, feed *models.Feed, item *gofeed.Item) error {
+	// Parse the description to extract metadata
+	entry, err := parseDescription(ctx, item.Description)
+	if err != nil {
+		return fmt.Errorf("failed to parse description: %w", err)
+	}
+
+	// Set fields from the feed item
+	entry.Guid = item.GUID
+	entry.Link = item.Link
+	entry.Title = item.Title
+
+	// Extract the ID from the GUID URL for deduplication and storage
+	booksearchID := extractIDFromGUID(item.GUID)
+
+	// Find matching subscription
+	subscription := fw.authorMatcher.FindMatchingSubscription(entry.Authors)
+	if subscription == nil {
+		// No match, skip this item
+		return nil
+	}
+
+	slog.InfoContext(ctx, "Found matching subscription",
+		slog.String("title", entry.Title),
+		slog.String("author", subscription.Author.Name),
+		slog.String("scope", subscription.Scope.Name),
+		slog.Any("feed_authors", entry.Authors))
+
+	eventlog.Log(fw.db, eventlog.CategorySubscription, eventlog.EventSubscriptionMatched, eventlog.SourceFeedwatcher2,
+		eventlog.EntitySubscription, fmt.Sprintf("%d", subscription.ID),
+		fmt.Sprintf("Matched: %s for %s (%s)", entry.Title, subscription.Author.Name, subscription.Scope.Name),
+		map[string]any{
+			"title":        entry.Title,
+			"author":       subscription.Author.Name,
+			"scope":        subscription.Scope.Name,
+			"feed_authors": entry.Authors,
+			"feed_name":    feed.Name,
+		})
+
+	// Check for duplicate by booksearch ID before downloading
+	var existingItem models.AuthorSubscriptionItem
+	result := fw.db.Where("booksearch_id = ?", booksearchID).First(&existingItem)
+	if result.Error == nil {
+		// Already exists, skip
+		slog.InfoContext(ctx, "Item already downloaded, skipping",
+			slog.String("booksearch_id", booksearchID),
+			slog.String("title", entry.Title))
+		eventlog.Log(fw.db, eventlog.CategoryDownload, eventlog.EventTorrentDuplicateSkipped, eventlog.SourceFeedwatcher2,
+			eventlog.EntityTorrent, booksearchID,
+			fmt.Sprintf("Duplicate skipped: %s", entry.Title),
+			map[string]string{"title": entry.Title, "booksearch_id": booksearchID, "author": subscription.Author.Name})
+		return nil
+	}
+	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to check for existing item: %w", result.Error)
+	}
+
+	// Determine book type from category
+	bookTypeName := determineBookTypeName(entry.Category)
+	var bookType models.BookType
+	result = fw.db.Where("name = ?", bookTypeName).First(&bookType)
+	if result.Error != nil {
+		return fmt.Errorf("failed to find book type %q: %w", bookTypeName, result.Error)
+	}
+
+	slog.InfoContext(ctx, "Determined book type",
+		slog.String("category", entry.Category),
+		slog.String("book_type", bookTypeName))
+
+	// Download torrent and extract hash
+	hash, err := fw.torrentDownloader.DownloadAndHash(ctx, entry.Link)
+	if err != nil {
+		return fmt.Errorf("failed to download torrent: %w", err)
+	}
+
+	slog.InfoContext(ctx, "Downloaded torrent",
+		slog.String("hash", hash),
+		slog.String("title", entry.Title))
+
+	// Add torrent to qBittorrent
+	addResponse, err := fw.qbitClient.AddTorrentFromUrlCtx(
+		ctx,
+		entry.Link,
+		map[string]string{
+			"autoTMM":  "true",
+			"category": AuthorSubscriptionCategory,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to add torrent to qBittorrent: %w", err)
+	}
+	if addResponse.FailureCount != 0 {
+		return fmt.Errorf("failed to add torrent to qBittorrent")
+	}
+
+	slog.InfoContext(ctx, "Added torrent to qBittorrent",
+		slog.String("title", entry.Title),
+		slog.String("category", AuthorSubscriptionCategory),
+		slog.String("hash", hash))
+
+	eventlog.Log(fw.db, eventlog.CategoryDownload, eventlog.EventTorrentAdded, eventlog.SourceFeedwatcher2,
+		eventlog.EntityTorrent, hash,
+		fmt.Sprintf("Downloaded: %s by %s", entry.Title, subscription.Author.Name),
+		map[string]string{
+			"title":         entry.Title,
+			"author":        subscription.Author.Name,
+			"category":      entry.Category,
+			"hash":          hash,
+			"booksearch_id": booksearchID,
+			"scope":         subscription.Scope.Name,
+		})
+
+	// Create AuthorSubscriptionItem record
+	subscriptionItem := models.AuthorSubscriptionItem{
+		AuthorSubscriptionID: subscription.ID,
+		BookTypeID:           bookType.ID,
+		TorrentHash:          hash,
+		BooksearchID:         booksearchID,
+		Title:                entry.Title,
+		DownloadedAt:         time.Now(),
+	}
+
+	result = fw.db.Create(&subscriptionItem)
+	if result.Error != nil {
+		slog.ErrorContext(ctx, "Failed to create subscription item record",
+			slog.String("hash", hash),
+			slog.Any("error", result.Error))
+		// Don't return error - torrent was already added to qBittorrent
+	}
+
+	// Send notification
+	payload := CreateFeedwatcher2NotificationPayload(&entry, &subscription.Author, subscription)
+	err = SendNotificationViaNotifier(ctx, fw.db, subscription.Notifier, payload)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to send notification",
+			slog.String("title", entry.Title),
+			slog.Any("error", err))
+		// Don't return error - torrent was already added
+	}
+
+	slog.InfoContext(ctx, "Successfully processed feed item",
+		slog.String("title", entry.Title),
+		slog.String("author", subscription.Author.Name),
+		slog.String("category", AuthorSubscriptionCategory),
+		slog.String("hash", hash))
+
+	return nil
+}

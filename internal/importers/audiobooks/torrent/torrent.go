@@ -3,6 +3,7 @@ package torrent
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/autobrr/go-qbittorrent"
@@ -34,25 +35,23 @@ type AudiobookFilesMetadata struct {
 func NewAudiobookFilesMetadata(ctx context.Context, qbit qbit.QbitClient, metadataProvider metadata.MetadataProvider, torrent qbittorrent.Torrent, mappedFiles []common.MappedTorrentFile) (*AudiobookFilesMetadata, error) {
 	sourceInfo, err := source.AnalyzeSource(mappedFiles)
 	if err != nil {
-		msg := "unable to analyze torrent source files"
-		slog.ErrorContext(ctx, msg,
+		slog.ErrorContext(ctx, "unable to analyze torrent source files",
 			slog.String("name", torrent.Name),
 			slog.String("hash", torrent.Hash),
 			slogx.Error(err),
 		)
-		return nil, errors.Join(errors.New(msg), err)
+		return nil, fmt.Errorf("unable to analyze torrent source files: %w", err)
 	}
 
 	metadata, err := getTagList(ctx, metadataProvider, sourceInfo)
 	if err != nil {
-		msg := "unable to extract tag list from source files"
-		slog.ErrorContext(ctx, msg,
+		slog.ErrorContext(ctx, "unable to extract tag list from source files",
 			slog.String("name", torrent.Name),
 			slog.String("hash", torrent.Hash),
 			slog.String("sourceType", sourceInfo.SourceType.String()),
 			slogx.Error(err),
 		)
-		return nil, errors.Join(errors.New(msg), err)
+		return nil, fmt.Errorf("unable to extract tag list from source files: %w", err)
 	}
 
 	abTorrent := &AudiobookFilesMetadata{

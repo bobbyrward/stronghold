@@ -8,7 +8,7 @@ servers:
     description: Local development server
 
 paths:
-  # Filter Keys
+  # Filter Keys (read-only reference data)
   /api/filter-keys:
     get:
       summary: List all filter keys
@@ -17,35 +17,13 @@ paths:
         - Filter Keys
       responses:
         '200':
-          description: List of filter keys
+          description: List of filter keys (pre-populated reference data)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/FilterKeyResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      summary: Create a filter key
-      operationId: createFilterKey
-      tags:
-        - Filter Keys
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FilterKeyRequest'
-      responses:
-        '201':
-          description: Filter key created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FilterKeyResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -68,48 +46,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    put:
-      summary: Update a filter key
-      operationId: updateFilterKey
-      tags:
-        - Filter Keys
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FilterKeyRequest'
-      responses:
-        '200':
-          description: Filter key updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FilterKeyResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      summary: Delete a filter key
-      operationId: deleteFilterKey
-      tags:
-        - Filter Keys
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Filter key deleted
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
-  # Filter Operators
+  # Filter Operators (read-only reference data)
   /api/filter-operators:
     get:
       summary: List all filter operators
@@ -118,35 +56,13 @@ paths:
         - Filter Operators
       responses:
         '200':
-          description: List of filter operators
+          description: List of filter operators (pre-populated reference data)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/FilterOperatorResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      summary: Create a filter operator
-      operationId: createFilterOperator
-      tags:
-        - Filter Operators
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FilterOperatorRequest'
-      responses:
-        '201':
-          description: Filter operator created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FilterOperatorResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -169,48 +85,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    put:
-      summary: Update a filter operator
-      operationId: updateFilterOperator
-      tags:
-        - Filter Operators
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FilterOperatorRequest'
-      responses:
-        '200':
-          description: Filter operator updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FilterOperatorResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      summary: Delete a filter operator
-      operationId: deleteFilterOperator
-      tags:
-        - Filter Operators
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Filter operator deleted
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
-  # Notification Types
+  # Notification Types (read-only reference data)
   /api/notification-types:
     get:
       summary: List all notification types
@@ -219,35 +95,13 @@ paths:
         - Notification Types
       responses:
         '200':
-          description: List of notification types
+          description: List of notification types (pre-populated reference data)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/NotificationTypeResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      summary: Create a notification type
-      operationId: createNotificationType
-      tags:
-        - Notification Types
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationTypeRequest'
-      responses:
-        '201':
-          description: Notification type created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationTypeResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -270,48 +124,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    put:
-      summary: Update a notification type
-      operationId: updateNotificationType
-      tags:
-        - Notification Types
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationTypeRequest'
-      responses:
-        '200':
-          description: Notification type updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationTypeResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      summary: Delete a notification type
-      operationId: deleteNotificationType
-      tags:
-        - Notification Types
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Notification type deleted
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
-  # Feed Filter Set Types
+  # Feed Filter Set Types (read-only reference data)
   /api/feed-filter-set-types:
     get:
       summary: List all feed filter set types
@@ -320,35 +134,13 @@ paths:
         - Feed Filter Set Types
       responses:
         '200':
-          description: List of feed filter set types
+          description: List of feed filter set types (pre-populated reference data)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/FeedFilterSetTypeResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      summary: Create a feed filter set type
-      operationId: createFeedFilterSetType
-      tags:
-        - Feed Filter Set Types
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeedFilterSetTypeRequest'
-      responses:
-        '201':
-          description: Feed filter set type created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeedFilterSetTypeResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -371,48 +163,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    put:
-      summary: Update a feed filter set type
-      operationId: updateFeedFilterSetType
-      tags:
-        - Feed Filter Set Types
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeedFilterSetTypeRequest'
-      responses:
-        '200':
-          description: Feed filter set type updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeedFilterSetTypeResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      summary: Delete a feed filter set type
-      operationId: deleteFeedFilterSetType
-      tags:
-        - Feed Filter Set Types
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Feed filter set type deleted
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
-  # Torrent Categories
+  # Torrent Categories (read-only reference data)
   /api/torrent-categories:
     get:
       summary: List all torrent categories
@@ -421,35 +173,13 @@ paths:
         - Torrent Categories
       responses:
         '200':
-          description: List of torrent categories
+          description: List of torrent categories (pre-populated reference data)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/TorrentCategoryResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      summary: Create a torrent category
-      operationId: createTorrentCategory
-      tags:
-        - Torrent Categories
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TorrentCategoryRequest'
-      responses:
-        '201':
-          description: Torrent category created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TorrentCategoryResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -468,46 +198,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TorrentCategoryResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    put:
-      summary: Update a torrent category
-      operationId: updateTorrentCategory
-      tags:
-        - Torrent Categories
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TorrentCategoryRequest'
-      responses:
-        '200':
-          description: Torrent category updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TorrentCategoryResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      summary: Delete a torrent category
-      operationId: deleteTorrentCategory
-      tags:
-        - Torrent Categories
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Torrent category deleted
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1414,15 +1104,7 @@ components:
       required:
         - error
 
-    # Filter Keys
-    FilterKeyRequest:
-      type: object
-      properties:
-        name:
-          type: string
-      required:
-        - name
-
+    # Filter Keys (read-only reference data)
     FilterKeyResponse:
       type: object
       properties:
@@ -1431,15 +1113,7 @@ components:
         name:
           type: string
 
-    # Filter Operators
-    FilterOperatorRequest:
-      type: object
-      properties:
-        name:
-          type: string
-      required:
-        - name
-
+    # Filter Operators (read-only reference data)
     FilterOperatorResponse:
       type: object
       properties:
@@ -1448,15 +1122,7 @@ components:
         name:
           type: string
 
-    # Notification Types
-    NotificationTypeRequest:
-      type: object
-      properties:
-        name:
-          type: string
-      required:
-        - name
-
+    # Notification Types (read-only reference data)
     NotificationTypeResponse:
       type: object
       properties:
@@ -1465,15 +1131,7 @@ components:
         name:
           type: string
 
-    # Feed Filter Set Types
-    FeedFilterSetTypeRequest:
-      type: object
-      properties:
-        name:
-          type: string
-      required:
-        - name
-
+    # Feed Filter Set Types (read-only reference data)
     FeedFilterSetTypeResponse:
       type: object
       properties:
@@ -1482,15 +1140,7 @@ components:
         name:
           type: string
 
-    # Torrent Categories
-    TorrentCategoryRequest:
-      type: object
-      properties:
-        name:
-          type: string
-      required:
-        - name
-
+    # Torrent Categories (read-only reference data)
     TorrentCategoryResponse:
       type: object
       properties:
@@ -1498,6 +1148,16 @@ components:
           type: integer
         name:
           type: string
+          description: Category name (e.g., "audiobooks", "books", "personal-audiobooks", "personal-books")
+        scope_id:
+          type: integer
+          description: ID of the subscription scope
+        scope_name:
+          type: string
+          description: Name of the subscription scope ("personal" or "family")
+        media_type:
+          type: string
+          description: Type of media ("audiobook" or "ebook")
 
     # Torrents
     TorrentResponse:
@@ -1899,7 +1559,7 @@ tags:
   - name: Feed Filter Set Types
     description: Feed filter set type reference data
   - name: Torrent Categories
-    description: Torrent category reference data
+    description: Torrent category reference data (read-only, pre-populated)
   - name: Torrents
     description: Torrent management via qBittorrent
   - name: Feeds

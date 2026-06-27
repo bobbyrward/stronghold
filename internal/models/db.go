@@ -36,19 +36,19 @@ func (l *SlogGormLogger) LogMode(level logger.LogLevel) logger.Interface {
 	return &newlogger
 }
 
-func (l *SlogGormLogger) Info(ctx context.Context, msg string, data ...interface{}) {
+func (l *SlogGormLogger) Info(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Info {
 		slog.InfoContext(ctx, fmt.Sprintf(msg, data...))
 	}
 }
 
-func (l *SlogGormLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
+func (l *SlogGormLogger) Warn(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Warn {
 		slog.WarnContext(ctx, fmt.Sprintf(msg, data...))
 	}
 }
 
-func (l *SlogGormLogger) Error(ctx context.Context, msg string, data ...interface{}) {
+func (l *SlogGormLogger) Error(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Error {
 		slog.ErrorContext(ctx, fmt.Sprintf(msg, data...))
 	}
@@ -82,6 +82,24 @@ func (l *SlogGormLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 	}
 }
 
+// ConnectAndMigrate connects to the database and runs migrations.
+// This is a convenience function that combines ConnectDB and AutoMigrate.
+func ConnectAndMigrate(ctx context.Context) (*gorm.DB, error) {
+	db, err := ConnectDB()
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	err = AutoMigrate(db)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to automigrate database: %w", err)
+	}
+
+	return db, nil
+}
+
 func ConnectDB() (*gorm.DB, error) {
 	ctx := context.Background()
 
@@ -97,7 +115,7 @@ func ConnectDB() (*gorm.DB, error) {
 		slog.ErrorContext(ctx, "Failed to connect to database",
 			slog.String("url", config.Config.Postgres.URL),
 			slog.Any("err", err))
-		return nil, errors.Join(err, fmt.Errorf("failed to connect to db"))
+		return nil, fmt.Errorf("failed to connect to db: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Successfully connected to database")
@@ -109,37 +127,44 @@ func AutoMigrate(db *gorm.DB) error {
 
 	slog.InfoContext(ctx, "Starting database auto-migration")
 
-	err := db.AutoMigrate(
+	// Drop orphaned filter tables removed from the model set. Child/join tables
+	// first to avoid foreign-key constraint errors.
+	err := db.Migrator().DropTable(
+		"feed_filter_set_entries",
+		"feed_filter_sets",
+		"feed_author_filters",
+		"feed_filters",
+		"feed_filter_set_types",
+		"filter_keys",
+		"filter_operators",
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to drop removed filter tables", slog.Any("err", err))
+		return fmt.Errorf("failed to drop removed filter tables: %w", err)
+	}
+
+	err = db.AutoMigrate(
 		// Existing models
 		&FeedItem{},
 		&SearchResponseItem{},
-		&TorrentCategory{},
 		&NotificationType{},
 		&Notifier{},
 		&Feed{},
-		&FeedAuthorFilter{},
-		&FeedFilter{},
-		&FilterKey{},
-		&FilterOperator{},
-		&FeedFilterSetType{},
-		&FeedFilterSet{},
-		&FeedFilterSetEntry{},
-
-		// Book library models (order matters for foreign key constraints)
-		&Person{},
-		&Series{},
-		&Book{},
-		&BookAuthor{},
-		&BookNarrator{},
-		&BookSeries{},
-		&BookIdentifier{},
-		&BookFile{},
-		&Download{},
-		&ImportHistory{},
+		&BookSearchCredential{},
+		// Feedwatcher2 models
+		&SubscriptionScope{},
+		&BookType{},
+		&Library{},
+		&TorrentCategory{},
+		&Author{},
+		&AuthorAlias{},
+		&AuthorSubscription{},
+		&AuthorSubscriptionItem{},
+		&EventLog{},
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to auto migrate db"))
+		return fmt.Errorf("failed to auto migrate db: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Successfully completed database auto-migration")
@@ -148,29 +173,24 @@ func AutoMigrate(db *gorm.DB) error {
 }
 
 func PopulateData(db *gorm.DB) error {
-	err := populateTorrentCategories(db)
+	err := populateSubscriptionScopes(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate torrent categories"))
+		return fmt.Errorf("failed to populate subscription scopes: %w", err)
+	}
+
+	err = populateBookTypes(db)
+	if err != nil {
+		return fmt.Errorf("failed to populate book types: %w", err)
+	}
+
+	err = populateTorrentCategories(db)
+	if err != nil {
+		return fmt.Errorf("failed to populate torrent categories: %w", err)
 	}
 
 	err = populateNotificationType(db)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate notification types"))
-	}
-
-	err = populateFilterKeys(db)
-	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate filter keys"))
-	}
-
-	err = populateFilterOperators(db)
-	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate filter operators"))
-	}
-
-	err = populateFilterSetTypes(db)
-	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to populate filter set types"))
+		return fmt.Errorf("failed to populate notification types: %w", err)
 	}
 
 	return nil
@@ -191,6 +211,14 @@ func ConnectTestDB() (*gorm.DB, error) {
 		slog.ErrorContext(ctx, "Failed to connect to test database", slog.Any("err", err))
 		return nil, err
 	}
+
+	// SQLite in-memory databases are per-connection. Limit to a single connection
+	// so all queries (including concurrent ones) see the same data.
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	sqlDB.SetMaxOpenConns(1)
 
 	slog.InfoContext(ctx, "Successfully connected to test database")
 

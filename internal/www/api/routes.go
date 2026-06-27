@@ -3,44 +3,34 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+
+	"github.com/bobbyrward/stronghold/internal/hardcover"
 )
 
 // RegisterRoutes registers all API routes with the Echo server
-func RegisterRoutes(e *echo.Group, db *gorm.DB) {
-	// Filter Keys
-	e.GET("/filter-keys", ListFilterKeys(db))
-	e.POST("/filter-keys", CreateFilterKey(db))
-	e.GET("/filter-keys/:id", GetFilterKey(db))
-	e.PUT("/filter-keys/:id", UpdateFilterKey(db))
-	e.DELETE("/filter-keys/:id", DeleteFilterKey(db))
-
-	// Filter Operators
-	e.GET("/filter-operators", ListFilterOperators(db))
-	e.POST("/filter-operators", CreateFilterOperator(db))
-	e.GET("/filter-operators/:id", GetFilterOperator(db))
-	e.PUT("/filter-operators/:id", UpdateFilterOperator(db))
-	e.DELETE("/filter-operators/:id", DeleteFilterOperator(db))
-
-	// Notification Types
+func RegisterRoutes(e *echo.Group, db *gorm.DB, hc hardcover.Client) {
+	// Notification Types (read-only reference data)
 	e.GET("/notification-types", ListNotificationTypes(db))
-	e.POST("/notification-types", CreateNotificationType(db))
 	e.GET("/notification-types/:id", GetNotificationType(db))
-	e.PUT("/notification-types/:id", UpdateNotificationType(db))
-	e.DELETE("/notification-types/:id", DeleteNotificationType(db))
 
-	// Feed Filter Set Types
-	e.GET("/feed-filter-set-types", ListFeedFilterSetTypes(db))
-	e.POST("/feed-filter-set-types", CreateFeedFilterSetType(db))
-	e.GET("/feed-filter-set-types/:id", GetFeedFilterSetType(db))
-	e.PUT("/feed-filter-set-types/:id", UpdateFeedFilterSetType(db))
-	e.DELETE("/feed-filter-set-types/:id", DeleteFeedFilterSetType(db))
-
-	// Torrent Categories
+	// Torrent Categories (read-only reference data)
 	e.GET("/torrent-categories", ListTorrentCategories(db))
-	e.POST("/torrent-categories", CreateTorrentCategory(db))
 	e.GET("/torrent-categories/:id", GetTorrentCategory(db))
-	e.PUT("/torrent-categories/:id", UpdateTorrentCategory(db))
-	e.DELETE("/torrent-categories/:id", DeleteTorrentCategory(db))
+
+	// Subscription Scopes (read-only reference data)
+	e.GET("/subscription-scopes", ListSubscriptionScopes(db))
+	e.GET("/subscription-scopes/:id", GetSubscriptionScope(db))
+
+	// Book Types (read-only reference data)
+	e.GET("/book-types", ListBookTypes(db))
+	e.GET("/book-types/:id", GetBookType(db))
+
+	// Libraries
+	e.GET("/libraries", ListLibraries(db))
+	e.POST("/libraries", CreateLibrary(db))
+	e.GET("/libraries/:id", GetLibrary(db))
+	e.PUT("/libraries/:id", UpdateLibrary(db))
+	e.DELETE("/libraries/:id", DeleteLibrary(db))
 
 	// Notifiers
 	e.GET("/notifiers", ListNotifiers(db))
@@ -56,34 +46,6 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB) {
 	e.PUT("/feeds/:id", UpdateFeed(db))
 	e.DELETE("/feeds/:id", DeleteFeed(db))
 
-	// Feed Filters
-	e.GET("/feed-filters", ListFeedFilters(db))
-	e.POST("/feed-filters", CreateFeedFilter(db))
-	e.GET("/feed-filters/:id", GetFeedFilter(db))
-	e.PUT("/feed-filters/:id", UpdateFeedFilter(db))
-	e.DELETE("/feed-filters/:id", DeleteFeedFilter(db))
-
-	// Feed Author Filters
-	e.GET("/feed-author-filters", ListFeedAuthorFilters(db))
-	e.POST("/feed-author-filters", CreateFeedAuthorFilter(db))
-	e.GET("/feed-author-filters/:id", GetFeedAuthorFilter(db))
-	e.PUT("/feed-author-filters/:id", UpdateFeedAuthorFilter(db))
-	e.DELETE("/feed-author-filters/:id", DeleteFeedAuthorFilter(db))
-
-	// Feed Filter Sets
-	e.GET("/feed-filter-sets", ListFeedFilterSets(db))
-	e.POST("/feed-filter-sets", CreateFeedFilterSet(db))
-	e.GET("/feed-filter-sets/:id", GetFeedFilterSet(db))
-	e.PUT("/feed-filter-sets/:id", UpdateFeedFilterSet(db))
-	e.DELETE("/feed-filter-sets/:id", DeleteFeedFilterSet(db))
-
-	// Feed Filter Set Entries
-	e.GET("/feed-filter-set-entries", ListFeedFilterSetEntries(db))
-	e.POST("/feed-filter-set-entries", CreateFeedFilterSetEntry(db))
-	e.GET("/feed-filter-set-entries/:id", GetFeedFilterSetEntry(db))
-	e.PUT("/feed-filter-set-entries/:id", UpdateFeedFilterSetEntry(db))
-	e.DELETE("/feed-filter-set-entries/:id", DeleteFeedFilterSetEntry(db))
-
 	// Torrents
 	e.GET("/torrents/unimported", ListUnimportedTorrents(db))
 	e.GET("/torrents/manual", ListManualInterventionTorrents(db))
@@ -97,4 +59,40 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB) {
 	e.POST("/audiobook-wizard/preview-directory", PreviewDirectory(db))
 	e.GET("/audiobook-wizard/libraries", GetLibraries(db))
 	e.POST("/audiobook-wizard/execute-import", ExecuteImport(db))
+
+	// Downloads
+	e.POST("/book-torrent-dl", DownloadBookTorrent(db, nil))
+
+	// Authors
+	e.GET("/authors", ListAuthors(db, hc))
+	e.POST("/authors", CreateAuthor(db, hc))
+	e.GET("/authors/:id", GetAuthor(db, hc))
+	e.PUT("/authors/:id", UpdateAuthor(db, hc))
+	e.DELETE("/authors/:id", DeleteAuthor(db))
+
+	// Author Aliases (nested under authors)
+	e.GET("/authors/:author_id/aliases", ListAuthorAliases(db))
+	e.POST("/authors/:author_id/aliases", CreateAuthorAlias(db))
+	e.GET("/authors/:author_id/aliases/:id", GetAuthorAlias(db))
+	e.PUT("/authors/:author_id/aliases/:id", UpdateAuthorAlias(db))
+	e.DELETE("/authors/:author_id/aliases/:id", DeleteAuthorAlias(db))
+
+	// Author Subscriptions (nested under authors, singleton per author)
+	e.GET("/authors/:author_id/subscription", GetAuthorSubscription(db))
+	e.POST("/authors/:author_id/subscription", CreateAuthorSubscription(db))
+	e.PUT("/authors/:author_id/subscription", UpdateAuthorSubscription(db))
+	e.DELETE("/authors/:author_id/subscription", DeleteAuthorSubscription(db))
+
+	// Author Subscription Items (nested under subscription)
+	e.GET("/authors/:author_id/subscription/items", ListAuthorSubscriptionItems(db))
+
+	// Hardcover
+	e.GET("/hardcover/authors/search", SearchHardcoverAuthors(hc))
+
+	// Event Logs (read-only, paginated)
+	e.GET("/event-logs", ListEventLogs(db))
+	e.GET("/event-logs/:id", GetEventLog(db))
+
+	// Version info
+	e.GET("/version", GetVersion())
 }

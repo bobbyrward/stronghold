@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -64,10 +63,7 @@ func NewFFProbeMetadataProvider() MetadataProvider {
 func (ffmp *FFProbeMetadataProvider) GetMetadata(ctx context.Context, path string) (MetadataTags, error) {
 	probeData, err := ffprobe.ProbeURL(ctx, path)
 	if err != nil {
-		return nil, errors.Join(
-			fmt.Errorf("unable to probe metadata: %s", path),
-			err,
-		)
+		return nil, fmt.Errorf("unable to probe metadata %s: %w", path, err)
 	}
 
 	slog.InfoContext(ctx, "ffprobe format tags",

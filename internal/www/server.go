@@ -2,7 +2,6 @@ package www
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,6 +12,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
+	"github.com/bobbyrward/stronghold/internal/hardcover"
 	"github.com/bobbyrward/stronghold/internal/models"
 	"github.com/bobbyrward/stronghold/internal/www/api"
 )
@@ -28,15 +30,18 @@ func Run() error {
 	db, err := models.ConnectDB()
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Run auto migration
 	err = models.AutoMigrate(db)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to automigrate database"))
+		return fmt.Errorf("failed to automigrate database: %w", err)
 	}
+
+	// Clean up old event logs
+	eventlog.Cleanup(ctx, db, 90)
 
 	echoServer := echo.New()
 	echoServer.HideBanner = true
@@ -75,17 +80,13 @@ func Run() error {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
-	/*
-		echoServer.GET("/", func(c echo.Context) error {
-			slog.InfoContext(c.Request().Context(), "Health check endpoint called")
-			return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-		})
-	*/
-
 	echoServer.Validator = NewValidator()
 
+	// Create Hardcover client
+	hc := hardcover.NewClient(config.Config.Hardcover.ApiToken)
+
 	// Register all API routes first (so they take precedence)
-	api.RegisterRoutes(echoServer.Group("/api"), db)
+	api.RegisterRoutes(echoServer.Group("/api"), db, hc)
 
 	// Serve Vue SPA static files from web/dist
 	echoServer.Static("/assets", "web/dist/assets")

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -26,16 +25,9 @@ func runFeedWatcher(cmd *cobra.Command, args []string) error {
 	
 	slog.InfoContext(ctx, "Starting feed watcher command")
 
-	db, err := models.ConnectDB()
+	db, err := models.ConnectAndMigrate(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to connect to database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to connect to database"))
-	}
-
-	err = models.AutoMigrate(db)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to auto-migrate database", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to automigrate database"))
+		return err
 	}
 
 	feedWatcher := feedwatcher.NewFeedWatcher()
@@ -43,7 +35,7 @@ func runFeedWatcher(cmd *cobra.Command, args []string) error {
 	err = feedWatcher.Run(ctx, db)
 	if err != nil {
 		slog.ErrorContext(ctx, "Feed watcher failed", slog.Any("err", err))
-		return errors.Join(err, fmt.Errorf("failed to run feed watcher"))
+		return fmt.Errorf("failed to run feed watcher: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Feed watcher completed successfully")

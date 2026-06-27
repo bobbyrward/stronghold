@@ -90,6 +90,7 @@ func GetTorrentInfo(db *gorm.DB) echo.HandlerFunc {
 			config.Config.Importers,
 			metadataProvider,
 			audibleClient,
+			db,
 		)
 		if err != nil {
 			return InternalError(c, ctx, "failed to create audiobook importer", err)
@@ -313,6 +314,7 @@ func ExecuteImport(db *gorm.DB) echo.HandlerFunc {
 			config.Config.Importers,
 			metadataProvider,
 			audibleClient,
+			db,
 		)
 		if err != nil {
 			return InternalError(c, ctx, "failed to create audiobook importer", err)
@@ -341,6 +343,15 @@ func ExecuteImport(db *gorm.DB) echo.HandlerFunc {
 			slog.WarnContext(ctx, "Failed to remove manual_intervention tag",
 				slog.String("hash", req.Hash),
 				slog.Any("error", err))
+		}
+
+		// Find import type by category to get notification settings
+		for _, importType := range config.Config.Importers.AudiobookImporter.ImportTypes {
+			if importType.Category == torrent.Category {
+				// Send notification if configured
+				importer.SendDiscordNotification(ctx, req.Metadata, importType)
+				break
+			}
 		}
 
 		response := ExecuteImportResponse{

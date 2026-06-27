@@ -25,7 +25,7 @@ func TestGetLibraries(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 
 	// Should return valid JSON array
-	var libraries []interface{}
+	var libraries []any
 	err := json.Unmarshal(rec.Body.Bytes(), &libraries)
 	assert.NoError(t, err)
 }

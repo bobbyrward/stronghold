@@ -65,7 +65,7 @@ func TestImportTorrent_SingleFileInRoot(t *testing.T) {
 	}
 
 	// Run import
-	importer := NewBookImporterSystem(mockClient)
+	importer := NewBookImporterSystem(mockClient, nil)
 	importer.ImportTorrent(ctx, torrent, importType, library)
 
 	// Verify file was copied to destination root
@@ -134,7 +134,7 @@ func TestImportTorrent_SingleFileInNestedDirectory(t *testing.T) {
 	}
 
 	// Run import
-	importer := NewBookImporterSystem(mockClient)
+	importer := NewBookImporterSystem(mockClient, nil)
 	importer.ImportTorrent(ctx, torrent, importType, library)
 
 	// Verify file was flattened to destination root
@@ -215,7 +215,7 @@ func TestImportTorrent_MultipleFilesInNestedDirectories(t *testing.T) {
 	}
 
 	// Run import
-	importer := NewBookImporterSystem(mockClient)
+	importer := NewBookImporterSystem(mockClient, nil)
 	importer.ImportTorrent(ctx, torrent, importType, library)
 
 	// Verify both files were flattened to destination root
@@ -299,7 +299,7 @@ func TestImportTorrent_MultipleFileFormats(t *testing.T) {
 	}
 
 	// Run import
-	importer := NewBookImporterSystem(mockClient)
+	importer := NewBookImporterSystem(mockClient, nil)
 	importer.ImportTorrent(ctx, torrent, importType, library)
 
 	// Verify all three formats were imported
@@ -376,7 +376,7 @@ func TestImportTorrent_IgnoreNonBookFiles(t *testing.T) {
 	}
 
 	// Run import
-	importer := NewBookImporterSystem(mockClient)
+	importer := NewBookImporterSystem(mockClient, nil)
 	importer.ImportTorrent(ctx, torrent, importType, library)
 
 	// Verify only epub was imported
@@ -443,7 +443,7 @@ func TestImportTorrent_NoBookFilesFound(t *testing.T) {
 	}
 
 	// Run import
-	importer := NewBookImporterSystem(mockClient)
+	importer := NewBookImporterSystem(mockClient, nil)
 	importer.ImportTorrent(ctx, torrent, importType, library)
 
 	// Verify no files were imported
@@ -509,7 +509,7 @@ func TestImportTorrent_DeeplyNestedStructure(t *testing.T) {
 	}
 
 	// Run import
-	importer := NewBookImporterSystem(mockClient)
+	importer := NewBookImporterSystem(mockClient, nil)
 	importer.ImportTorrent(ctx, torrent, importType, library)
 
 	// Verify file was flattened to destination root

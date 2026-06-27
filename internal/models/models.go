@@ -6,6 +6,26 @@ import (
 	"gorm.io/gorm"
 )
 
+// EventLog is an append-only log of meaningful state changes across the system.
+// No UpdatedAt or soft-deletes — rows are only inserted and eventually cleaned up by retention policy.
+type EventLog struct {
+	ID         uint      `gorm:"primaryKey;autoIncrement"`
+	CreatedAt  time.Time `gorm:"not null;index"`
+	Category   string    `gorm:"not null;index"`   // download, import, notification, subscription, search, feed, mutation
+	EventType  string    `gorm:"not null;index"`   // e.g. torrent.added, import.completed
+	Source     string    `gorm:"not null"`          // feedwatcher2, discord-bot, api, ebook-importer, etc.
+	EntityType string    `gorm:"index"`             // torrent, author, feed, notifier, etc.
+	EntityID   string    `gorm:"index"`             // hash, numeric ID as string, etc.
+	Summary    string    `gorm:"not null"`          // human-readable one-liner
+	Details    string    `gorm:"type:jsonb"`        // structured JSON blob
+}
+
+type CommonFields struct {
+	ID        uint `gorm:"primaryKey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type FeedItem struct {
 	ID          uint      `gorm:"primaryKey"`
 	Guid        string    `gorm:"not null;uniqueIndex"`
@@ -33,11 +53,6 @@ type SearchResponseItem struct {
 	Tags         string `gorm:"notnull"`
 }
 
-type TorrentCategory struct {
-	gorm.Model
-	Name string `gorm:"not null;uniqueIndex"`
-}
-
 type NotificationType struct {
 	gorm.Model
 	Name string `gorm:"not null;uniqueIndex"`
@@ -57,58 +72,75 @@ type Feed struct {
 	URL  string
 }
 
-type FeedAuthorFilter struct {
-	gorm.Model
-	FeedID            uint `gorm:"not null;uniqueIndex:idx_feed_author"`
-	Feed              Feed
-	TorrentCategoryID uint `gorm:"not null"`
-	TorrentCategory   TorrentCategory
-	NotifierID        uint `gorm:"not null"`
-	Notifier          Notifier
-	Author            string `gorm:"not null;uniqueIndex:idx_feed_author"`
+// SubscriptionScope is a reference table for subscription scopes
+type SubscriptionScope struct {
+	CommonFields
+	Name string `gorm:"not null;uniqueIndex"` // "personal" or "family"
 }
 
-type FeedFilter struct {
-	gorm.Model
-	Name              string
-	FeedID            uint `gorm:"not null"`
-	Feed              Feed
-	TorrentCategoryID uint `gorm:"not null"`
-	TorrentCategory   TorrentCategory
-	NotifierID        uint `gorm:"not null"`
-	Notifier          Notifier
+// BookType is a reference table for book types (ebook or audiobook)
+type BookType struct {
+	CommonFields
+	Name string `gorm:"not null;uniqueIndex"` // "ebook" or "audiobook"
 }
 
-type FilterKey struct {
-	gorm.Model
-	Name string `gorm:"not null;uniqueIndex"`
+// Library represents a storage location for books
+type Library struct {
+	CommonFields
+	Name       string   `gorm:"not null;uniqueIndex"`
+	Path       string   `gorm:"not null;uniqueIndex"`
+	BookTypeID uint     `gorm:"not null"`
+	BookType   BookType `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
-type FilterOperator struct {
-	gorm.Model
-	Name string `gorm:"not null;uniqueIndex"`
+// TorrentCategory (updated - replaces existing model)
+type TorrentCategory struct {
+	CommonFields
+	Name      string `gorm:"not null;uniqueIndex"`
+	ScopeID   uint   `gorm:"not null"`
+	Scope     SubscriptionScope
+	MediaType string `gorm:"not null"` // "audiobook" or "ebook"
 }
 
-type FeedFilterSetType struct {
-	gorm.Model
-	Name string `gorm:"not null;uniqueIndex"`
+// Author represents a writer of books
+type Author struct {
+	CommonFields
+	Name         string  `gorm:"not null;uniqueIndex"`
+	HardcoverRef *string // ponytail: canonical Hardcover author id as decimal string; nil until linked. slug kept only for UI/link.
 }
 
-type FeedFilterSet struct {
-	gorm.Model
-	FeedFilterID        uint `gorm:"not null"`
-	FeedFilter          FeedFilter
-	FeedFilterSetTypeID uint `gorm:"not null"`
-	FeedFilterSetType   FeedFilterSetType
+// AuthorAlias represents an additional alias for an Author
+type AuthorAlias struct {
+	CommonFields
+	AuthorID uint   `gorm:"not null"`
+	Author   Author `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Name     string `gorm:"not null;uniqueIndex"` // globally unique
 }
 
-type FeedFilterSetEntry struct {
-	gorm.Model
-	FeedFilterSetID  uint `gorm:"not null"`
-	FeedFilterSet    FeedFilterSet
-	FilterKeyID      uint `gorm:"not null"`
-	FilterKey        FilterKey
-	FilterOperatorID uint `gorm:"not null"`
-	FilterOperator   FilterOperator
-	Value            string
+// AuthorSubscription represents a subscription to an Author
+type AuthorSubscription struct {
+	CommonFields
+	AuthorID           uint   `gorm:"not null;uniqueIndex"` // one subscription per author
+	Author             Author `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	ScopeID            uint   `gorm:"not null"`
+	Scope              SubscriptionScope
+	NotifierID         *uint
+	Notifier           *Notifier
+	EbookLibraryID     uint    `gorm:"not null"`
+	EbookLibrary       Library `gorm:"foreignKey:EbookLibraryID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	AudiobookLibraryID uint    `gorm:"not null"`
+	AudiobookLibrary   Library `gorm:"foreignKey:AudiobookLibraryID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+}
+
+// AuthorSubscriptionItem represents a downloaded item from an AuthorSubscription
+type AuthorSubscriptionItem struct {
+	CommonFields
+	AuthorSubscriptionID uint               `gorm:"not null"`
+	AuthorSubscription   AuthorSubscription `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	BookTypeID           uint               `gorm:"not null"`
+	BookType             BookType           `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	TorrentHash          string             `gorm:"not null"`
+	BooksearchID         string             `gorm:"not null;uniqueIndex"` // torrent ID extracted from feed GUID URL
+	Title                string             `gorm:"not null"`
+	DownloadedAt         time.Time          `gorm:"not null"`
 }

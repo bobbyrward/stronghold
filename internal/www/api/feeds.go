@@ -2,10 +2,12 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/models"
 )
 
@@ -55,6 +57,13 @@ func (handler FeedHandler) IDFromModel(row models.Feed) uint {
 	return row.ID
 }
 
+func (handler FeedHandler) LogEvent(db *gorm.DB, eventType string, row models.Feed) {
+	eventlog.Log(db, eventlog.CategoryMutation, eventlog.EntityFeed+"."+eventType, eventlog.SourceAPI,
+		eventlog.EntityFeed, fmt.Sprintf("%d", row.ID),
+		fmt.Sprintf("Feed %s: %s", eventType, row.Name),
+		map[string]any{"id": row.ID, "name": row.Name})
+}
+
 // ListFeeds returns all feeds
 func ListFeeds(db *gorm.DB) echo.HandlerFunc {
 	return genericListHandler[models.Feed, FeedRequest, FeedResponse](db, FeedHandler{})
@@ -77,5 +86,5 @@ func UpdateFeed(db *gorm.DB) echo.HandlerFunc {
 
 // DeleteFeed deletes a feed
 func DeleteFeed(db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandler[models.Feed](db)
+	return genericDeleteHandlerWithEventLog[models.Feed, FeedRequest, FeedResponse](db, FeedHandler{})
 }

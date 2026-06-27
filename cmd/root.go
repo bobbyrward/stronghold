@@ -1,19 +1,19 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/bobbyrward/stronghold/cmd/booksearch"
 	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/logging"
 )
 
 var (
 	cfgFile  string
-	logLevel string
+	logLevel = "info"
 	rootCmd  = &cobra.Command{
 		Use:          "stronghold",
 		SilenceUsage: true,
@@ -45,8 +45,13 @@ func init() {
 	rootCmd.AddCommand(createFeedWatcherCmd())
 	rootCmd.AddCommand(createApiCmd())
 	rootCmd.AddCommand(createDiscordBotCmd())
-	rootCmd.AddCommand(createBookSearchCmd())
+	rootCmd.AddCommand(booksearch.CreateBookSearchCmd())
+	rootCmd.AddCommand(createRefreshTokenCmd())
 	rootCmd.AddCommand(createAudiobookImporterCmd())
+	rootCmd.AddCommand(createDoctorCmd())
+	rootCmd.AddCommand(createFeedWatcher2Cmd())
+	rootCmd.AddCommand(createSubscribeCmd())
+	rootCmd.AddCommand(createAuthorSubscriptionImporterCmd())
 }
 
 func internalCobraInit() error {
@@ -54,7 +59,7 @@ func internalCobraInit() error {
 
 	err := config.LoadConfig(cfgFile)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to load config"))
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	return nil

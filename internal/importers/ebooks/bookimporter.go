@@ -2,7 +2,6 @@ package ebooks
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,7 +11,10 @@ import (
 	"github.com/autobrr/go-qbittorrent"
 	"github.com/cappuccinotm/slogx"
 
+	"gorm.io/gorm"
+
 	"github.com/bobbyrward/stronghold/internal/config"
+	"github.com/bobbyrward/stronghold/internal/eventlog"
 	"github.com/bobbyrward/stronghold/internal/importers/common"
 	"github.com/bobbyrward/stronghold/internal/notifications"
 	"github.com/bobbyrward/stronghold/internal/qbit"
@@ -20,11 +22,13 @@ import (
 
 type BookImporterSystem struct {
 	qbitClient qbit.QbitClient
+	db         *gorm.DB
 }
 
-func NewBookImporterSystem(qbitClient qbit.QbitClient) *BookImporterSystem {
+func NewBookImporterSystem(qbitClient qbit.QbitClient, db *gorm.DB) *BookImporterSystem {
 	return &BookImporterSystem{
 		qbitClient: qbitClient,
+		db:         db,
 	}
 }
 
@@ -41,7 +45,7 @@ func (bis *BookImporterSystem) Run(ctx context.Context) error {
 
 		err := bis.ProcessImportType(ctx, importType, library)
 		if err != nil {
-			return errors.Join(err, fmt.Errorf("failed to process import type: %s", importType.Category))
+			return fmt.Errorf("failed to process import type %s: %w", importType.Category, err)
 		}
 	}
 
@@ -51,7 +55,7 @@ func (bis *BookImporterSystem) Run(ctx context.Context) error {
 func (bis *BookImporterSystem) ProcessImportType(ctx context.Context, importType config.ImportType, library *config.ImportLibrary) error {
 	torrents, err := qbit.GetUnimportedTorrentsByCategory(ctx, bis.qbitClient, importType.Category)
 	if err != nil {
-		return errors.Join(err, fmt.Errorf("failed to get unimported torrents for category: %s", importType.Category))
+		return fmt.Errorf("failed to get unimported torrents for category %s: %w", importType.Category, err)
 	}
 
 	for _, torrent := range torrents {
@@ -71,15 +75,7 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 			slogx.Error(err),
 		)
 
-		err = qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to add manual intervention tag",
-				slog.String("name", torrent.Name),
-				slog.String("hash", torrent.Hash),
-				slogx.Error(err),
-			)
-		}
-
+		bis.markForManualIntervention(ctx, torrent, importType.DiscordNotifier, "Failed to map torrent files: "+err.Error())
 		return
 	}
 
@@ -97,13 +93,9 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 	}
 
 	if len(books) == 0 {
-		slog.InfoContext(ctx, "Unable to find epubs in torrent", slog.String("name", torrent.Name), slog.Any("err", err))
+		slog.InfoContext(ctx, "Unable to find epubs in torrent", slog.String("name", torrent.Name))
 
-		err = qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to add manual intervention tag", slog.String("name", torrent.Name), slog.Any("err", err))
-		}
-
+		bis.markForManualIntervention(ctx, torrent, importType.DiscordNotifier, "No ebook files (.epub, .mobi, .azw3) found in torrent")
 		return
 	}
 
@@ -118,10 +110,7 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 		if err != nil {
 			slog.InfoContext(ctx, "Unable to copy file", slog.Any("mappedFile", mappedFile), slog.String("name", torrent.Name), slog.Any("err", err))
 
-			err = qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
-			if err != nil {
-				slog.ErrorContext(ctx, "Failed to add manual intervention tag", slog.String("name", torrent.Name), slog.Any("err", err))
-			}
+			bis.markForManualIntervention(ctx, torrent, importType.DiscordNotifier, "Failed to copy file: "+err.Error())
 			return
 		}
 	}
@@ -131,7 +120,76 @@ func (bis *BookImporterSystem) ImportTorrent(ctx context.Context, torrent qbitto
 		slog.ErrorContext(ctx, "Failed to add imported tag", slog.String("name", torrent.Name), slog.Any("err", err))
 	}
 
+	bookNames := make([]string, len(books))
+	for i, b := range books {
+		bookNames[i] = b.BaseName
+	}
+	eventlog.Log(bis.db, eventlog.CategoryImport, eventlog.EventImportCompleted, eventlog.SourceEbookImporter,
+		eventlog.EntityTorrent, torrent.Hash,
+		fmt.Sprintf("Imported ebook: %s (%d files)", torrent.Name, len(books)),
+		map[string]any{"name": torrent.Name, "hash": torrent.Hash, "books": bookNames, "library": library.Path, "category": importType.Category})
+
 	bis.sendDiscordNotification(ctx, torrent, library, books, importType)
+}
+
+func (bis *BookImporterSystem) markForManualIntervention(ctx context.Context, torrent qbittorrent.Torrent, notifierName string, reason string) {
+	err := qbit.TagTorrent(ctx, bis.qbitClient, torrent, config.Config.Importers.ManualInterventionTag)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to add manual intervention tag",
+			slog.String("name", torrent.Name),
+			slog.String("hash", torrent.Hash),
+			slogx.Error(err),
+		)
+		return
+	}
+
+	slog.InfoContext(ctx, "Marked torrent for manual intervention",
+		slog.String("name", torrent.Name),
+		slog.String("hash", torrent.Hash),
+		slog.String("reason", reason),
+	)
+
+	eventlog.Log(bis.db, eventlog.CategoryImport, eventlog.EventImportManualIntervention, eventlog.SourceEbookImporter,
+		eventlog.EntityTorrent, torrent.Hash,
+		fmt.Sprintf("Manual intervention: %s: %s", torrent.Name, reason),
+		map[string]string{"name": torrent.Name, "hash": torrent.Hash, "reason": reason})
+
+	// Send notification if notifier is configured
+	if notifierName != "" {
+		bis.sendManualInterventionNotification(ctx, torrent, notifierName, reason)
+	}
+}
+
+func (bis *BookImporterSystem) sendManualInterventionNotification(ctx context.Context, torrent qbittorrent.Torrent, notifierName string, reason string) {
+	message := notifications.DiscordWebhookMessage{
+		Username: "Stronghold Book Importer",
+		Embeds: []notifications.DiscordEmbed{
+			{
+				Title:       "⚠️ Manual Intervention Required",
+				Description: fmt.Sprintf("Ebook **%s** requires manual intervention", torrent.Name),
+				Color:       0xFFA500, // Orange color
+				Fields: []notifications.DiscordEmbedField{
+					{
+						Name:   "Reason",
+						Value:  reason,
+						Inline: false,
+					},
+					{
+						Name:   "Torrent Hash",
+						Value:  torrent.Hash,
+						Inline: true,
+					},
+				},
+			},
+		},
+	}
+
+	err := notifications.SendNotification(ctx, notifierName, message)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to send manual intervention notification",
+			slog.String("torrent", torrent.Name),
+			slogx.Error(err))
+	}
 }
 
 func (bis *BookImporterSystem) sendDiscordNotification(ctx context.Context, torrent qbittorrent.Torrent, library *config.ImportLibrary, books []common.MappedTorrentFile, importType config.ImportType) {

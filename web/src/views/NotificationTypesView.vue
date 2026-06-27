@@ -11,7 +11,7 @@ const loading = ref(true)
 
 const columns: Column[] = [
     { key: 'id', label: 'ID', editable: false },
-    { key: 'name', label: 'Name', editable: true, type: 'text' }
+    { key: 'name', label: 'Name', editable: false }
 ]
 
 onMounted(async () => {
@@ -23,33 +23,13 @@ onMounted(async () => {
         loading.value = false
     }
 })
-
-async function handleSave(item: NotificationType, isNew: boolean) {
-    if (isNew) {
-        const created = await api.notificationTypes.create({ name: item.name })
-        data.value.push(created)
-        toast.success('Notification type created')
-    } else {
-        const updated = await api.notificationTypes.update(item.id, { name: item.name })
-        const index = data.value.findIndex(d => d.id === item.id)
-        data.value[index] = updated
-        toast.success('Notification type updated')
-    }
-}
-
-async function handleDelete(id: number) {
-    await api.notificationTypes.delete(id)
-    data.value = data.value.filter(d => d.id !== id)
-    toast.success('Notification type deleted')
-}
 </script>
 
 <template>
     <div class="mt-4">
         <h2>Notification Types</h2>
-        <p class="text-muted mb-4">Manage notification type reference data</p>
+        <p class="text-muted mb-4">Reference data for notification types (read-only)</p>
 
-        <DataTable :columns="columns" :data="data" :loading="loading" :editable="true" :on-save="handleSave"
-            :on-delete="handleDelete" />
+        <DataTable :columns="columns" :data="data" :loading="loading" :editable="false" />
     </div>
 </template>

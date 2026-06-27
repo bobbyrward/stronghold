@@ -10,4 +10,5 @@ type ClusterConfig struct {
 	Logging       LoggingConfig       `yaml:"logging"`
 	APIClient     APIClientConfig     `yaml:"apiClient"`
 	Importers     ImportersConfig     `yaml:"importers"`
+	Hardcover     HarcoverConfig      `yaml:"hardcover"`
 }
