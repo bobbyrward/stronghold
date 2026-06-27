@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown/v2"
-	"github.com/charmbracelet/glamour"
+	"charm.land/glamour/v2"
 	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/bobbyrward/stronghold/internal/booksearch"
