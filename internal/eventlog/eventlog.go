@@ -73,7 +73,6 @@ const (
 	EntityFeed         = "feed"
 	EntityNotifier     = "notifier"
 	EntityLibrary      = "library"
-	EntityFeedAuthorFilter = "feed_author_filter"
 	EntitySearch       = "search"
 )
 

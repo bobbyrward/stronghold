@@ -1,25 +1,10 @@
 // Reference data types
-export interface FilterKey {
-    id: number
-    name: string
-}
-
 export interface SubscriptionScope {
     id: number
     name: string
 }
 
-export interface FilterOperator {
-    id: number
-    name: string
-}
-
 export interface NotificationType {
-    id: number
-    name: string
-}
-
-export interface FeedFilterSetType {
     id: number
     name: string
 }
@@ -109,48 +94,9 @@ export interface Notifier {
     url: string
 }
 
-export interface FeedFilter {
-    id: number
-    name: string
-    feed_id: number
-    feed_name: string
-    category_id: number
-    category_name: string
-    notifier_id: number
-    notifier_name: string
-}
-
-export interface FeedAuthorFilter {
-    id: number
-    author: string
-    feed_id: number
-    feed_name: string
-    category_id: number
-    category_name: string
-    notifier_id: number
-    notifier_name: string
-}
-
-export interface FeedFilterSet {
-    id: number
-    feed_filter_id: number
-    type_id: number
-    type_name: string
-}
-
-export interface FeedFilterSetEntry {
-    id: number
-    feed_filter_set_id: number
-    key_id: number
-    key_name: string
-    operator_id: number
-    operator_name: string
-    value: string
-}
-
 // Request types (for create/update operations)
 // Reference data types are read-only - no request types needed
-// (FilterKey, FilterOperator, NotificationType, FeedFilterSetType, TorrentCategory)
+// (NotificationType, TorrentCategory)
 
 export interface FeedRequest {
     name: string
@@ -161,32 +107,6 @@ export interface NotifierRequest {
     name: string
     type_id: number
     url?: string
-}
-
-export interface FeedFilterRequest {
-    name: string
-    feed_id: number
-    category_id: number
-    notifier_id: number
-}
-
-export interface FeedAuthorFilterRequest {
-    author: string
-    feed_id: number
-    category_id: number
-    notifier_id: number
-}
-
-export interface FeedFilterSetRequest {
-    feed_filter_id: number
-    type_id: number
-}
-
-export interface FeedFilterSetEntryRequest {
-    feed_filter_set_id: number
-    key_id: number
-    operator_id: number
-    value: string
 }
 
 export interface AuthorRequest {

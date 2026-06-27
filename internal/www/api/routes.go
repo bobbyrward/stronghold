@@ -9,21 +9,9 @@ import (
 
 // RegisterRoutes registers all API routes with the Echo server
 func RegisterRoutes(e *echo.Group, db *gorm.DB, hc hardcover.Client) {
-	// Filter Keys (read-only reference data)
-	e.GET("/filter-keys", ListFilterKeys(db))
-	e.GET("/filter-keys/:id", GetFilterKey(db))
-
-	// Filter Operators (read-only reference data)
-	e.GET("/filter-operators", ListFilterOperators(db))
-	e.GET("/filter-operators/:id", GetFilterOperator(db))
-
 	// Notification Types (read-only reference data)
 	e.GET("/notification-types", ListNotificationTypes(db))
 	e.GET("/notification-types/:id", GetNotificationType(db))
-
-	// Feed Filter Set Types (read-only reference data)
-	e.GET("/feed-filter-set-types", ListFeedFilterSetTypes(db))
-	e.GET("/feed-filter-set-types/:id", GetFeedFilterSetType(db))
 
 	// Torrent Categories (read-only reference data)
 	e.GET("/torrent-categories", ListTorrentCategories(db))
@@ -57,34 +45,6 @@ func RegisterRoutes(e *echo.Group, db *gorm.DB, hc hardcover.Client) {
 	e.GET("/feeds/:id", GetFeed(db))
 	e.PUT("/feeds/:id", UpdateFeed(db))
 	e.DELETE("/feeds/:id", DeleteFeed(db))
-
-	// Feed Filters
-	e.GET("/feed-filters", ListFeedFilters(db))
-	e.POST("/feed-filters", CreateFeedFilter(db))
-	e.GET("/feed-filters/:id", GetFeedFilter(db))
-	e.PUT("/feed-filters/:id", UpdateFeedFilter(db))
-	e.DELETE("/feed-filters/:id", DeleteFeedFilter(db))
-
-	// Feed Author Filters
-	e.GET("/feed-author-filters", ListFeedAuthorFilters(db))
-	e.POST("/feed-author-filters", CreateFeedAuthorFilter(db))
-	e.GET("/feed-author-filters/:id", GetFeedAuthorFilter(db))
-	e.PUT("/feed-author-filters/:id", UpdateFeedAuthorFilter(db))
-	e.DELETE("/feed-author-filters/:id", DeleteFeedAuthorFilter(db))
-
-	// Feed Filter Sets
-	e.GET("/feed-filter-sets", ListFeedFilterSets(db))
-	e.POST("/feed-filter-sets", CreateFeedFilterSet(db))
-	e.GET("/feed-filter-sets/:id", GetFeedFilterSet(db))
-	e.PUT("/feed-filter-sets/:id", UpdateFeedFilterSet(db))
-	e.DELETE("/feed-filter-sets/:id", DeleteFeedFilterSet(db))
-
-	// Feed Filter Set Entries
-	e.GET("/feed-filter-set-entries", ListFeedFilterSetEntries(db))
-	e.POST("/feed-filter-set-entries", CreateFeedFilterSetEntry(db))
-	e.GET("/feed-filter-set-entries/:id", GetFeedFilterSetEntry(db))
-	e.PUT("/feed-filter-set-entries/:id", UpdateFeedFilterSetEntry(db))
-	e.DELETE("/feed-filter-set-entries/:id", DeleteFeedFilterSetEntry(db))
 
 	// Torrents
 	e.GET("/torrents/unimported", ListUnimportedTorrents(db))

@@ -127,20 +127,29 @@ func AutoMigrate(db *gorm.DB) error {
 
 	slog.InfoContext(ctx, "Starting database auto-migration")
 
-	err := db.AutoMigrate(
+	// Drop orphaned filter tables removed from the model set. Child/join tables
+	// first to avoid foreign-key constraint errors.
+	err := db.Migrator().DropTable(
+		"feed_filter_set_entries",
+		"feed_filter_sets",
+		"feed_author_filters",
+		"feed_filters",
+		"feed_filter_set_types",
+		"filter_keys",
+		"filter_operators",
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to drop removed filter tables", slog.Any("err", err))
+		return fmt.Errorf("failed to drop removed filter tables: %w", err)
+	}
+
+	err = db.AutoMigrate(
 		// Existing models
 		&FeedItem{},
 		&SearchResponseItem{},
 		&NotificationType{},
 		&Notifier{},
 		&Feed{},
-		&FeedAuthorFilter{},
-		&FeedFilter{},
-		&FilterKey{},
-		&FilterOperator{},
-		&FeedFilterSetType{},
-		&FeedFilterSet{},
-		&FeedFilterSetEntry{},
 		&BookSearchCredential{},
 		// Feedwatcher2 models
 		&SubscriptionScope{},
@@ -182,21 +191,6 @@ func PopulateData(db *gorm.DB) error {
 	err = populateNotificationType(db)
 	if err != nil {
 		return fmt.Errorf("failed to populate notification types: %w", err)
-	}
-
-	err = populateFilterKeys(db)
-	if err != nil {
-		return fmt.Errorf("failed to populate filter keys: %w", err)
-	}
-
-	err = populateFilterOperators(db)
-	if err != nil {
-		return fmt.Errorf("failed to populate filter operators: %w", err)
-	}
-
-	err = populateFilterSetTypes(db)
-	if err != nil {
-		return fmt.Errorf("failed to populate filter set types: %w", err)
 	}
 
 	return nil
