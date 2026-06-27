@@ -184,7 +184,7 @@ function truncateHash(hash: string, length: number = 12): string {
 }
 
 function handleHardcoverSelect(author: HardcoverAuthorSearchResult) {
-  editData.value.hardcover_ref = author.slug
+  editData.value.hardcover_ref = author.id
 }
 
 function handleSave() {

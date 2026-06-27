@@ -95,7 +95,7 @@ function closeModal() {
                         </div>
 
                         <div v-else-if="results.length > 0" class="list-group">
-                            <div v-for="author in results" :key="author.slug"
+                            <div v-for="author in results" :key="author.id"
                                 class="list-group-item list-group-item-action">
 
                                 <div class="row">

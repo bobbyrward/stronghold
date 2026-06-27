@@ -46,7 +46,7 @@ func (h AuthorHandler) RequestToModel(c echo.Context, ctx context.Context, db *g
 	// Validate hardcover_ref if provided
 	if req.HardcoverRef != nil {
 		slog.DebugContext(ctx, "Validating hardcover_ref", slog.String("ref", *req.HardcoverRef))
-		author, err := h.hardcoverClient.GetAuthorBySlug(ctx, *req.HardcoverRef)
+		author, err := h.hardcoverClient.GetAuthorByID(ctx, *req.HardcoverRef)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to validate hardcover_ref", slog.Any("error", err))
 			return models.Author{}, InternalError(c, ctx, "Failed to validate hardcover_ref", err)
@@ -56,6 +56,8 @@ func (h AuthorHandler) RequestToModel(c echo.Context, ctx context.Context, db *g
 			return models.Author{}, BadRequest(c, ctx, "invalid hardcover_ref: author not found on Hardcover")
 		}
 		slog.InfoContext(ctx, "Hardcover ref validated", slog.String("ref", *req.HardcoverRef), slog.String("name", author.Name))
+		// Persist the canonical id, not the submitted ref (which may be a merged duplicate's id).
+		req.HardcoverRef = &author.ID
 	}
 
 	return models.Author{
@@ -75,7 +77,7 @@ func (h AuthorHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm
 		// Only validate if it's different from current
 		if row.HardcoverRef == nil || *row.HardcoverRef != *req.HardcoverRef {
 			slog.DebugContext(ctx, "Validating hardcover_ref on update", slog.String("ref", *req.HardcoverRef))
-			author, err := h.hardcoverClient.GetAuthorBySlug(ctx, *req.HardcoverRef)
+			author, err := h.hardcoverClient.GetAuthorByID(ctx, *req.HardcoverRef)
 			if err != nil {
 				slog.ErrorContext(ctx, "Failed to validate hardcover_ref", slog.Any("error", err))
 				return InternalError(c, ctx, "Failed to validate hardcover_ref", err)
@@ -85,6 +87,8 @@ func (h AuthorHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm
 				return BadRequest(c, ctx, "invalid hardcover_ref: author not found on Hardcover")
 			}
 			slog.InfoContext(ctx, "Hardcover ref validated", slog.String("ref", *req.HardcoverRef), slog.String("name", author.Name))
+			// Persist the canonical id, not the submitted ref (which may be a merged duplicate's id).
+			req.HardcoverRef = &author.ID
 		}
 	}
 

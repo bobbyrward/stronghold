@@ -106,7 +106,7 @@ type TorrentCategory struct {
 type Author struct {
 	CommonFields
 	Name         string  `gorm:"not null;uniqueIndex"`
-	HardcoverRef *string // nullable until linked; slug/UUID TBD
+	HardcoverRef *string // ponytail: canonical Hardcover author id as decimal string; nil until linked. slug kept only for UI/link.
 }
 
 // AuthorAlias represents an additional alias for an Author

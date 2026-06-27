@@ -38,6 +38,7 @@ export interface LibraryRequest {
 
 // Hardcover search
 export interface HardcoverAuthorSearchResult {
+    id: string
     slug: string
     name: string
 }

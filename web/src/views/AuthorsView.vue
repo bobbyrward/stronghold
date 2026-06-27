@@ -90,7 +90,7 @@ function openHardcoverModal() {
 }
 
 function handleHardcoverSelect(author: HardcoverAuthorSearchResult) {
-  newAuthor.value.hardcover_ref = author.slug
+  newAuthor.value.hardcover_ref = author.id
   if (!newAuthor.value.name) {
     newAuthor.value.name = author.name
   }

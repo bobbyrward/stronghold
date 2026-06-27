@@ -32,6 +32,7 @@ func TestHardcoverSearch(t *testing.T) {
 		// Verify structure and content
 		names := make(map[string]string)
 		for _, r := range results {
+			assert.NotEmpty(t, r.ID)
 			assert.NotEmpty(t, r.Slug)
 			assert.NotEmpty(t, r.Name)
 			names[r.Slug] = r.Name
@@ -53,6 +54,7 @@ func TestHardcoverSearch(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Len(t, results, 1)
+		assert.Equal(t, "3", results[0].ID)
 		assert.Equal(t, "patrick-rothfuss", results[0].Slug)
 		assert.Equal(t, "Patrick Rothfuss", results[0].Name)
 	})
