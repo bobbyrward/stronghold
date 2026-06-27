@@ -29,7 +29,7 @@ func TestBackfillHardcoverRefs(t *testing.T) {
 	require.NoError(t, db.Create(&unknownAuthor).Error)
 	require.NoError(t, db.Create(&noRefAuthor).Error)
 
-	rewritten, skipped, unresolved, err := backfillHardcoverRefs(context.Background(), db, hc, 0)
+	rewritten, skipped, unresolved, err := backfillHardcoverRefs(context.Background(), db, hc)
 	require.NoError(t, err)
 	assert.Equal(t, 1, rewritten)
 	assert.Equal(t, 1, skipped)

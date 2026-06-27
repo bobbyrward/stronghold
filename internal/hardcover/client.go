@@ -13,4 +13,8 @@ type Client interface {
 
 	// GetAuthorByID retrieves an author by their canonical id.
 	GetAuthorByID(ctx context.Context, id string) (*AuthorSearchResult, error)
+
+	// GetAuthorBooks fetches an author's bibliography (list of works) by their
+	// canonical id, ordered by release date.
+	GetAuthorBooks(ctx context.Context, id string) ([]BookResult, error)
 }
