@@ -288,18 +288,18 @@ func TestLookupByName(t *testing.T) {
 		assert.Contains(t, err.Error(), "Notification type not found")
 	})
 
-	t.Run("finds filter key", func(t *testing.T) {
-		var filterKey models.FilterKey
-		err := LookupByName(db, ctx, &filterKey, "author", "Filter key")
+	t.Run("finds torrent category", func(t *testing.T) {
+		var torrentCategory models.TorrentCategory
+		err := LookupByName(db, ctx, &torrentCategory, "personal-books", "Torrent category")
 		assert.NoError(t, err)
-		assert.Equal(t, "author", filterKey.Name)
+		assert.Equal(t, "personal-books", torrentCategory.Name)
 	})
 
-	t.Run("finds filter operator", func(t *testing.T) {
-		var filterOperator models.FilterOperator
-		err := LookupByName(db, ctx, &filterOperator, "contains", "Filter operator")
+	t.Run("finds book type", func(t *testing.T) {
+		var bookType models.BookType
+		err := LookupByName(db, ctx, &bookType, "ebook", "Book type")
 		assert.NoError(t, err)
-		assert.Equal(t, "contains", filterOperator.Name)
+		assert.Equal(t, "ebook", bookType.Name)
 	})
 }
 
@@ -450,24 +450,24 @@ func TestLookupByNameWithDifferentModels(t *testing.T) {
 			wantError:    false,
 		},
 		{
-			name:         "FilterKey - author",
-			model:        &models.FilterKey{},
-			lookupName:   "author",
-			resourceName: "Filter key",
+			name:         "TorrentCategory - personal-books",
+			model:        &models.TorrentCategory{},
+			lookupName:   "personal-books",
+			resourceName: "Torrent category",
 			wantError:    false,
 		},
 		{
-			name:         "FilterOperator - contains",
-			model:        &models.FilterOperator{},
-			lookupName:   "contains",
-			resourceName: "Filter operator",
+			name:         "BookType - ebook",
+			model:        &models.BookType{},
+			lookupName:   "ebook",
+			resourceName: "Book type",
 			wantError:    false,
 		},
 		{
-			name:         "FeedFilterSetType - any",
-			model:        &models.FeedFilterSetType{},
-			lookupName:   "any",
-			resourceName: "Feed filter set type",
+			name:         "SubscriptionScope - personal",
+			model:        &models.SubscriptionScope{},
+			lookupName:   "personal",
+			resourceName: "Subscription scope",
 			wantError:    false,
 		},
 		{

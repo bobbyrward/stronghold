@@ -1,8 +1,5 @@
 import type {
-    FilterKey,
-    FilterOperator,
     NotificationType,
-    FeedFilterSetType,
     TorrentCategory,
     SubscriptionScope,
     BookType,
@@ -12,14 +9,6 @@ import type {
     FeedRequest,
     Notifier,
     NotifierRequest,
-    FeedFilter,
-    FeedFilterRequest,
-    FeedAuthorFilter,
-    FeedAuthorFilterRequest,
-    FeedFilterSet,
-    FeedFilterSetRequest,
-    FeedFilterSetEntry,
-    FeedFilterSetEntryRequest,
     Torrent,
     // Audiobook Wizard types
     BookMetadata,
@@ -67,28 +56,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-    // Filter Keys (read-only reference data)
-    filterKeys: {
-        list: () => request<FilterKey[]>('/filter-keys'),
-        get: (id: number) => request<FilterKey>(`/filter-keys/${id}`)
-    },
-
-    // Filter Operators (read-only reference data)
-    filterOperators: {
-        list: () => request<FilterOperator[]>('/filter-operators'),
-        get: (id: number) => request<FilterOperator>(`/filter-operators/${id}`)
-    },
-
     // Notification Types (read-only reference data)
     notificationTypes: {
         list: () => request<NotificationType[]>('/notification-types'),
         get: (id: number) => request<NotificationType>(`/notification-types/${id}`)
-    },
-
-    // Feed Filter Set Types (read-only reference data)
-    feedFilterSetTypes: {
-        list: () => request<FeedFilterSetType[]>('/feed-filter-set-types'),
-        get: (id: number) => request<FeedFilterSetType>(`/feed-filter-set-types/${id}`)
     },
 
     // Torrent Categories (read-only reference data)
@@ -230,90 +201,6 @@ export const api = {
             }),
         delete: (id: number) =>
             request<void>(`/notifiers/${id}`, { method: 'DELETE' })
-    },
-
-    // Feed Filters
-    feedFilters: {
-        list: (feedId?: number) => {
-            const params = feedId ? `?feed_id=${feedId}` : ''
-            return request<FeedFilter[]>(`/feed-filters${params}`)
-        },
-        get: (id: number) => request<FeedFilter>(`/feed-filters/${id}`),
-        create: (data: FeedFilterRequest) =>
-            request<FeedFilter>('/feed-filters', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: FeedFilterRequest) =>
-            request<FeedFilter>(`/feed-filters/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/feed-filters/${id}`, { method: 'DELETE' })
-    },
-
-    // Feed Author Filters
-    feedAuthorFilters: {
-        list: (feedId?: number) => {
-            const params = feedId ? `?feed_id=${feedId}` : ''
-            return request<FeedAuthorFilter[]>(`/feed-author-filters${params}`)
-        },
-        get: (id: number) => request<FeedAuthorFilter>(`/feed-author-filters/${id}`),
-        create: (data: FeedAuthorFilterRequest) =>
-            request<FeedAuthorFilter>('/feed-author-filters', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: FeedAuthorFilterRequest) =>
-            request<FeedAuthorFilter>(`/feed-author-filters/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/feed-author-filters/${id}`, { method: 'DELETE' })
-    },
-
-    // Feed Filter Sets
-    feedFilterSets: {
-        list: (feedFilterId?: number) => {
-            const params = feedFilterId ? `?feed_filter_id=${feedFilterId}` : ''
-            return request<FeedFilterSet[]>(`/feed-filter-sets${params}`)
-        },
-        get: (id: number) => request<FeedFilterSet>(`/feed-filter-sets/${id}`),
-        create: (data: FeedFilterSetRequest) =>
-            request<FeedFilterSet>('/feed-filter-sets', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: FeedFilterSetRequest) =>
-            request<FeedFilterSet>(`/feed-filter-sets/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/feed-filter-sets/${id}`, { method: 'DELETE' })
-    },
-
-    // Feed Filter Set Entries
-    feedFilterSetEntries: {
-        list: (feedFilterSetId?: number) => {
-            const params = feedFilterSetId ? `?feed_filter_set_id=${feedFilterSetId}` : ''
-            return request<FeedFilterSetEntry[]>(`/feed-filter-set-entries${params}`)
-        },
-        get: (id: number) => request<FeedFilterSetEntry>(`/feed-filter-set-entries/${id}`),
-        create: (data: FeedFilterSetEntryRequest) =>
-            request<FeedFilterSetEntry>('/feed-filter-set-entries', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            }),
-        update: (id: number, data: FeedFilterSetEntryRequest) =>
-            request<FeedFilterSetEntry>(`/feed-filter-set-entries/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            }),
-        delete: (id: number) =>
-            request<void>(`/feed-filter-set-entries/${id}`, { method: 'DELETE' })
     },
 
     // Torrents
