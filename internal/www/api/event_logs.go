@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/models"
@@ -42,7 +42,7 @@ type EventLogFacets struct {
 }
 
 func ListEventLogs(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		slog.InfoContext(ctx, "Listing event logs")
 
@@ -187,7 +187,7 @@ func ListEventLogs(db *gorm.DB) echo.HandlerFunc {
 }
 
 func GetEventLog(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		id, err := ParseIDParam(c, ctx)

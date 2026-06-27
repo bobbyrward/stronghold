@@ -8,7 +8,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/qbit"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -55,7 +55,7 @@ func sortTorrents(torrents []qbit.Torrent) {
 func ListUnimportedTorrents(
 	db *gorm.DB,
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		slog.InfoContext(ctx, "Listing unimported torrents")
@@ -85,7 +85,7 @@ func ListUnimportedTorrents(
 func ListManualInterventionTorrents(
 	db *gorm.DB,
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		slog.InfoContext(ctx, "Listing manual intervention torrents")
@@ -119,7 +119,7 @@ func ListManualInterventionTorrents(
 func SetTorrentCategory(
 	db *gorm.DB,
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		hash := c.Param("hash")
@@ -155,7 +155,7 @@ func SetTorrentCategory(
 func SetTorrentTags(
 	db *gorm.DB,
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		hash := c.Param("hash")

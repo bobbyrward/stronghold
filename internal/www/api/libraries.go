@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/eventlog"
@@ -27,7 +27,7 @@ type LibraryResponse struct {
 
 type LibraryHandler struct{}
 
-func (h LibraryHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.Library) LibraryResponse {
+func (h LibraryHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.Library) LibraryResponse {
 	return LibraryResponse{
 		ID:           row.ID,
 		Name:         row.Name,
@@ -37,7 +37,7 @@ func (h LibraryHandler) ModelToResponse(c echo.Context, ctx context.Context, db 
 	}
 }
 
-func (h LibraryHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req LibraryRequest) (models.Library, error) {
+func (h LibraryHandler) RequestToModel(c *echo.Context, ctx context.Context, db *gorm.DB, req LibraryRequest) (models.Library, error) {
 	var bookType models.BookType
 	if err := LookupByName(db, ctx, &bookType, req.BookTypeName, "Book type"); err != nil {
 		return models.Library{}, BadRequest(c, ctx, "Invalid book_type_name: "+req.BookTypeName)
@@ -50,7 +50,7 @@ func (h LibraryHandler) RequestToModel(c echo.Context, ctx context.Context, db *
 	}, nil
 }
 
-func (h LibraryHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.Library, req LibraryRequest) error {
+func (h LibraryHandler) UpdateModel(c *echo.Context, ctx context.Context, db *gorm.DB, row *models.Library, req LibraryRequest) error {
 	var bookType models.BookType
 	if err := LookupByName(db, ctx, &bookType, req.BookTypeName, "Book type"); err != nil {
 		return BadRequest(c, ctx, "Invalid book_type_name: "+req.BookTypeName)
@@ -62,7 +62,7 @@ func (h LibraryHandler) UpdateModel(c echo.Context, ctx context.Context, db *gor
 	return nil
 }
 
-func (h LibraryHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h LibraryHandler) ParseQuery(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	// Optional: filter by book_type_id query param
 	db, err := ApplyUintFilter(c, ctx, db, "book_type_id", "book_type_id")
 	if err != nil {
@@ -71,7 +71,7 @@ func (h LibraryHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm
 	return db, nil
 }
 
-func (h LibraryHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h LibraryHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db.Preload("BookType"), nil
 }
 

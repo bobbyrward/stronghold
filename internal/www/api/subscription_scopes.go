@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/models"
@@ -16,14 +16,14 @@ type SubscriptionScopeResponse struct {
 
 type SubscriptionScopeHandler struct{}
 
-func (h SubscriptionScopeHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.SubscriptionScope) SubscriptionScopeResponse {
+func (h SubscriptionScopeHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.SubscriptionScope) SubscriptionScopeResponse {
 	return SubscriptionScopeResponse{
 		ID:   row.ID,
 		Name: row.Name,
 	}
 }
 
-func (h SubscriptionScopeHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h SubscriptionScopeHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db, nil
 }
 

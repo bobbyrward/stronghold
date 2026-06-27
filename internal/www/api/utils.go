@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
 // ParseIDParam extracts and validates the "id" path parameter
-func ParseIDParam(c echo.Context, ctx context.Context) (uint, error) {
+func ParseIDParam(c *echo.Context, ctx context.Context) (uint, error) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
@@ -24,7 +24,7 @@ func ParseIDParam(c echo.Context, ctx context.Context) (uint, error) {
 }
 
 // ParseAuthorIDParam extracts and validates the "author_id" path parameter
-func ParseAuthorIDParam(c echo.Context, ctx context.Context) (uint, error) {
+func ParseAuthorIDParam(c *echo.Context, ctx context.Context) (uint, error) {
 	idStr := c.Param("author_id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
@@ -35,7 +35,7 @@ func ParseAuthorIDParam(c echo.Context, ctx context.Context) (uint, error) {
 }
 
 // ParseQueryParamUint parses an optional query parameter as uint
-func ParseQueryParamUint(c echo.Context, ctx context.Context, param string) (uint, bool, error) {
+func ParseQueryParamUint(c *echo.Context, ctx context.Context, param string) (uint, bool, error) {
 	str := c.QueryParam(param)
 	if str == "" {
 		return 0, false, nil
@@ -49,7 +49,7 @@ func ParseQueryParamUint(c echo.Context, ctx context.Context, param string) (uin
 }
 
 // BindRequest binds and logs request body errors
-func BindRequest(c echo.Context, ctx context.Context, req any) error {
+func BindRequest(c *echo.Context, ctx context.Context, req any) error {
 	if err := c.Bind(req); err != nil {
 		slog.WarnContext(ctx, "Invalid request body", slog.Any("error", err))
 		return err
@@ -58,7 +58,7 @@ func BindRequest(c echo.Context, ctx context.Context, req any) error {
 }
 
 // ValidateRequest validated and logs request body errors
-func ValidateRequest(c echo.Context, ctx context.Context, req any) error {
+func ValidateRequest(c *echo.Context, ctx context.Context, req any) error {
 	if err := c.Validate(req); err != nil {
 		slog.WarnContext(ctx, "Invalid request body", slog.Any("error", err))
 		return err
@@ -67,25 +67,25 @@ func ValidateRequest(c echo.Context, ctx context.Context, req any) error {
 }
 
 // BadRequest returns a 400 response with logging
-func BadRequest(c echo.Context, ctx context.Context, message string) error {
+func BadRequest(c *echo.Context, ctx context.Context, message string) error {
 	slog.WarnContext(ctx, message)
 	return c.JSON(http.StatusBadRequest, map[string]string{"error": message})
 }
 
 // NotFound returns a 404 response with logging
-func NotFound(c echo.Context, ctx context.Context, resource string, id uint) error {
+func NotFound(c *echo.Context, ctx context.Context, resource string, id uint) error {
 	slog.WarnContext(ctx, resource+" not found", slog.Uint64("id", uint64(id)))
 	return c.JSON(http.StatusNotFound, map[string]string{"error": resource + " not found"})
 }
 
 // NotFound returns a 404 response with logging
-func GenericNotFound(c echo.Context, ctx context.Context, message string) error {
+func GenericNotFound(c *echo.Context, ctx context.Context, message string) error {
 	slog.WarnContext(ctx, "not found", slog.String("msg", message))
 	return c.JSON(http.StatusNotFound, map[string]string{"error": message})
 }
 
 // InternalError returns a 500 response with logging
-func InternalError(c echo.Context, ctx context.Context, message string, err error) error {
+func InternalError(c *echo.Context, ctx context.Context, message string, err error) error {
 	slog.ErrorContext(ctx, message, slog.Any("error", err))
 	return c.JSON(http.StatusInternalServerError, map[string]string{"error": message})
 }
@@ -105,7 +105,7 @@ func LookupByName(db *gorm.DB, ctx context.Context, dest any, name, resourceName
 }
 
 // GetAll fetches all records of type T with standard error handling
-func GetAll[T any](c echo.Context, ctx context.Context, db *gorm.DB) ([]T, error) {
+func GetAll[T any](c *echo.Context, ctx context.Context, db *gorm.DB) ([]T, error) {
 	var rows []T
 	if err := db.Find(&rows).Error; err != nil {
 		return nil, InternalError(c, ctx, "Failed to GetAll", err)
@@ -152,7 +152,7 @@ func EscapeLikePattern(pattern string) string {
 // ApplyUintFilter applies a uint query parameter filter if present.
 // Returns the modified db, and an error if the parameter value is invalid.
 // The error is already sent as a BadRequest response.
-func ApplyUintFilter(c echo.Context, ctx context.Context, db *gorm.DB, paramName, columnName string) (*gorm.DB, error) {
+func ApplyUintFilter(c *echo.Context, ctx context.Context, db *gorm.DB, paramName, columnName string) (*gorm.DB, error) {
 	value, hasValue, err := ParseQueryParamUint(c, ctx, paramName)
 	if err != nil {
 		return db, BadRequest(c, ctx, "Invalid "+paramName+" parameter")

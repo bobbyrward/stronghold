@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/models"
@@ -16,14 +16,14 @@ type BookTypeResponse struct {
 
 type BookTypeHandler struct{}
 
-func (h BookTypeHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.BookType) BookTypeResponse {
+func (h BookTypeHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.BookType) BookTypeResponse {
 	return BookTypeResponse{
 		ID:   row.ID,
 		Name: row.Name,
 	}
 }
 
-func (h BookTypeHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h BookTypeHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db, nil
 }
 
