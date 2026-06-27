@@ -11,6 +11,7 @@ import (
 
 // HardcoverAuthorSearchResponse represents an author result from Hardcover search.
 type HardcoverAuthorSearchResponse struct {
+	ID   string `json:"id"`
 	Slug string `json:"slug"`
 	Name string `json:"name"`
 }
@@ -35,6 +36,7 @@ func SearchHardcoverAuthors(client hardcover.Client) echo.HandlerFunc {
 		response := make([]HardcoverAuthorSearchResponse, len(results))
 		for i, r := range results {
 			response[i] = HardcoverAuthorSearchResponse{
+				ID:   r.ID,
 				Slug: r.Slug,
 				Name: r.Name,
 			}

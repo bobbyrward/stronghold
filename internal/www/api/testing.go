@@ -56,11 +56,15 @@ func SetupTestServerWithDB(db *gorm.DB) *echo.Echo {
 	apiGroup := e.Group("/api")
 	hc := hardcover.NewMockClient()
 
-	// Add test authors to the mock Hardcover client
-	hc.AddAuthor("brandon-sanderson", "Brandon Sanderson")
-	hc.AddAuthor("brandon-mull", "Brandon Mull")
-	hc.AddAuthor("patrick-rothfuss", "Patrick Rothfuss")
-	hc.AddAuthor("joe-abercrombie", "Joe Abercrombie")
+	// Add test authors to the mock Hardcover client (id, slug, name)
+	hc.AddAuthor("1", "brandon-sanderson", "Brandon Sanderson")
+	hc.AddAuthor("2", "brandon-mull", "Brandon Mull")
+	hc.AddAuthor("3", "patrick-rothfuss", "Patrick Rothfuss")
+	hc.AddAuthor("4", "joe-abercrombie", "Joe Abercrombie")
+
+	// Merged duplicate: id "5" has been merged into canonical "1", so looking it
+	// up resolves to canonical id "1" (mirrors Hardcover's canonical_id behavior).
+	hc.Authors["5"] = hardcover.AuthorSearchResult{ID: "1", Slug: "brandon-sanderson", Name: "Merged Duplicate"}
 
 	RegisterRoutes(apiGroup, db, hc)
 

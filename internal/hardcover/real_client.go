@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/hasura/go-graphql-client"
 )
@@ -29,20 +30,42 @@ func NewClient(token string) *RealClient {
 	}
 }
 
+// authorRow is the shared GraphQL selection for an author plus its canonical
+// (merge target). Hardcover merges duplicate authors; when canonical is set it
+// is the live author, so id/slug/name must all be resolved from it as a unit.
+type authorRow struct {
+	ID   int    `graphql:"id"`
+	Name string `graphql:"name"`
+	Slug string `graphql:"slug"`
+
+	Canonical *struct {
+		ID   int    `graphql:"id"`
+		Name string `graphql:"name"`
+		Slug string `graphql:"slug"`
+	}
+}
+
+func (a authorRow) toResult() AuthorSearchResult {
+	if a.Canonical != nil {
+		return AuthorSearchResult{
+			ID:   strconv.Itoa(a.Canonical.ID),
+			Slug: a.Canonical.Slug,
+			Name: a.Canonical.Name,
+		}
+	}
+	return AuthorSearchResult{
+		ID:   strconv.Itoa(a.ID),
+		Slug: a.Slug,
+		Name: a.Name,
+	}
+}
+
 // SearchAuthors searches for authors by name query using the Hardcover GraphQL API.
 func (c *RealClient) SearchAuthors(ctx context.Context, query string) ([]AuthorSearchResult, error) {
 	slog.InfoContext(ctx, "Searching Hardcover authors", slog.String("query", query))
 
 	var q struct {
-		Authors []struct {
-			Name string `graphql:"name"`
-			Slug string `graphql:"slug"`
-
-			Canonical *struct {
-				Name string `graphql:"name"`
-				Slug string `graphql:"slug"`
-			}
-		} `graphql:"authors(where: {name: {_eq: $name}})"`
+		Authors []authorRow `graphql:"authors(where: {name: {_eq: $name}})"`
 	}
 
 	variables := map[string]any{
@@ -55,34 +78,20 @@ func (c *RealClient) SearchAuthors(ctx context.Context, query string) ([]AuthorS
 	}
 
 	searchResults := make([]AuthorSearchResult, len(q.Authors))
-
 	for idx, author := range q.Authors {
 		slog.DebugContext(ctx, "Found author", slog.String("name", author.Name), slog.String("slug", author.Slug), slog.Any("canonical", author.Canonical))
-		if author.Canonical != nil {
-			searchResults[idx] = AuthorSearchResult{
-				Slug: author.Canonical.Slug,
-				Name: author.Canonical.Name,
-			}
-		} else {
-			searchResults[idx] = AuthorSearchResult{
-				Slug: author.Slug,
-				Name: author.Name,
-			}
-		}
+		searchResults[idx] = author.toResult()
 	}
 
 	return searchResults, nil
 }
 
-// GetAuthorBySlug retrieves an author by their unique slug using the Hardcover GraphQL API.
+// GetAuthorBySlug retrieves an author by their slug using the Hardcover GraphQL API.
 func (c *RealClient) GetAuthorBySlug(ctx context.Context, slug string) (*AuthorSearchResult, error) {
 	slog.InfoContext(ctx, "Getting Hardcover author by slug", slog.String("slug", slug))
 
 	var q struct {
-		Authors []struct {
-			Name string `graphql:"name"`
-			Slug string `graphql:"slug"`
-		} `graphql:"authors(where: {slug: {_eq: $slug}})"`
+		Authors []authorRow `graphql:"authors(where: {slug: {_eq: $slug}})"`
 	}
 
 	variables := map[string]any{
@@ -104,8 +113,37 @@ func (c *RealClient) GetAuthorBySlug(ctx context.Context, slug string) (*AuthorS
 		return nil, nil
 	}
 
-	return &AuthorSearchResult{
-		Slug: q.Authors[0].Slug,
-		Name: q.Authors[0].Name,
-	}, nil
+	result := q.Authors[0].toResult()
+	return &result, nil
+}
+
+// GetAuthorByID retrieves an author by their canonical id using the Hardcover GraphQL API.
+func (c *RealClient) GetAuthorByID(ctx context.Context, id string) (*AuthorSearchResult, error) {
+	slog.InfoContext(ctx, "Getting Hardcover author by id", slog.String("id", id))
+
+	intID, err := strconv.Atoi(id)
+	if err != nil {
+		slog.WarnContext(ctx, "Invalid hardcover author id", slog.String("id", id))
+		return nil, nil
+	}
+
+	var q struct {
+		Authors []authorRow `graphql:"authors(where: {id: {_eq: $id}})"`
+	}
+
+	variables := map[string]any{
+		"id": intID,
+	}
+
+	if err := c.graphqlClient.Query(ctx, &q, variables); err != nil {
+		return nil, err
+	}
+
+	if len(q.Authors) == 0 {
+		slog.WarnContext(ctx, "No author found with given id", slog.String("id", id))
+		return nil, nil
+	}
+
+	result := q.Authors[0].toResult()
+	return &result, nil
 }

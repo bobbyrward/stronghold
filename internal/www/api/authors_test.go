@@ -139,14 +139,15 @@ func TestAuthors_HardcoverValidation(t *testing.T) {
 	e, cleanup := SetupTestServer(t)
 	defer cleanup()
 
-	// The mock client in testing.go has these authors:
-	// - "brandon-sanderson" -> "Brandon Sanderson"
-	// - "brandon-mull" -> "Brandon Mull"
-	// - "patrick-rothfuss" -> "Patrick Rothfuss"
-	// - "joe-abercrombie" -> "Joe Abercrombie"
+	// The mock client in testing.go has these authors (id, slug, name):
+	// - "1" / "brandon-sanderson" -> "Brandon Sanderson"
+	// - "2" / "brandon-mull" -> "Brandon Mull"
+	// - "3" / "patrick-rothfuss" -> "Patrick Rothfuss"
+	// - "4" / "joe-abercrombie" -> "Joe Abercrombie"
+	// HardcoverRef now stores the canonical id, not the slug.
 
 	t.Run("Create with valid hardcover_ref succeeds", func(t *testing.T) {
-		body := `{"name": "Brandon Sanderson", "hardcover_ref": "brandon-sanderson"}`
+		body := `{"name": "Brandon Sanderson", "hardcover_ref": "1"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/authors", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -158,11 +159,28 @@ func TestAuthors_HardcoverValidation(t *testing.T) {
 		err := json.Unmarshal(rec.Body.Bytes(), &author)
 		require.NoError(t, err)
 		assert.NotNil(t, author.HardcoverRef)
-		assert.Equal(t, "brandon-sanderson", *author.HardcoverRef)
+		assert.Equal(t, "1", *author.HardcoverRef)
+	})
+
+	t.Run("Create with merged (non-canonical) ref stores canonical id", func(t *testing.T) {
+		// id "5" is a merged duplicate that resolves to canonical "1".
+		body := `{"name": "Merged Ref Author", "hardcover_ref": "5"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/authors", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusCreated, rec.Code)
+
+		var author AuthorResponse
+		err := json.Unmarshal(rec.Body.Bytes(), &author)
+		require.NoError(t, err)
+		require.NotNil(t, author.HardcoverRef)
+		assert.Equal(t, "1", *author.HardcoverRef, "should persist canonical id, not submitted merged id")
 	})
 
 	t.Run("Create with invalid hardcover_ref returns 400", func(t *testing.T) {
-		body := `{"name": "Invalid Author", "hardcover_ref": "nonexistent-author-slug"}`
+		body := `{"name": "Invalid Author", "hardcover_ref": "999999"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/authors", bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -201,7 +219,7 @@ func TestAuthors_HardcoverValidation(t *testing.T) {
 		author := createTestAuthor(t, e, "Author For Update")
 
 		// Update with valid hardcover_ref
-		body := `{"name": "Author For Update", "hardcover_ref": "patrick-rothfuss"}`
+		body := `{"name": "Author For Update", "hardcover_ref": "3"}`
 		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/authors/%d", author.ID), bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -213,7 +231,7 @@ func TestAuthors_HardcoverValidation(t *testing.T) {
 		err := json.Unmarshal(rec.Body.Bytes(), &updated)
 		require.NoError(t, err)
 		assert.NotNil(t, updated.HardcoverRef)
-		assert.Equal(t, "patrick-rothfuss", *updated.HardcoverRef)
+		assert.Equal(t, "3", *updated.HardcoverRef)
 	})
 
 	t.Run("Update with invalid hardcover_ref returns 400", func(t *testing.T) {
@@ -221,7 +239,7 @@ func TestAuthors_HardcoverValidation(t *testing.T) {
 		author := createTestAuthor(t, e, "Author For Invalid Update")
 
 		// Try to update with invalid hardcover_ref
-		body := `{"name": "Author For Invalid Update", "hardcover_ref": "invalid-slug-here"}`
+		body := `{"name": "Author For Invalid Update", "hardcover_ref": "888888"}`
 		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/authors/%d", author.ID), bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
