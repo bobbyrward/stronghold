@@ -8,7 +8,7 @@ import (
 
 	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/qbit"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 

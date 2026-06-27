@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/models"
@@ -149,8 +149,14 @@ func ListEventLogs(db *gorm.DB) echo.HandlerFunc {
 		wg.Add(4)
 		go func() { defer wg.Done(); newFacetQuery().Distinct("category").Pluck("category", &facets.Categories) }()
 		go func() { defer wg.Done(); newFacetQuery().Distinct("source").Pluck("source", &facets.Sources) }()
-		go func() { defer wg.Done(); newFacetQuery().Distinct("event_type").Pluck("event_type", &facets.EventTypes) }()
-		go func() { defer wg.Done(); newFacetQuery().Distinct("entity_type").Pluck("entity_type", &facets.EntityTypes) }()
+		go func() {
+			defer wg.Done()
+			newFacetQuery().Distinct("event_type").Pluck("event_type", &facets.EventTypes)
+		}()
+		go func() {
+			defer wg.Done()
+			newFacetQuery().Distinct("entity_type").Pluck("entity_type", &facets.EntityTypes)
+		}()
 		wg.Wait()
 
 		// Build response
