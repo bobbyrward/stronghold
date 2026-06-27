@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -74,8 +74,7 @@ func TestParseIDParam(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/test/:id", nil)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
-			c.SetParamNames("id")
-			c.SetParamValues(tt.paramID)
+			c.SetPathValues(echo.PathValues{{Name: "id", Value: tt.paramID}})
 			ctx := c.Request().Context()
 
 			id, err := ParseIDParam(c, ctx)
@@ -380,13 +379,13 @@ func TestDeleteByID(t *testing.T) {
 func TestErrorResponseConsistency(t *testing.T) {
 	tests := []struct {
 		name           string
-		handler        func(c echo.Context, ctx context.Context) error
+		handler        func(c *echo.Context, ctx context.Context) error
 		expectedStatus int
 		expectedKey    string
 	}{
 		{
 			name: "BadRequest returns error key",
-			handler: func(c echo.Context, ctx context.Context) error {
+			handler: func(c *echo.Context, ctx context.Context) error {
 				return BadRequest(c, ctx, "bad request")
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -394,7 +393,7 @@ func TestErrorResponseConsistency(t *testing.T) {
 		},
 		{
 			name: "NotFound returns error key",
-			handler: func(c echo.Context, ctx context.Context) error {
+			handler: func(c *echo.Context, ctx context.Context) error {
 				return NotFound(c, ctx, "Resource", 1)
 			},
 			expectedStatus: http.StatusNotFound,
@@ -402,7 +401,7 @@ func TestErrorResponseConsistency(t *testing.T) {
 		},
 		{
 			name: "InternalError returns error key",
-			handler: func(c echo.Context, ctx context.Context) error {
+			handler: func(c *echo.Context, ctx context.Context) error {
 				return InternalError(c, ctx, "internal error", errors.New("test"))
 			},
 			expectedStatus: http.StatusInternalServerError,

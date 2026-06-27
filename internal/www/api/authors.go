@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/eventlog"
@@ -29,7 +29,7 @@ type AuthorHandler struct {
 	hardcoverClient hardcover.Client
 }
 
-func (handler AuthorHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.Author) AuthorResponse {
+func (handler AuthorHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.Author) AuthorResponse {
 	return AuthorResponse{
 		ID:           row.ID,
 		Name:         row.Name,
@@ -37,7 +37,7 @@ func (handler AuthorHandler) ModelToResponse(c echo.Context, ctx context.Context
 	}
 }
 
-func (h AuthorHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req AuthorRequest) (models.Author, error) {
+func (h AuthorHandler) RequestToModel(c *echo.Context, ctx context.Context, db *gorm.DB, req AuthorRequest) (models.Author, error) {
 	// Treat empty string as nil
 	if req.HardcoverRef != nil && *req.HardcoverRef == "" {
 		req.HardcoverRef = nil
@@ -66,7 +66,7 @@ func (h AuthorHandler) RequestToModel(c echo.Context, ctx context.Context, db *g
 	}, nil
 }
 
-func (h AuthorHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.Author, req AuthorRequest) error {
+func (h AuthorHandler) UpdateModel(c *echo.Context, ctx context.Context, db *gorm.DB, row *models.Author, req AuthorRequest) error {
 	// Treat empty string as nil
 	if req.HardcoverRef != nil && *req.HardcoverRef == "" {
 		req.HardcoverRef = nil
@@ -97,7 +97,7 @@ func (h AuthorHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm
 	return nil
 }
 
-func (h AuthorHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h AuthorHandler) ParseQuery(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	query := c.QueryParam("q")
 	if query == "" {
 		return db, nil
@@ -120,7 +120,7 @@ func (h AuthorHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm.
 	return db, nil
 }
 
-func (handler AuthorHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (handler AuthorHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db, nil
 }
 

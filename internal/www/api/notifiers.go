@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/eventlog"
@@ -27,7 +27,7 @@ type NotifierResponse struct {
 
 type NotifierHandler struct{}
 
-func (handler NotifierHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.Notifier) NotifierResponse {
+func (handler NotifierHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.Notifier) NotifierResponse {
 	typeName := ""
 	if row.NotificationType != nil {
 		typeName = row.NotificationType.Name
@@ -41,7 +41,7 @@ func (handler NotifierHandler) ModelToResponse(c echo.Context, ctx context.Conte
 	}
 }
 
-func (handler NotifierHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req NotifierRequest) (models.Notifier, error) {
+func (handler NotifierHandler) RequestToModel(c *echo.Context, ctx context.Context, db *gorm.DB, req NotifierRequest) (models.Notifier, error) {
 	return models.Notifier{
 		Name:               req.Name,
 		NotificationTypeID: req.TypeID,
@@ -49,16 +49,16 @@ func (handler NotifierHandler) RequestToModel(c echo.Context, ctx context.Contex
 	}, nil
 }
 
-func (handler NotifierHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.Notifier, req NotifierRequest) error {
+func (handler NotifierHandler) UpdateModel(c *echo.Context, ctx context.Context, db *gorm.DB, row *models.Notifier, req NotifierRequest) error {
 	row.Name = req.Name
 	return nil
 }
 
-func (handler NotifierHandler) ParseQuery(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (handler NotifierHandler) ParseQuery(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db, nil
 }
 
-func (handler NotifierHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (handler NotifierHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db.Preload("NotificationType"), nil
 }
 

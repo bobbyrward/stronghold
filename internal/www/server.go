@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 
 	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/eventlog"
@@ -44,17 +44,15 @@ func Run() error {
 	eventlog.Cleanup(ctx, db, 90)
 
 	echoServer := echo.New()
-	echoServer.HideBanner = true
 
 	// Add slog middleware for request logging
 	echoServer.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
 		LogURI:      true,
-		LogError:    true,
 		LogMethod:   true,
 		LogLatency:  true,
 		HandleError: true,
-		LogValuesFunc: func(c echo.Context, values middleware.RequestLoggerValues) error {
+		LogValuesFunc: func(c *echo.Context, values middleware.RequestLoggerValues) error {
 			if values.Error == nil {
 				slog.InfoContext(c.Request().Context(), "HTTP request",
 					slog.String("method", values.Method),
@@ -76,7 +74,7 @@ func Run() error {
 	// Add CORS middleware for frontend development
 	echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
-		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
@@ -93,26 +91,21 @@ func Run() error {
 	echoServer.File("/stronghold.svg", "web/dist/stronghold.svg")
 
 	// SPA fallback - serve index.html for all non-API routes
-	echoServer.GET("/*", func(c echo.Context) error {
+	echoServer.GET("/*", func(c *echo.Context) error {
 		return c.File("web/dist/index.html")
 	})
 
-	go func() {
-		slog.InfoContext(ctx, "Starting HTTP server on :8000")
-		if err := echoServer.Start(":8000"); err != nil && err != http.ErrServerClosed {
-			slog.ErrorContext(ctx, "Failed to start HTTP server", slog.Any("err", err))
-		}
-	}()
-
-	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
-	<-parentContext.Done()
-	slog.InfoContext(ctx, "Received interrupt signal, shutting down server")
-
-	shutdownContext, timeoutFunc := context.WithTimeout(context.Background(), 10*time.Second)
-	defer timeoutFunc()
-
-	if err := echoServer.Shutdown(shutdownContext); err != nil {
-		slog.ErrorContext(ctx, "Failed to gracefully shutdown server", slog.Any("err", err))
+	// Start blocks until parentContext is cancelled (interrupt), then gracefully
+	// shuts down within GracefulTimeout. Replaces v4's e.Start + e.Shutdown,
+	// which were removed in v5 in favor of StartConfig.
+	sc := echo.StartConfig{
+		Address:         ":8000",
+		HideBanner:      true,
+		GracefulTimeout: 10 * time.Second,
+	}
+	slog.InfoContext(ctx, "Starting HTTP server on :8000")
+	if err := sc.Start(parentContext, echoServer); err != nil && err != http.ErrServerClosed {
+		slog.ErrorContext(ctx, "Server error", slog.Any("err", err))
 		return err
 	}
 

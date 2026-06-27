@@ -11,7 +11,7 @@ import (
 	"github.com/bobbyrward/stronghold/internal/importers/audiobooks/metadata"
 	"github.com/bobbyrward/stronghold/internal/importers/common"
 	"github.com/bobbyrward/stronghold/internal/qbit"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
@@ -60,7 +60,7 @@ type ExecuteImportResponse struct {
 
 // GetTorrentInfo returns information about a torrent
 func GetTorrentInfo(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		hash := c.Param("hash")
 
@@ -135,7 +135,7 @@ func GetTorrentInfo(db *gorm.DB) echo.HandlerFunc {
 
 // SearchASIN searches for audiobooks by title and author, returning ASINs and metadata
 func SearchASIN(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		var req SearchASINRequest
@@ -189,7 +189,7 @@ func SearchASIN(db *gorm.DB) echo.HandlerFunc {
 
 // GetASINMetadata retrieves full metadata for a specific ASIN
 func GetASINMetadata(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		asin := c.Param("asin")
 
@@ -213,7 +213,7 @@ func GetASINMetadata(db *gorm.DB) echo.HandlerFunc {
 
 // PreviewDirectory generates a preview of the directory name for given metadata
 func PreviewDirectory(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		var req PreviewDirectoryRequest
@@ -251,7 +251,7 @@ func PreviewDirectory(db *gorm.DB) echo.HandlerFunc {
 
 // GetLibraries returns the list of available audiobook libraries
 func GetLibraries(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		slog.InfoContext(ctx, "Getting audiobook libraries")
@@ -267,7 +267,7 @@ func GetLibraries(db *gorm.DB) echo.HandlerFunc {
 
 // ExecuteImport performs the actual import operation
 func ExecuteImport(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		var req ExecuteImportRequest

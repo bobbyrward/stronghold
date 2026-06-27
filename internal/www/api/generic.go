@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/eventlog"
@@ -26,11 +26,11 @@ func logEventIfSupported[Model any, Request any, Response any](handler ModelHand
 }
 
 type ModelHandler[Model any, Request any, Response any] interface {
-	ModelToResponse(echo.Context, context.Context, *gorm.DB, Model) Response
-	RequestToModel(echo.Context, context.Context, *gorm.DB, Request) (Model, error)
-	UpdateModel(echo.Context, context.Context, *gorm.DB, *Model, Request) error
-	ParseQuery(echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
-	PreloadRelations(echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
+	ModelToResponse(*echo.Context, context.Context, *gorm.DB, Model) Response
+	RequestToModel(*echo.Context, context.Context, *gorm.DB, Request) (Model, error)
+	UpdateModel(*echo.Context, context.Context, *gorm.DB, *Model, Request) error
+	ParseQuery(*echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
+	PreloadRelations(*echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
 	IDFromModel(Model) uint
 }
 
@@ -38,7 +38,7 @@ func genericListHandler[Model any, Request any, Response any](
 	db *gorm.DB,
 	handler ModelHandler[Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		typeName := reflect.TypeFor[Model]().Name()
@@ -80,7 +80,7 @@ func genericCreateHandler[Model any, Request any, Response any](
 	db *gorm.DB,
 	handler ModelHandler[Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		typeName := reflect.TypeFor[Model]().Name()
@@ -134,7 +134,7 @@ func genericGetHandler[Model any, Request any, Response any](
 	db *gorm.DB,
 	handler ModelHandler[Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 
@@ -167,7 +167,7 @@ func genericUpdateHandler[Model any, Request any, Response any](
 	db *gorm.DB,
 	handler ModelHandler[Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 
@@ -238,7 +238,7 @@ func genericDeleteHandlerImpl[Model any, Request any, Response any](
 	db *gorm.DB,
 	handler ModelHandler[Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 

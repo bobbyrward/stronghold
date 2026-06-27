@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/eventlog"
@@ -16,7 +16,7 @@ import (
 // It provides CRUD operations for resources that belong to a parent (e.g., AuthorAlias under Author).
 type NestedModelHandler[Parent any, Model any, Request any, Response any] interface {
 	// ParseParentID extracts the parent ID from the request path
-	ParseParentID(echo.Context, context.Context) (uint, error)
+	ParseParentID(*echo.Context, context.Context) (uint, error)
 
 	// ValidateParent validates that the parent exists, returns error if not found
 	ValidateParent(*gorm.DB, context.Context, uint) error
@@ -28,16 +28,16 @@ type NestedModelHandler[Parent any, Model any, Request any, Response any] interf
 	SetParentID(*Model, uint)
 
 	// ModelToResponse converts a model to its API response type
-	ModelToResponse(echo.Context, context.Context, *gorm.DB, Model) Response
+	ModelToResponse(*echo.Context, context.Context, *gorm.DB, Model) Response
 
 	// RequestToModel converts a request to a new model instance
-	RequestToModel(echo.Context, context.Context, *gorm.DB, Request) (Model, error)
+	RequestToModel(*echo.Context, context.Context, *gorm.DB, Request) (Model, error)
 
 	// UpdateModel updates an existing model with request data
-	UpdateModel(echo.Context, context.Context, *gorm.DB, *Model, Request) error
+	UpdateModel(*echo.Context, context.Context, *gorm.DB, *Model, Request) error
 
 	// PreloadRelations adds any preloads needed for the model
-	PreloadRelations(echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
+	PreloadRelations(*echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
 
 	// IDFromModel returns the ID of a model instance
 	IDFromModel(Model) uint
@@ -50,7 +50,7 @@ func nestedListHandler[Parent any, Model any, Request any, Response any](
 	db *gorm.DB,
 	handler NestedModelHandler[Parent, Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 
@@ -98,7 +98,7 @@ func nestedCreateHandler[Parent any, Model any, Request any, Response any](
 	db *gorm.DB,
 	handler NestedModelHandler[Parent, Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 
@@ -157,7 +157,7 @@ func nestedGetHandler[Parent any, Model any, Request any, Response any](
 	db *gorm.DB,
 	handler NestedModelHandler[Parent, Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 
@@ -202,7 +202,7 @@ func nestedUpdateHandler[Parent any, Model any, Request any, Response any](
 	db *gorm.DB,
 	handler NestedModelHandler[Parent, Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 
@@ -266,7 +266,7 @@ func nestedDeleteHandler[Parent any, Model any, Request any, Response any](
 	db *gorm.DB,
 	handler NestedModelHandler[Parent, Model, Request, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 

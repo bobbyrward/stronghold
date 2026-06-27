@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/bobbyrward/stronghold/internal/hardcover"
 )
@@ -18,7 +18,7 @@ type HardcoverAuthorSearchResponse struct {
 
 // SearchHardcoverAuthors handles GET /hardcover/authors/search
 func SearchHardcoverAuthors(client hardcover.Client) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		query := c.QueryParam("q")
 

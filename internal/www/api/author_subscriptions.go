@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/config"
@@ -59,7 +59,7 @@ func subscriptionToResponse(sub models.AuthorSubscription) AuthorSubscriptionRes
 
 // GetAuthorSubscription returns the subscription for an author
 func GetAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		authorID, err := ParseAuthorIDParam(c, ctx)
@@ -86,7 +86,7 @@ func GetAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 
 // CreateAuthorSubscription creates a new subscription for an author
 func CreateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		authorID, err := ParseAuthorIDParam(c, ctx)
@@ -168,7 +168,7 @@ func CreateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 
 // UpdateAuthorSubscription updates an author's subscription
 func UpdateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		authorID, err := ParseAuthorIDParam(c, ctx)
@@ -239,7 +239,7 @@ func UpdateAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
 
 // DeleteAuthorSubscription deletes an author's subscription
 func DeleteAuthorSubscription(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		authorID, err := ParseAuthorIDParam(c, ctx)
@@ -298,7 +298,7 @@ func itemToResponse(item models.AuthorSubscriptionItem, torrentUrlPrefix string)
 
 // ListAuthorSubscriptionItems returns subscription items for an author's subscription
 func ListAuthorSubscriptionItems(db *gorm.DB) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		authorID, err := ParseAuthorIDParam(c, ctx)

@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 )
 
 // ReadOnlyModelHandler is a simplified interface for read-only resources
 // that only need List and Get operations (no Create, Update, Delete).
 type ReadOnlyModelHandler[Model any, Response any] interface {
-	ModelToResponse(echo.Context, context.Context, *gorm.DB, Model) Response
-	PreloadRelations(echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
+	ModelToResponse(*echo.Context, context.Context, *gorm.DB, Model) Response
+	PreloadRelations(*echo.Context, context.Context, *gorm.DB) (*gorm.DB, error)
 	IDFromModel(Model) uint
 }
 
@@ -22,7 +22,7 @@ func readOnlyListHandler[Model any, Response any](
 	db *gorm.DB,
 	handler ReadOnlyModelHandler[Model, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 
 		typeName := reflect.TypeFor[Model]().Name()
@@ -59,7 +59,7 @@ func readOnlyGetHandler[Model any, Response any](
 	db *gorm.DB,
 	handler ReadOnlyModelHandler[Model, Response],
 ) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		typeName := reflect.TypeFor[Model]().Name()
 

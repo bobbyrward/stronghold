@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/eventlog"
@@ -23,7 +23,7 @@ type AuthorAliasResponse struct {
 
 type AuthorAliasHandler struct{}
 
-func (h AuthorAliasHandler) ParseParentID(c echo.Context, ctx context.Context) (uint, error) {
+func (h AuthorAliasHandler) ParseParentID(c *echo.Context, ctx context.Context) (uint, error) {
 	return ParseAuthorIDParam(c, ctx)
 }
 
@@ -40,7 +40,7 @@ func (h AuthorAliasHandler) SetParentID(row *models.AuthorAlias, parentID uint) 
 	row.AuthorID = parentID
 }
 
-func (h AuthorAliasHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.AuthorAlias) AuthorAliasResponse {
+func (h AuthorAliasHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.AuthorAlias) AuthorAliasResponse {
 	return AuthorAliasResponse{
 		ID:       row.ID,
 		AuthorID: row.AuthorID,
@@ -48,18 +48,18 @@ func (h AuthorAliasHandler) ModelToResponse(c echo.Context, ctx context.Context,
 	}
 }
 
-func (h AuthorAliasHandler) RequestToModel(c echo.Context, ctx context.Context, db *gorm.DB, req AuthorAliasRequest) (models.AuthorAlias, error) {
+func (h AuthorAliasHandler) RequestToModel(c *echo.Context, ctx context.Context, db *gorm.DB, req AuthorAliasRequest) (models.AuthorAlias, error) {
 	return models.AuthorAlias{
 		Name: req.Name,
 	}, nil
 }
 
-func (h AuthorAliasHandler) UpdateModel(c echo.Context, ctx context.Context, db *gorm.DB, row *models.AuthorAlias, req AuthorAliasRequest) error {
+func (h AuthorAliasHandler) UpdateModel(c *echo.Context, ctx context.Context, db *gorm.DB, row *models.AuthorAlias, req AuthorAliasRequest) error {
 	row.Name = req.Name
 	return nil
 }
 
-func (h AuthorAliasHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h AuthorAliasHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db, nil
 }
 

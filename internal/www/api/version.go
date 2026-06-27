@@ -3,13 +3,13 @@ package api
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/bobbyrward/stronghold/internal/version"
 )
 
 func GetVersion() echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"version":    version.Version,
 			"git_commit": version.GitCommit,

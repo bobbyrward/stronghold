@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/models"
@@ -19,7 +19,7 @@ type TorrentCategoryResponse struct {
 
 type TorrentCategoryHandler struct{}
 
-func (h TorrentCategoryHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.TorrentCategory) TorrentCategoryResponse {
+func (h TorrentCategoryHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.TorrentCategory) TorrentCategoryResponse {
 	return TorrentCategoryResponse{
 		ID:        row.ID,
 		Name:      row.Name,
@@ -29,7 +29,7 @@ func (h TorrentCategoryHandler) ModelToResponse(c echo.Context, ctx context.Cont
 	}
 }
 
-func (h TorrentCategoryHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h TorrentCategoryHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db.Preload("Scope"), nil
 }
 

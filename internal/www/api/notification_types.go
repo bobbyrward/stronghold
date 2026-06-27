@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"gorm.io/gorm"
 
 	"github.com/bobbyrward/stronghold/internal/models"
@@ -16,14 +16,14 @@ type NotificationTypeResponse struct {
 
 type NotificationTypeHandler struct{}
 
-func (h NotificationTypeHandler) ModelToResponse(c echo.Context, ctx context.Context, db *gorm.DB, row models.NotificationType) NotificationTypeResponse {
+func (h NotificationTypeHandler) ModelToResponse(c *echo.Context, ctx context.Context, db *gorm.DB, row models.NotificationType) NotificationTypeResponse {
 	return NotificationTypeResponse{
 		ID:   row.ID,
 		Name: row.Name,
 	}
 }
 
-func (h NotificationTypeHandler) PreloadRelations(c echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+func (h NotificationTypeHandler) PreloadRelations(c *echo.Context, ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
 	return db, nil
 }
 
