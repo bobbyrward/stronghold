@@ -225,11 +225,6 @@ func genericUpdateHandler[Model any, Request any, Response any](
 	}
 }
 
-// genericDeleteHandler deletes a resource by ID
-func genericDeleteHandler[Model any](db *gorm.DB) echo.HandlerFunc {
-	return genericDeleteHandlerImpl[Model, any, any](db, nil)
-}
-
 // genericDeleteHandlerWithEventLog deletes a resource by ID and logs a mutation event
 // via the handler's LogEvent method, which has access to the model's name and other fields.
 func genericDeleteHandlerWithEventLog[Model any, Request any, Response any](

@@ -23,19 +23,6 @@ func setupTestServer(t *testing.T) (*httptest.Server, func()) {
 	return server, cleanup
 }
 
-// getTorrentCategoryByName returns a pre-populated TorrentCategory by name
-func getTorrentCategoryByName(t *testing.T, client *Client, ctx context.Context, name string) TorrentCategoryResponse {
-	categories, err := client.TorrentCategories.List(ctx)
-	require.NoError(t, err)
-	for _, cat := range categories {
-		if cat.Name == name {
-			return cat
-		}
-	}
-	t.Fatalf("TorrentCategory with name %q not found", name)
-	return TorrentCategoryResponse{}
-}
-
 func TestNewClient(t *testing.T) {
 	baseURL := "http://localhost:8000"
 	client := NewClient(baseURL)
