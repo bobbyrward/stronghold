@@ -132,6 +132,30 @@ type AuthorSubscription struct {
 	AudiobookLibrary   Library `gorm:"foreignKey:AudiobookLibraryID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 }
 
+// Book is a single work in the catalog, mapping to a Hardcover work. A work may
+// be co-authored, so Authors is many-to-many — a book lists every tracked author
+// who contributed it. HardcoverRef is nil for provisional books (acquired from a
+// feed before being resolved to a Hardcover work).
+type Book struct {
+	CommonFields
+	Authors      []Author `gorm:"many2many:book_authors;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	HardcoverRef *string  `gorm:"uniqueIndex"` // Hardcover work id (decimal string); nil = provisional
+	Title        string   `gorm:"not null"`
+	ReleaseDate  *time.Time
+}
+
+// AcquisitionTarget is the unit of "wanted vs. satisfied": one per (Book × media
+// type). Its existence means that media type is wanted; Satisfied flips once a
+// release fills it. The catalog spine is Book → AcquisitionTarget → DownloadRecord.
+type AcquisitionTarget struct {
+	CommonFields
+	BookID     uint     `gorm:"not null;uniqueIndex:idx_acq_book_booktype"`
+	Book       Book     `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	BookTypeID uint     `gorm:"not null;uniqueIndex:idx_acq_book_booktype"`
+	BookType   BookType `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Satisfied  bool     `gorm:"not null;default:false"`
+}
+
 // AuthorSubscriptionItem represents a downloaded item from an AuthorSubscription
 type AuthorSubscriptionItem struct {
 	CommonFields

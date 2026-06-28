@@ -160,6 +160,9 @@ func AutoMigrate(db *gorm.DB) error {
 		&AuthorAlias{},
 		&AuthorSubscription{},
 		&AuthorSubscriptionItem{},
+		// Catalog spine
+		&Book{},
+		&AcquisitionTarget{},
 		&EventLog{},
 	)
 	if err != nil {

@@ -8,9 +8,11 @@ import (
 // MockClient is a mock implementation of the Hardcover Client interface for testing.
 type MockClient struct {
 	Authors             map[string]AuthorSearchResult // id -> result
+	Books               map[string][]BookResult       // author id -> bibliography
 	SearchAuthorsFunc   func(ctx context.Context, query string) ([]AuthorSearchResult, error)
 	GetAuthorBySlugFunc func(ctx context.Context, slug string) (*AuthorSearchResult, error)
 	GetAuthorByIDFunc   func(ctx context.Context, id string) (*AuthorSearchResult, error)
+	GetAuthorBooksFunc  func(ctx context.Context, id string) ([]BookResult, error)
 }
 
 // Compile-time check that MockClient implements Client interface.
@@ -20,6 +22,7 @@ var _ Client = (*MockClient)(nil)
 func NewMockClient() *MockClient {
 	return &MockClient{
 		Authors: make(map[string]AuthorSearchResult),
+		Books:   make(map[string][]BookResult),
 	}
 }
 
@@ -72,4 +75,14 @@ func (m *MockClient) GetAuthorByID(ctx context.Context, id string) (*AuthorSearc
 		return &author, nil
 	}
 	return nil, nil
+}
+
+// GetAuthorBooks retrieves an author's bibliography by canonical id.
+// If GetAuthorBooksFunc is set, it delegates to that function.
+// Otherwise, it returns the books stored for that author id.
+func (m *MockClient) GetAuthorBooks(ctx context.Context, id string) ([]BookResult, error) {
+	if m.GetAuthorBooksFunc != nil {
+		return m.GetAuthorBooksFunc(ctx, id)
+	}
+	return m.Books[id], nil
 }

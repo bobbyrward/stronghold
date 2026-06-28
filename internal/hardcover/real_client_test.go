@@ -25,3 +25,20 @@ func TestAuthorRowToResult(t *testing.T) {
 		}
 	})
 }
+
+func TestBookRowToResult(t *testing.T) {
+	t.Run("maps id, title and release date", func(t *testing.T) {
+		date := "2017-11-14"
+		got := bookRow{ID: 123, Title: "Oathbringer", ReleaseDate: &date}.toResult()
+		if got.HardcoverID != "123" || got.Title != "Oathbringer" || got.ReleaseDate == nil || *got.ReleaseDate != date {
+			t.Fatalf("unexpected result: %+v", got)
+		}
+	})
+
+	t.Run("nil release date passes through", func(t *testing.T) {
+		got := bookRow{ID: 1, Title: "Untitled"}.toResult()
+		if got.ReleaseDate != nil {
+			t.Fatalf("expected nil release date, got: %v", *got.ReleaseDate)
+		}
+	})
+}

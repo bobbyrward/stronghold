@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
-	"time"
 
+	"github.com/bobbyrward/stronghold/internal/catalog"
 	"github.com/bobbyrward/stronghold/internal/config"
 	"github.com/bobbyrward/stronghold/internal/hardcover"
 	"github.com/bobbyrward/stronghold/internal/models"
@@ -23,8 +23,41 @@ func createDoctorCmd() *cobra.Command {
 	doctorCmd.AddCommand(createDoctorMigrateCmd())
 	doctorCmd.AddCommand(createDoctorInitBookSearchCmd())
 	doctorCmd.AddCommand(createDoctorBackfillHardcoverRefsCmd())
+	doctorCmd.AddCommand(createDoctorSyncBibliographyCmd())
 
 	return doctorCmd
+}
+
+func createDoctorSyncBibliographyCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "sync-bibliography",
+		Short: "Fetch each Hardcover-linked author's works and upsert them as Book rows",
+		Long: `For every author with a HardcoverRef, fetch their bibliography from Hardcover
+and upsert each work into the Book catalog (keyed on the Hardcover work id, so
+re-runs update rather than duplicate). Does not create acquisition targets.`,
+		RunE: runDoctorSyncBibliographyCmd,
+	}
+}
+
+func runDoctorSyncBibliographyCmd(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
+	slog.InfoContext(ctx, "Syncing author bibliographies")
+
+	db, err := models.ConnectDB()
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	client := hardcover.NewClient(config.Config.Hardcover.ApiToken)
+
+	synced, err := catalog.SyncAuthorBibliography(ctx, db, client)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Bibliography sync complete: %d books upserted\n", synced)
+	return nil
 }
 
 func createDoctorBackfillHardcoverRefsCmd() *cobra.Command {
@@ -52,8 +85,7 @@ func runDoctorBackfillHardcoverRefsCmd(cmd *cobra.Command, args []string) error 
 
 	client := hardcover.NewClient(config.Config.Hardcover.ApiToken)
 
-	// Hardcover allows 60 req/min; 1 request/second keeps us at the limit.
-	rewritten, skipped, unresolved, err := backfillHardcoverRefs(ctx, db, client, time.Second)
+	rewritten, skipped, unresolved, err := backfillHardcoverRefs(ctx, db, client)
 	if err != nil {
 		return err
 	}
@@ -65,7 +97,7 @@ func runDoctorBackfillHardcoverRefsCmd(cmd *cobra.Command, args []string) error 
 // backfillHardcoverRefs rewrites slug-based Author.HardcoverRef values to canonical
 // Hardcover ids. Refs that already parse as an int are skipped (idempotent); slugs
 // that cannot be resolved are reported and left untouched.
-func backfillHardcoverRefs(ctx context.Context, db *gorm.DB, client hardcover.Client, perRequestDelay time.Duration) (rewritten, skipped, unresolved int, err error) {
+func backfillHardcoverRefs(ctx context.Context, db *gorm.DB, client hardcover.Client) (rewritten, skipped, unresolved int, err error) {
 	var authors []models.Author
 	if err := db.Where("hardcover_ref IS NOT NULL").Find(&authors).Error; err != nil {
 		return 0, 0, 0, fmt.Errorf("failed to load authors: %w", err)
@@ -80,9 +112,7 @@ func backfillHardcoverRefs(ctx context.Context, db *gorm.DB, client hardcover.Cl
 			continue
 		}
 
-		// ponytail: plain sleep over a rate.Limiter dep — one-off serial loop.
-		time.Sleep(perRequestDelay)
-
+		// Spacing is owned by the client's rate limiter (internal/hardcover).
 		result, getErr := client.GetAuthorBySlug(ctx, ref)
 		if getErr != nil {
 			return rewritten, skipped, unresolved, fmt.Errorf("failed to resolve slug %q for author %d: %w", ref, author.ID, getErr)
